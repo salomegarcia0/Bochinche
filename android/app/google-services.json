@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "306629378098",
+    "project_id": "bochinche-9b659",
+    "storage_bucket": "bochinche-9b659.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:306629378098:android:25a9d700be13315caefc2b",
+        "android_client_info": {
+          "package_name": "com.example.bochinche_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBFkqaeGrWq4d53NpEUkAJIt_cniWuWEGI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
