@@ -1,5 +1,9 @@
 # Bochinche_app
 
+##  Branches
+
+    This branch is any to develoup the map
+
 ## Commands for development
 
 flutter doctor      # Para verificar el estado del flutter 
