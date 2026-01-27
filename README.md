@@ -1,6 +1,23 @@
-# bochinche_app
+# Bochinche_app
 
-A new Flutter project.
+## Commands for development
+
+flutter doctor      # Para verificar el estado del flutter 
+flutter clean       # Limpiar todas las dependencias
+flutter pub get     # Para instalar (o reinstalar) dependencias
+flutter run         # Iniciar el programa
+
+
+## Structure
+
+lib/
+ ├── core/          # Estilos globales, temas, utilidades de red
+ ├── features/      # Cada funcionalidad grande
+ │    ├── auth/     # Login, Register
+ │    ├── map/      # Mapa y marcadores
+ │    ├── events/   # Detalle del evento, creación
+ ├── data/          # Modelos de datos y servicios (Firebase)
+ └── main.dart
 
 ## Getting Started
 
