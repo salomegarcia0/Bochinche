@@ -2,7 +2,8 @@
 
 ##  Branches
 
-    This branch is any to develoup the map
+    This branch is only to develoup the map
+    When you`re gonna pull this branch, type in the terminal "flutter pub get", as the dependeces have changed to use the map
 
 ## Commands for development
 
