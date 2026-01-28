@@ -11,7 +11,7 @@ flutter run         # Iniciar el programa
 ## Structure
 
 lib/
- ├── core/          # Estilos globales, temas, utilidades de red
+ ├── styles/          # Estilos globales, temas, utilidades de red
  ├── features/      # Cada funcionalidad grande
  │    ├── auth/     # Login, Register
  │    ├── map/      # Mapa y marcadores
