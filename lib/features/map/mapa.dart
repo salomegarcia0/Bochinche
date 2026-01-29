@@ -22,7 +22,7 @@ class _MapaState extends State<Mapa> {
             mapController: controladormapa,
             options: const MapOptions(
               initialCenter: LatLng(0, 0),
-              initialZoom: 2,
+              initialZoom: 16,
               minZoom: 0,
               maxZoom: 100,
             ),
@@ -32,6 +32,7 @@ class _MapaState extends State<Mapa> {
                     "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
               ),
               CurrentLocationLayer(
+                alignPositionOnUpdate: AlignOnUpdate.once,
                 style: LocationMarkerStyle(
                   marker: const DefaultLocationMarker(
                     child: Icon(
