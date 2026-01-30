@@ -1,13 +1,14 @@
 import 'dart:ui';
 import 'package:bochinche_app/sources/events_logic.dart';
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class EventosCreate extends StatelessWidget {
   const EventosCreate({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
+    return Scaffold(
       body: SingleChildScrollView(
         scrollDirection: Axis.vertical,
         child: Column(
@@ -36,7 +37,12 @@ class EventosCreate extends StatelessWidget {
               ),
             ),
             ElevatedButton(
-              onPressed: null,
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => ControlPanelEvent()),
+                );
+              },
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -120,9 +126,22 @@ class _FormCreateEventState extends State<FormCreateEvent> {
                   fontSize: 15,
                 ),
               ),
-              TextFormField(
-                decoration: InputDecoration(contentPadding: EdgeInsets.all(4)),
+              Padding(
+                padding: EdgeInsetsGeometry.all(4),
+                child: Container(
+                  decoration: BoxDecoration(
+                    border: BoxBorder.all(color: Colors.black),
+                  ),
+                  child: TextFormField(
+                    controller: nombreEventoController,
+                    decoration: InputDecoration(
+                      contentPadding: EdgeInsets.all(4),
+                      enabledBorder: InputBorder.none,
+                    ),
+                  ),
+                ),
               ),
+
               const SizedBox(height: 15),
               const Text(
                 'Dirección',
@@ -132,7 +151,7 @@ class _FormCreateEventState extends State<FormCreateEvent> {
                   fontSize: 15,
                 ),
               ),
-              const TextField(maxLines: 1),
+              TextFormField(maxLines: 1, controller: direccionController),
               const SizedBox(height: 15),
               const Text(
                 'Contacto',
@@ -142,7 +161,7 @@ class _FormCreateEventState extends State<FormCreateEvent> {
                   fontSize: 15,
                 ),
               ),
-              const TextField(maxLines: 1),
+              TextFormField(maxLines: 1, controller: contactoController),
               const SizedBox(height: 15),
               const Text(
                 'Tipo de evento',
@@ -165,6 +184,7 @@ class _FormCreateEventState extends State<FormCreateEvent> {
                 onChanged: (String? newValue) {
                   setState(() {
                     selectedValue = newValue;
+                    typeC = selectedValue;
                   });
                 },
               ),
@@ -228,7 +248,7 @@ class _FormCreateEventState extends State<FormCreateEvent> {
                   fontSize: 15,
                 ),
               ),
-              const TextField(maxLines: 5),
+              TextFormField(maxLines: 5, controller: descripcionController),
               const Text(
                 'Aforo del evento',
                 style: TextStyle(
@@ -237,14 +257,15 @@ class _FormCreateEventState extends State<FormCreateEvent> {
                   fontSize: 15,
                 ),
               ),
-              const TextField(maxLines: 1),
+              TextFormField(maxLines: 1, controller: aforoController),
 
               const SizedBox(height: 30),
 
               Center(
                 child: ElevatedButton(
                   onPressed: () {
-                    null;
+                    createEvent(context);
+                    dispose();
                   },
                   child: const Row(
                     mainAxisSize: MainAxisSize.min,
@@ -280,8 +301,97 @@ class ControlPanelEvent extends StatelessWidget {
               fontWeight: FontWeight.w800,
             ),
           ),
+          MyEvents(),
         ],
       ),
+    );
+  }
+}
+
+class MyEvents extends StatefulWidget {
+  //Esto con el tiempo se validará mejor
+  const MyEvents({super.key});
+
+  @override
+  State<MyEvents> createState() => _MyEventsState();
+}
+
+class _MyEventsState extends State<MyEvents> {
+  String obtainIDFromEvent(String id) {
+    return id;
+  }
+
+  Future<void> deleteEvent(String id) async {
+    try {
+      await FirebaseFirestore.instance.collection('events').doc(id).delete();
+    } catch (e) {
+      print('Error $e');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        FutureBuilder<List<dynamic>>(
+          future: chargeEvents(),
+          builder: (context, snapshot) {
+            if (snapshot.hasData) {
+              final eventos = snapshot.data!;
+              return Column(
+                children: eventos
+                    .map(
+                      (i) => Padding(
+                        padding: EdgeInsetsGeometry.all(10),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(4),
+                            border: BoxBorder.all(color: Colors.black),
+                          ),
+                          child: Column(
+                            children: [
+                              Text(
+                                i['name'],
+                                style: TextStyle(color: Colors.black),
+                              ),
+                              ElevatedButton(
+                                onPressed: null,
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.change_circle),
+                                    Text('Modificar evento'),
+                                  ],
+                                ),
+                              ),
+                              ElevatedButton(
+                                onPressed: () {
+                                  try {
+                                    setState(() {
+                                      deleteEvent(obtainIDFromEvent(i['id']));
+                                    });
+                                  } catch (e) {
+                                    print(e);
+                                  }
+                                },
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.delete),
+                                    Text('Eliminar evento'),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    )
+                    .toList(),
+              );
+            }
+            return LinearProgressIndicator();
+          },
+        ),
+      ],
     );
   }
 }
