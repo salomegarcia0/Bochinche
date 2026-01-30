@@ -69,6 +69,10 @@ class FormCreateEvent extends StatefulWidget {
 
 class _FormCreateEventState extends State<FormCreateEvent> {
   String? selectedValue;
+  String? selectedValue2;
+  TimeOfDay hora1select = TimeOfDay.now();
+  TimeOfDay hora2select = TimeOfDay.now();
+
   final List<String> options = [
     'Concierto',
     'Conferencias',
@@ -77,6 +81,14 @@ class _FormCreateEventState extends State<FormCreateEvent> {
     'Fiestas',
     'Convenciones',
     'Otros',
+  ];
+
+  final List<String> state = [
+    'Proximo',
+    'En Vivo',
+    'Pospuesto',
+    'Finalizado'
+        'Cancelado',
   ];
 
   Future<void> fechaselect1(BuildContext context) async {
@@ -89,7 +101,8 @@ class _FormCreateEventState extends State<FormCreateEvent> {
 
     if (date != null) {
       setState(() {
-        fecha1.text = date.toString().split(" ")[0];
+        fecha1C.text = date.toString().split(" ")[0];
+        fecha1 = date;
       });
     }
   }
@@ -104,7 +117,8 @@ class _FormCreateEventState extends State<FormCreateEvent> {
 
     if (date != null) {
       setState(() {
-        fecha2.text = date.toString().split(" ")[0];
+        fecha2C.text = date.toString().split(" ")[0];
+        fecha2 = date;
       });
     }
   }
@@ -198,7 +212,7 @@ class _FormCreateEventState extends State<FormCreateEvent> {
                 ),
               ),
               TextField(
-                controller: fecha1,
+                controller: fecha1C,
                 decoration: InputDecoration(
                   filled: true,
                   prefix: Icon(Icons.calendar_view_day_rounded),
@@ -212,6 +226,7 @@ class _FormCreateEventState extends State<FormCreateEvent> {
                 readOnly: true,
                 onTap: () {
                   fechaselect1(context);
+                  print(fecha1C);
                 },
               ),
               Text(
@@ -223,7 +238,7 @@ class _FormCreateEventState extends State<FormCreateEvent> {
                 ),
               ),
               TextField(
-                controller: fecha2,
+                controller: fecha2C,
                 decoration: InputDecoration(
                   filled: true,
                   prefix: Icon(Icons.calendar_view_day_rounded),
@@ -239,7 +254,84 @@ class _FormCreateEventState extends State<FormCreateEvent> {
                   fechaselect2(context);
                 },
               ),
-
+              Text(
+                'Hora de inicio del evento',
+                style: TextStyle(
+                  color: Colors.black,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 15,
+                ),
+              ),
+              Padding(
+                padding: EdgeInsetsGeometry.all(2),
+                child: Container(
+                  decoration: BoxDecoration(
+                    border: BoxBorder.all(color: Colors.black),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                  child: Text(
+                    '${hora1select.hour}:${hora1select.minute}',
+                    style: TextStyle(color: Colors.black, fontSize: 15),
+                  ),
+                ),
+              ),
+              ElevatedButton(
+                child: Text('Elige la hora de inicio del evento'),
+                onPressed: () async {
+                  final TimeOfDay? horaFirst = await showTimePicker(
+                    context: context,
+                    initialTime: hora1select,
+                    initialEntryMode: TimePickerEntryMode.dial,
+                  );
+                  if (horaFirst != null) {
+                    setState(() {
+                      hora1select = horaFirst;
+                      firtTimeHour = hora1select;
+                      print(hora1select.hour);
+                      print(hora1select.minute);
+                    });
+                  }
+                },
+              ),
+              Text(
+                'Hora de cierre del evento',
+                style: TextStyle(
+                  color: Colors.black,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 15,
+                ),
+              ),
+              Padding(
+                padding: EdgeInsetsGeometry.all(2),
+                child: Container(
+                  decoration: BoxDecoration(
+                    border: BoxBorder.all(color: Colors.black),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                  child: Text(
+                    '${hora2select.hour}:${hora2select.minute} ',
+                    style: TextStyle(color: Colors.black, fontSize: 15),
+                  ),
+                ),
+              ),
+              ElevatedButton(
+                child: Text('Elige la hora de cierre del evento'),
+                onPressed: () async {
+                  final TimeOfDay? horaLast = await showTimePicker(
+                    context: context,
+                    initialTime: hora2select,
+                    initialEntryMode: TimePickerEntryMode.dial,
+                  );
+                  if (horaLast != null) {
+                    setState(() {
+                      hora2select = horaLast;
+                      lastTimeHour = hora2select;
+                      print(hora2select.hour);
+                      print(hora2select.minute);
+                    });
+                  }
+                },
+              ),
               const Text(
                 'Descripción',
                 style: TextStyle(
@@ -266,6 +358,9 @@ class _FormCreateEventState extends State<FormCreateEvent> {
                   onPressed: () {
                     createEvent(context);
                     dispose();
+                    /*
+                    navigator
+                     */
                   },
                   child: const Row(
                     mainAxisSize: MainAxisSize.min,

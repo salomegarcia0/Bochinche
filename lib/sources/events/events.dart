@@ -1,5 +1,3 @@
-import 'package:flutter/material.dart';
-
 class Events {
   String? id;
   String? nameEvent;
