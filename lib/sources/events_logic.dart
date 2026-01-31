@@ -1,72 +1,114 @@
-/*
-  Los datos que tienen DK son datos que aun no se pueden obtener
-  id_organizer: no existe aun register ni login
-  longitude: no esta el mapa para poner los pines en la creacion
-  latitude: no esta el mapa para poner los pines en la creacion
- */
-
-import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
 
-TextEditingController fecha1C = TextEditingController();
-TextEditingController fecha2C = TextEditingController();
-TextEditingController nombreEventoController = TextEditingController();
-TextEditingController descripcionController = TextEditingController();
-TextEditingController direccionController = TextEditingController();
-TextEditingController contactoController = TextEditingController();
-TextEditingController aforoController = TextEditingController();
-DateTime? fecha1;
-DateTime? fecha2;
-TimeOfDay firtTimeHour = TimeOfDay.now();
-TimeOfDay lastTimeHour = TimeOfDay.now();
-String? typeC;
+// --- CONTROLADORES DE TEXTO GLOBALES ---
+final nombreEventoController = TextEditingController();
+final direccionController = TextEditingController();
+final contactoController = TextEditingController();
+final descripcionController = TextEditingController();
+final aforoController = TextEditingController();
+final fecha1C = TextEditingController(); // Fecha Inicio (texto)
+final fecha2C = TextEditingController(); // Fecha Fin (texto)
 
+// --- VARIABLES DE ESTADO GLOBALES ---
+String? typeC; // Tipo de evento (Cine, Teatro, etc.)
+DateTime? fecha1; // Objeto fecha inicio
+DateTime? fecha2; // Objeto fecha fin
+TimeOfDay? firtTimeHour; // Hora inicio
+TimeOfDay? lastTimeHour; // Hora cierre
+
+// --- VARIABLES DE UBICACIÓN (MAPA) ---
+double latitudC = 0.0;
+double longitudC = 0.0;
+
+// --- FUNCIÓN PARA CREAR EL EVENTO EN FIRESTORE ---
 Future<void> createEvent(BuildContext context) async {
+  // Verificación básica: al menos el nombre y la ubicación deben existir
+  if (nombreEventoController.text.isEmpty || latitudC == 0.0) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Por favor, ingresa el nombre y selecciona la ubicación en el mapa.',
+        ),
+        backgroundColor: Colors.red,
+      ),
+    );
+    return;
+  }
+
   try {
-    final documento = FirebaseFirestore.instance.collection("events").doc();
-    await documento.set({
-      'id': documento.id,
-      'id_organizer': 'DK',
+    // Guardar en la colección 'events' de Firebase
+    await FirebaseFirestore.instance.collection('events').add({
       'name': nombreEventoController.text,
+      'address': direccionController.text,
       'contact': contactoController.text,
-      'direction': direccionController.text,
-      'ini_date': fecha1!.toIso8601String(),
-      'fin_date': fecha2!.toIso8601String(),
-      'quantity': aforoController.text,
-      'type': typeC,
+      'type': typeC ?? 'Otros',
       'description': descripcionController.text,
-      'status': 'Proximo',
-      'ini_hour': {'hour': firtTimeHour.hour, 'minute': firtTimeHour.minute},
-      'fin_hour': {'hour': lastTimeHour.hour, 'minute': lastTimeHour.minute},
-      'total_stars': 0,
-      'number_ratings': 0,
-      'longitude': 'DK',
-      'latitude': 'DK',
+      'capacity': aforoController.text,
+      'startDate': fecha1C.text,
+      'endDate': fecha2C.text,
+      'startTime': firtTimeHour != null
+          ? '${firtTimeHour!.hour}:${firtTimeHour!.minute}'
+          : '',
+      'endTime': lastTimeHour != null
+          ? '${lastTimeHour!.hour}:${lastTimeHour!.minute}'
+          : '',
+      // COORDENADAS DEL MAPA
+      'lat': latitudC,
+      'lng': longitudC,
+      'createdAt': FieldValue.serverTimestamp(), // Fecha de creación automática
     });
-    print(documento.id);
+
+    // Mostrar mensaje de éxito
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('¡Evento creado y ubicado en el mapa con éxito!'),
+        backgroundColor: Colors.green,
+      ),
+    );
+
+    // LIMPIAR TODOS LOS CAMPOS DESPUÉS DE GUARDAR
+    clearAllFields();
   } catch (e) {
-    print("Error $e");
+    // Mostrar error si falla la conexión
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('Error al guardar: $e')));
   }
 }
 
-Future<List> chargeEvents() async {
-  final List lista;
-  QuerySnapshot snap = await FirebaseFirestore.instance
-      .collection('events')
-      .get();
-  lista = snap.docs.map((doc) {
-    Map<String, dynamic> evento = doc.data() as Map<String, dynamic>;
-    return evento;
-  }).toList();
-  return lista;
-}
-
-void dispose() {
-  fecha1C.clear();
-  fecha2C.clear();
+// --- FUNCIÓN PARA LIMPIAR EL FORMULARIO ---
+void clearAllFields() {
   nombreEventoController.clear();
-  descripcionController.clear();
   direccionController.clear();
   contactoController.clear();
+  descripcionController.clear();
   aforoController.clear();
+  fecha1C.clear();
+  fecha2C.clear();
+  typeC = null;
+  latitudC = 0.0;
+  longitudC = 0.0;
+}
+
+// --- FUNCIÓN PARA CARGAR EVENTOS (Para el Panel de Control) ---
+Future<List<Map<String, dynamic>>> chargeEvents() async {
+  List<Map<String, dynamic>> eventos = [];
+
+  try {
+    QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+        .collection('events')
+        .get();
+
+    for (var doc in querySnapshot.docs) {
+      Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+      data['id'] =
+          doc.id; // Agregamos el ID de Firebase para poder borrar/editar
+      eventos.add(data);
+    }
+  } catch (e) {
+    print("Error cargando eventos: $e");
+  }
+
+  return eventos;
 }
