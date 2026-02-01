@@ -1,3 +1,4 @@
+import 'package:bochinche_app/styles/BochincheAppBar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
@@ -15,7 +16,7 @@ class _MapaState extends State<Mapa> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Mapa')),
+      appBar: const BochincheAppBar(),
       body: Stack(
         children: [
           FlutterMap(
