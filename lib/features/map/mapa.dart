@@ -15,7 +15,7 @@ class _MapaState extends State<Mapa> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Mapa')),
+      appBar: AppBar(title: const Text('BOCHINCHE')),
       body: Stack(
         children: [
           FlutterMap(
