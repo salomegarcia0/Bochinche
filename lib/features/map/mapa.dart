@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:bochinche_app/features/map/BuscadorEventoMapa.dart';
 
 class Mapa extends StatefulWidget {
   const Mapa({super.key});
@@ -19,37 +20,46 @@ class _MapaState extends State<Mapa> {
       appBar: const BochincheAppBar(),
       body: Stack(
         children: [
-          FlutterMap(
-            mapController: controladormapa,
-            options: const MapOptions(
-              initialCenter: LatLng(0, 0),
-              initialZoom: 16,
-              minZoom: 0,
-              maxZoom: 100,
+          mapa(context),
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: Padding(
+              padding: const EdgeInsets.all(5.0),
+              child: SizedBox(
+                height: MediaQuery.of(context).size.width * 0.5,
+                child: BuscadorEventoMapa(),
+              ),
             ),
-            children: [
-              TileLayer(
-                urlTemplate:
-                    "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-              ),
-              CurrentLocationLayer(
-                alignPositionOnUpdate: AlignOnUpdate.once,
-                style: LocationMarkerStyle(
-                  marker: const DefaultLocationMarker(
-                    child: Icon(
-                      Icons.my_location,
-                      color: Colors.blue,
-                      size: 30,
-                    ),
-                  ),
-                  markerSize: Size(30, 30),
-                  markerDirection: MarkerDirection.heading,
-                ),
-              ),
-            ],
           ),
         ],
       ),
+    );
+  }
+
+  Widget mapa(BuildContext context) {
+    return FlutterMap(
+      mapController: controladormapa,
+      options: const MapOptions(
+        initialCenter: LatLng(0, 0),
+        initialZoom: 16,
+        minZoom: 0,
+        maxZoom: 100,
+      ),
+      children: [
+        TileLayer(
+          urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+        ),
+        CurrentLocationLayer(
+          alignPositionOnUpdate: AlignOnUpdate.once,
+          style: LocationMarkerStyle(
+            marker: const DefaultLocationMarker(
+              child: Icon(Icons.my_location, color: Colors.blue, size: 30),
+            ),
+            markerSize: Size(30, 30),
+            markerDirection: MarkerDirection.heading,
+          ),
+        ),
+      ],
     );
   }
 }

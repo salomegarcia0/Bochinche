@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:bochinche_app/styles/Color.dart';
 
 class BochincheAppBar extends StatelessWidget implements PreferredSizeWidget {
-  const BochincheAppBar({Key? key}) : super(key: key);
+  const BochincheAppBar({super.key});
 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
@@ -12,7 +12,7 @@ class BochincheAppBar extends StatelessWidget implements PreferredSizeWidget {
     return AppBar(
       leading: icon(context),
       title: const Text(
-        'Bochinche',
+        'BOCHINCHE',
         style: TextStyle(color: SecondaryPurple, fontWeight: FontWeight.bold),
       ),
       centerTitle: true,

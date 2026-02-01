@@ -1,0 +1,76 @@
+import 'package:bochinche_app/styles/Color.dart';
+import 'package:flutter/material.dart';
+
+class BuscadorEventoMapa extends StatelessWidget
+    implements PreferredSizeWidget {
+  const BuscadorEventoMapa({super.key});
+
+  @override
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 55.0),
+      decoration: BoxDecoration(
+        color: PrimaryBackGroundPurple,
+        borderRadius: BorderRadius.circular(35.0),
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [Container(), filtro(context)],
+          ),
+          buscador(context),
+        ],
+      ),
+    );
+  }
+
+  Widget filtro(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16.0, 8.0, 16.0, 0.0),
+      child: FilledButton(
+        onPressed: () {},
+        style: FilledButton.styleFrom(
+          backgroundColor: PrimaryPurple,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15.0),
+          ),
+        ),
+        child: const Text('Filtros', style: TextStyle(color: Colors.white)),
+      ),
+    );
+  }
+
+  Widget buscador(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+      child: Container(
+        margin: const EdgeInsets.all(8.0),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: SecondaryPurple,
+            borderRadius: BorderRadius.circular(50.0),
+            border: Border.all(
+              color: PrimaryPurple, // Color del borde
+              width: 1.0, // Grosor
+            ),
+          ),
+          child: TextField(
+            scrollPadding: const EdgeInsets.all(8.0),
+            decoration: const InputDecoration(
+              icon: Icon(Icons.search, color: PrimaryPurple),
+              hintText: 'Buscar evento',
+              border: InputBorder.none,
+            ),
+            onSubmitted: (value) {
+              // Lógica de búsqueda de eventos
+            },
+          ),
+        ),
+      ),
+    );
+  }
+}
