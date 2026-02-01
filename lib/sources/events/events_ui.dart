@@ -5,7 +5,7 @@ import 'package:latlong2/latlong.dart';
 
 // --- CORRECCIÓN DE RUTAS ---
 // Usamos 'package:' que es la forma más segura en Flutter para evitar errores de ruta
-import 'package:bochinche_app/sources/events_logic.dart';
+import 'package:bochinche_app/sources/events/events_logic.dart';
 import 'package:bochinche_app/features/map/mapa.dart';
 
 class EventosCreate extends StatelessWidget {
@@ -66,7 +66,42 @@ class FormCreateEvent extends StatefulWidget {
 class _FormCreateEventState extends State<FormCreateEvent> {
   String? selectedValue;
   LatLng? ubicacionTemporal;
+  String? selectedValue2;
+  TimeOfDay hora1select = TimeOfDay.now();
+  TimeOfDay hora2select = TimeOfDay.now();
   TimeOfDay hora1 = TimeOfDay.now();
+
+  Future<void> fechaselect2(BuildContext context) async {
+    DateTime? date = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime.now(),
+      lastDate: DateTime(2027),
+    );
+
+    if (date != null) {
+      setState(() {
+        fecha2C.text = date.toString().split(" ")[0];
+        fecha2 = date;
+      });
+    }
+  }
+
+  Future<void> fechaselect1(BuildContext context) async {
+    DateTime? date = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime.now(),
+      lastDate: DateTime(2027),
+    );
+
+    if (date != null) {
+      setState(() {
+        fecha1C.text = date.toString().split(" ")[0];
+        fecha1 = date;
+      });
+    }
+  }
 
   final List<String> options = [
     'Concierto',
@@ -132,6 +167,43 @@ class _FormCreateEventState extends State<FormCreateEvent> {
               });
             },
           ),
+          _buildLabel('Fecha Inicio'),
+          TextField(
+            controller: fecha1C,
+            decoration: InputDecoration(
+              filled: true,
+              prefix: Icon(Icons.calendar_view_day_rounded),
+              enabledBorder: OutlineInputBorder(
+                borderSide: BorderSide(color: Colors.black),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderSide: BorderSide(color: Colors.green),
+              ),
+            ),
+            readOnly: true,
+            onTap: () {
+              fechaselect1(context);
+              print(fecha1C);
+            },
+          ),
+          _buildLabel('Fecha Fin'),
+          TextField(
+            controller: fecha2C,
+            decoration: InputDecoration(
+              filled: true,
+              prefix: Icon(Icons.calendar_view_day_rounded),
+              enabledBorder: OutlineInputBorder(
+                borderSide: BorderSide(color: Colors.black),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderSide: BorderSide(color: Colors.green),
+              ),
+            ),
+            readOnly: true,
+            onTap: () {
+              fechaselect2(context);
+            },
+          ),
 
           const SizedBox(height: 20),
           _buildLabel('Ubicación en el Mapa'),
@@ -169,38 +241,75 @@ class _FormCreateEventState extends State<FormCreateEvent> {
           const SizedBox(height: 20),
           Row(
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildLabel("Fecha Inicio"),
-                    TextFormField(
-                      controller: fecha1C,
-                      readOnly: true,
-                      onTap: () => _selectDate(context, fecha1C, true),
-                    ),
-                  ],
-                ),
-              ),
               const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildLabel("Hora Inicio"),
+                    _buildLabel("Hora de inicio"),
+
+                    Padding(
+                      padding: EdgeInsetsGeometry.all(2),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          border: BoxBorder.all(color: Colors.black),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                        child: Text(
+                          '${hora1select.hour}:${hora1select.minute}',
+                          style: TextStyle(color: Colors.black, fontSize: 15),
+                        ),
+                      ),
+                    ),
                     ElevatedButton(
+                      child: Text('Elige la hora de inicio del evento'),
                       onPressed: () async {
-                        final TimeOfDay? t = await showTimePicker(
+                        final TimeOfDay? horaFirst = await showTimePicker(
                           context: context,
-                          initialTime: hora1,
+                          initialTime: hora1select,
+                          initialEntryMode: TimePickerEntryMode.dial,
                         );
-                        if (t != null)
+                        if (horaFirst != null) {
                           setState(() {
-                            hora1 = t;
-                            firtTimeHour = t;
+                            hora1select = horaFirst;
+                            firtTimeHour = hora1select;
+                            print(hora1select.hour);
+                            print(hora1select.minute);
                           });
+                        }
                       },
-                      child: Text("${hora1.hour}:${hora1.minute}"),
+                    ),
+                    _buildLabel("Hora de cierre"),
+                    Padding(
+                      padding: EdgeInsetsGeometry.all(2),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          border: BoxBorder.all(color: Colors.black),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                        child: Text(
+                          '${hora2select.hour}:${hora2select.minute} ',
+                          style: TextStyle(color: Colors.black, fontSize: 15),
+                        ),
+                      ),
+                    ),
+                    ElevatedButton(
+                      child: Text('Elige la hora de cierre del evento'),
+                      onPressed: () async {
+                        final TimeOfDay? horaLast = await showTimePicker(
+                          context: context,
+                          initialTime: hora2select,
+                          initialEntryMode: TimePickerEntryMode.dial,
+                        );
+                        if (horaLast != null) {
+                          setState(() {
+                            hora2select = horaLast;
+                            lastTimeHour = hora2select;
+                            print(hora2select.hour);
+                            print(hora2select.minute);
+                          });
+                        }
+                      },
                     ),
                   ],
                 ),
@@ -247,53 +356,108 @@ class ControlPanelEvent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text("Mis Eventos")),
-      body: const MyEvents(),
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          Text(
+            'Panel de control para gestionar eventos',
+            style: TextStyle(
+              color: Colors.black,
+              fontSize: 25,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          MyEvents(),
+        ],
+      ),
     );
   }
 }
 
 class MyEvents extends StatefulWidget {
+  //Esto con el tiempo se validará mejor
   const MyEvents({super.key});
+
   @override
   State<MyEvents> createState() => _MyEventsState();
 }
 
 class _MyEventsState extends State<MyEvents> {
+  String obtainIDFromEvent(String id) {
+    return id;
+  }
+
+  Future<void> deleteEvent(String id) async {
+    try {
+      await FirebaseFirestore.instance.collection('events').doc(id).delete();
+    } catch (e) {
+      print('Error $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<Map<String, dynamic>>>(
-      future: chargeEvents(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting)
-          return const Center(child: CircularProgressIndicator());
-        if (!snapshot.hasData || snapshot.data!.isEmpty)
-          return const Center(child: Text("No hay eventos"));
-
-        final eventos = snapshot.data!;
-        return ListView.builder(
-          itemCount: eventos.length,
-          itemBuilder: (context, index) {
-            final item = eventos[index];
-            return Card(
-              child: ListTile(
-                title: Text(item['name'] ?? ''),
-                trailing: IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.red),
-                  onPressed: () async {
-                    await FirebaseFirestore.instance
-                        .collection('events')
-                        .doc(item['id'])
-                        .delete();
-                    setState(() {});
-                  },
-                ),
-              ),
-            );
+    return Column(
+      children: [
+        FutureBuilder<List<dynamic>>(
+          future: chargeEvents(),
+          builder: (context, snapshot) {
+            if (snapshot.hasData) {
+              final eventos = snapshot.data!;
+              return Column(
+                children: eventos
+                    .map(
+                      (i) => Padding(
+                        padding: EdgeInsetsGeometry.all(10),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(4),
+                            border: BoxBorder.all(color: Colors.black),
+                          ),
+                          child: Column(
+                            children: [
+                              Text(
+                                i['name'],
+                                style: TextStyle(color: Colors.black),
+                              ),
+                              ElevatedButton(
+                                onPressed: null,
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.change_circle),
+                                    Text('Modificar evento'),
+                                  ],
+                                ),
+                              ),
+                              ElevatedButton(
+                                onPressed: () {
+                                  try {
+                                    setState(() {
+                                      deleteEvent(obtainIDFromEvent(i['id']));
+                                    });
+                                  } catch (e) {
+                                    print(e);
+                                  }
+                                },
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.delete),
+                                    Text('Eliminar evento'),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    )
+                    .toList(),
+              );
+            }
+            return LinearProgressIndicator();
           },
-        );
-      },
+        ),
+      ],
     );
   }
 }

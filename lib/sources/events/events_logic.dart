@@ -42,21 +42,22 @@ Future<void> createEvent(BuildContext context) async {
       'name': nombreEventoController.text,
       'address': direccionController.text,
       'contact': contactoController.text,
-      'type': typeC ?? 'Otros',
+      'type': typeC,
       'description': descripcionController.text,
       'capacity': aforoController.text,
-      'startDate': fecha1C.text,
-      'endDate': fecha2C.text,
-      'startTime': firtTimeHour != null
-          ? '${firtTimeHour!.hour}:${firtTimeHour!.minute}'
-          : '',
-      'endTime': lastTimeHour != null
-          ? '${lastTimeHour!.hour}:${lastTimeHour!.minute}'
-          : '',
-      // COORDENADAS DEL MAPA
+      'startDate': fecha1!.toIso8601String(),
+      'endDate': fecha2!.toIso8601String(),
+      'startTime': {
+        {firtTimeHour!.hour},
+        {firtTimeHour!.minute},
+      },
+      'endTime': {
+        {lastTimeHour!.hour},
+        {lastTimeHour!.minute},
+      },
       'lat': latitudC,
       'lng': longitudC,
-      'createdAt': FieldValue.serverTimestamp(), // Fecha de creación automática
+      'createdAt': FieldValue.serverTimestamp(),
     });
 
     // Mostrar mensaje de éxito
