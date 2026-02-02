@@ -12,10 +12,12 @@ final fecha2C = TextEditingController(); // Fecha Fin (texto)
 
 // --- VARIABLES DE ESTADO GLOBALES ---
 String? typeC; // Tipo de evento (Cine, Teatro, etc.)
+String? stateC;
 DateTime? fecha1; // Objeto fecha inicio
 DateTime? fecha2; // Objeto fecha fin
 TimeOfDay? firtTimeHour; // Hora inicio
 TimeOfDay? lastTimeHour; // Hora cierre
+var idmod;
 
 // --- VARIABLES DE UBICACIÓN (MAPA) ---
 double latitudC = 0.0;
@@ -23,7 +25,7 @@ double longitudC = 0.0;
 
 // --- FUNCIÓN PARA CREAR EL EVENTO EN FIRESTORE ---
 Future<void> createEvent(BuildContext context) async {
-  // Verificación básica: al menos el nombre y la ubicación deben existir
+  // Verificación básica
   if (nombreEventoController.text.isEmpty || latitudC == 0.0) {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
@@ -37,24 +39,24 @@ Future<void> createEvent(BuildContext context) async {
   }
 
   try {
-    // Guardar en la colección 'events' de Firebase
-    await FirebaseFirestore.instance.collection('events').add({
+    // 1. Generamos la referencia ANTES de guardar para obtener el ID
+    final newEventRef = FirebaseFirestore.instance.collection('events').doc();
+
+    // 2. Usamos .set() en lugar de .add()
+    await newEventRef.set({
+      'id': newEventRef.id,
       'name': nombreEventoController.text,
       'address': direccionController.text,
       'contact': contactoController.text,
       'type': typeC,
+      'state': 'Proximo',
+      'id_organizer': 'id',
       'description': descripcionController.text,
       'capacity': aforoController.text,
       'startDate': fecha1!.toIso8601String(),
       'endDate': fecha2!.toIso8601String(),
-      'startTime': {
-        {firtTimeHour!.hour},
-        {firtTimeHour!.minute},
-      },
-      'endTime': {
-        {lastTimeHour!.hour},
-        {lastTimeHour!.minute},
-      },
+      'startTime': {'hour': firtTimeHour!.hour, 'minute': firtTimeHour!.minute},
+      'endTime': {'hour': lastTimeHour!.hour, 'minute': lastTimeHour!.minute},
       'lat': latitudC,
       'lng': longitudC,
       'createdAt': FieldValue.serverTimestamp(),
@@ -68,10 +70,9 @@ Future<void> createEvent(BuildContext context) async {
       ),
     );
 
-    // LIMPIAR TODOS LOS CAMPOS DESPUÉS DE GUARDAR
+    // LIMPIAR TODOS LOS CAMPOS
     clearAllFields();
   } catch (e) {
-    // Mostrar error si falla la conexión
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text('Error al guardar: $e')));
@@ -88,8 +89,10 @@ void clearAllFields() {
   fecha1C.clear();
   fecha2C.clear();
   typeC = null;
-  latitudC = 0.0;
-  longitudC = 0.0;
+  latitudC = 10.0;
+  longitudC = -60.0;
+  firtTimeHour = TimeOfDay(hour: 0, minute: 0);
+  lastTimeHour = TimeOfDay(hour: 0, minute: 0);
 }
 
 // --- FUNCIÓN PARA CARGAR EVENTOS (Para el Panel de Control) ---
@@ -112,4 +115,60 @@ Future<List<Map<String, dynamic>>> chargeEvents() async {
   }
 
   return eventos;
+}
+
+Future<void> cargarDatosEvento(String idDocumento) async {
+  try {
+    // 1. Obtener el documento de Firestore
+    DocumentSnapshot doc = await FirebaseFirestore.instance
+        .collection('events') // Asegúrate de que la colección sea correcta
+        .doc(idDocumento)
+        .get();
+
+    // 2. Verificar si el documento existe
+    if (doc.exists) {
+      Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+
+      nombreEventoController.text = data['name'] ?? '';
+      direccionController.text = data['address'] ?? '';
+      contactoController.text = data['contact'] ?? '';
+      descripcionController.text = data['description'] ?? '';
+      aforoController.text = data['capacity'] ?? '';
+    } else {
+      print("El documento con id $idDocumento no existe");
+    }
+  } catch (e) {
+    print("Error al obtener los datos: $e");
+  }
+}
+
+Future<void> modifyEvent(BuildContext context, String id) async {
+  try {
+    final newEventRef = FirebaseFirestore.instance.collection('events').doc(id);
+
+    await newEventRef.update({
+      'name': nombreEventoController.text,
+      'address': direccionController.text,
+      'contact': contactoController.text,
+      'state': stateC ?? 'Proximo',
+      'id_organizer': 'id',
+      'description': descripcionController.text,
+      'capacity': aforoController.text,
+    });
+
+    // Mostrar mensaje de éxito
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('¡Evento modificado con éxito!'),
+        backgroundColor: Colors.green,
+      ),
+    );
+
+    // LIMPIAR TODOS LOS CAMPOS
+    clearAllFields();
+  } catch (e) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('Error al modificar: $e')));
+  }
 }
