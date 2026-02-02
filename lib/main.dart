@@ -1,7 +1,7 @@
 import 'package:bochinche_app/data/firebase_options.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'features/map/mapa.dart';
+import 'features/map/Paginna_Inicio.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -36,7 +36,7 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  Mapa mapa = const Mapa();
+  Pagina_Principal mapa = const Pagina_Principal();
 
   @override
   Widget build(BuildContext context) {

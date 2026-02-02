@@ -1,14 +1,16 @@
-import 'package:bochinche_app/styles/BochincheAppBar.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:bochinche_app/features/map/BuscadorEventoMapa.dart';
+import 'package:flutter_map/flutter_map.dart';
 
-class Mapa extends StatefulWidget {
+class Mapa extends StatefulWidget implements PreferredSizeWidget {
   const Mapa({super.key});
+
   @override
   State<Mapa> createState() => _MapaState();
+
+  @override
+  Size get preferredSize => const Size.fromHeight(300);
 }
 
 class _MapaState extends State<Mapa> {
@@ -16,27 +18,6 @@ class _MapaState extends State<Mapa> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: const BochincheAppBar(),
-      body: Stack(
-        children: [
-          mapa(context),
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: Padding(
-              padding: const EdgeInsets.all(5.0),
-              child: SizedBox(
-                height: MediaQuery.of(context).size.width * 0.5,
-                child: BuscadorEventoMapa(),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget mapa(BuildContext context) {
     return FlutterMap(
       mapController: controladormapa,
       options: const MapOptions(
@@ -51,8 +32,8 @@ class _MapaState extends State<Mapa> {
         ),
         CurrentLocationLayer(
           alignPositionOnUpdate: AlignOnUpdate.once,
-          style: LocationMarkerStyle(
-            marker: const DefaultLocationMarker(
+          style: const LocationMarkerStyle(
+            marker: DefaultLocationMarker(
               child: Icon(Icons.my_location, color: Colors.blue, size: 30),
             ),
             markerSize: Size(30, 30),
