@@ -10,7 +10,7 @@ class BochincheAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      leading: icon(context),
+      iconTheme: IconThemeData(color: SecondaryPurple),
       title: const Text(
         'BOCHINCHE',
         style: TextStyle(color: SecondaryPurple, fontWeight: FontWeight.bold),

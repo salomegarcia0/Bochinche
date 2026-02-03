@@ -1,4 +1,7 @@
 import 'dart:ui';
+import 'package:bochinche_app/features/map/Paginna_Inicio.dart';
+import 'package:bochinche_app/styles/BochincheAppBar.dart';
+import 'package:bochinche_app/styles/Color.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:latlong2/latlong.dart';
@@ -15,11 +18,7 @@ class EventosCreate extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       drawer: const Navbar(),
-      appBar: AppBar(
-        title: const Text("Bochinche"),
-        backgroundColor: Colors.deepPurple,
-        foregroundColor: Colors.white,
-      ),
+      appBar: BochincheAppBar(),
       body: const SingleChildScrollView(
         child: Column(
           children: [
@@ -220,7 +219,7 @@ class _FormCreateEventState extends State<FormCreateEvent> {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(10),
             ),
-            leading: const Icon(Icons.map, color: Colors.blue),
+            leading: const Icon(Icons.map, color: PrimaryPurple),
             title: Text(
               ubicacionTemporal == null
                   ? "Toca para abrir el mapa"
@@ -345,8 +344,8 @@ class _FormCreateEventState extends State<FormCreateEvent> {
               height: 50,
               child: ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.deepPurple,
-                  foregroundColor: Colors.white,
+                  backgroundColor: PrimaryPurple,
+                  foregroundColor: SecondaryPurple,
                 ),
                 onPressed: () => createEvent(context),
                 icon: const Icon(Icons.cloud_upload),
@@ -375,11 +374,7 @@ class ControlPanelEvent extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       drawer: const Navbar(),
-      appBar: AppBar(
-        title: Text('Bochinche'),
-        backgroundColor: Colors.deepPurple,
-        foregroundColor: Colors.white,
-      ),
+      appBar: BochincheAppBar(),
       body: SingleChildScrollView(
         child: Container(
           color: Colors.white,
@@ -500,21 +495,21 @@ class _MyEventsState extends State<MyEvents> {
                                 ),
                               ),
                               Text(
-                                'Fechas: ${i['startDate']} hasta ${i['endDate']}',
+                                'Fechas: ${DateTime.parse(i['startDate']).day}/${DateTime.parse(i['startDate']).month}/${DateTime.parse(i['startDate']).year} hasta ${DateTime.parse(i['endDate']).day}/${DateTime.parse(i['endDate']).month}/${DateTime.parse(i['endDate']).year}',
                                 style: TextStyle(
                                   color: Colors.black,
                                   fontSize: 13,
                                 ),
                               ),
                               Text(
-                                'Horarios: ${i['startTime']['hour']}:${i['startTime']['minute']} hasta ${i['endTime']['hour']}:${i['endTime']['minute']}',
+                                'Horarios: ${i['startTime']['hour']}:${i['startTime']['minute'].toString().padLeft(2, '0')} hasta ${i['endTime']['hour']}:${i['endTime']['minute'].toString().padLeft(2, '0')}',
                                 style: TextStyle(
                                   color: Colors.black,
                                   fontSize: 13,
                                 ),
                               ),
                               Text(
-                                'Localización: ${i['lat']},${i['lng']}',
+                                'Localización: ${i['location'].latitude}, ${i['location'].longitude}',
                                 style: TextStyle(
                                   color: Colors.black,
                                   fontSize: 13,
@@ -580,11 +575,7 @@ class ModifyEvents extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       drawer: const Navbar(),
-      appBar: AppBar(
-        title: const Text("Bochinche"),
-        backgroundColor: Colors.deepPurple,
-        foregroundColor: Colors.white,
-      ),
+      appBar: BochincheAppBar(),
       body: SingleChildScrollView(
         child: Column(
           children: [
@@ -749,8 +740,8 @@ class _FormCreateEvent2State extends State<FormCreateEvent2> {
               height: 50,
               child: ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.deepPurple,
-                  foregroundColor: Colors.white,
+                  backgroundColor: PrimaryPurple,
+                  foregroundColor: SecondaryPurple,
                 ),
                 onPressed: () => modifyEvent(context, idmod),
                 icon: const Icon(Icons.cloud_upload),
@@ -779,11 +770,24 @@ class Navbar extends StatelessWidget {
     return Drawer(
       child: ListView(
         children: [
-          ListTile(leading: Icon(Icons.map), title: Text('Mapa'), onTap: () {}),
+          ListTile(
+            leading: Icon(Icons.map),
+            title: Text('Mapa'),
+            onTap: () {
+              clearAllFields();
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const Pagina_Principal(),
+                ),
+              );
+            },
+          ),
           ListTile(
             leading: Icon(Icons.view_array),
             title: Text('Crear eventos'),
             onTap: () {
+              clearAllFields();
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => const EventosCreate()),
@@ -794,6 +798,7 @@ class Navbar extends StatelessWidget {
             leading: Icon(Icons.view_array),
             title: Text('Panel de control'),
             onTap: () {
+              clearAllFields();
               Navigator.push(
                 context,
                 MaterialPageRoute(

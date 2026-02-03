@@ -86,8 +86,7 @@ Future<void> createEvent(BuildContext context) async {
       'endDate': fecha2!.toIso8601String(),
       'startTime': {'hour': firtTimeHour!.hour, 'minute': firtTimeHour!.minute},
       'endTime': {'hour': lastTimeHour!.hour, 'minute': lastTimeHour!.minute},
-      'lat': latitudC,
-      'lng': longitudC,
+      'location': GeoPoint(latitudC, longitudC),
       'createdAt': FieldValue.serverTimestamp(),
     });
 

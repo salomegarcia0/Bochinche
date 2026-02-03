@@ -1,3 +1,4 @@
+import 'package:bochinche_app/sources/events/events_ui.dart';
 import 'package:bochinche_app/styles/BochincheAppBar.dart';
 import 'package:bochinche_app/features/map/Mapa.dart';
 import 'package:flutter/material.dart';
@@ -14,7 +15,9 @@ class _Pagina_PrincipalState extends State<Pagina_Principal> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      drawer: Navbar(),
       appBar: const BochincheAppBar(),
+
       body: Stack(
         children: [
           mapa,
