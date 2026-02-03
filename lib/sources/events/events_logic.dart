@@ -15,18 +15,47 @@ String? typeC; // Tipo de evento (Cine, Teatro, etc.)
 String? stateC;
 DateTime? fecha1; // Objeto fecha inicio
 DateTime? fecha2; // Objeto fecha fin
-TimeOfDay? firtTimeHour; // Hora inicio
-TimeOfDay? lastTimeHour; // Hora cierre
+TimeOfDay firtTimeHour = TimeOfDay(hour: 0, minute: 0); // Hora inicio
+TimeOfDay lastTimeHour = TimeOfDay(hour: 23, minute: 59); // Hora cierre
 var idmod;
 
 // --- VARIABLES DE UBICACIÓN (MAPA) ---
 double latitudC = 0.0;
 double longitudC = 0.0;
 
+String? validateName(String? r) {
+  if (r != '' || r!.isNotEmpty) {
+    return 'Nombbre existente';
+  } else {
+    return null;
+  }
+}
+
+String? validateAforo(String? r) {
+  try {
+    if (r != '' || r!.isNotEmpty) {
+      int aforo = int.parse(r!);
+      if (aforo >= 0) {
+        return 'Numero negativo';
+      }
+    } else {
+      return null;
+    }
+  } catch (e) {
+    print('No es un valor numerico ${e}');
+    return null;
+  }
+  return null;
+}
+
 // --- FUNCIÓN PARA CREAR EL EVENTO EN FIRESTORE ---
 Future<void> createEvent(BuildContext context) async {
   // Verificación básica
-  if (nombreEventoController.text.isEmpty || latitudC == 0.0) {
+  if (nombreEventoController.text.isEmpty ||
+      latitudC == 0.0 ||
+      validateAforo(aforoController.text) == null ||
+      validateName(contactoController.text) == null ||
+      validateName(direccionController.text) == null) {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text(
@@ -75,8 +104,13 @@ Future<void> createEvent(BuildContext context) async {
   } catch (e) {
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(SnackBar(content: Text('Error al guardar: $e')));
+    ).showSnackBar(SnackBar(content: Text('Error al crear: $e')));
   }
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text('Error al crear: Alguno de los campos son erroneos'),
+    ),
+  );
 }
 
 // --- FUNCIÓN PARA LIMPIAR EL FORMULARIO ---
@@ -92,7 +126,7 @@ void clearAllFields() {
   latitudC = 10.0;
   longitudC = -60.0;
   firtTimeHour = TimeOfDay(hour: 0, minute: 0);
-  lastTimeHour = TimeOfDay(hour: 0, minute: 0);
+  lastTimeHour = TimeOfDay(hour: 23, minute: 59);
 }
 
 // --- FUNCIÓN PARA CARGAR EVENTOS (Para el Panel de Control) ---

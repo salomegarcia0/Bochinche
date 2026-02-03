@@ -6,7 +6,7 @@ import 'package:latlong2/latlong.dart';
 // --- CORRECCIÓN DE RUTAS ---
 // Usamos 'package:' que es la forma más segura en Flutter para evitar errores de ruta
 import 'package:bochinche_app/sources/events/events_logic.dart';
-import 'package:bochinche_app/features/map/mapa.dart';
+import 'package:bochinche_app/features/map/mapa_2.dart';
 
 class EventosCreate extends StatelessWidget {
   const EventosCreate({super.key});
@@ -14,12 +14,13 @@ class EventosCreate extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      drawer: const Navbar(),
       appBar: AppBar(
         title: const Text("Bochinche"),
         backgroundColor: Colors.deepPurple,
         foregroundColor: Colors.white,
       ),
-      body: SingleChildScrollView(
+      body: const SingleChildScrollView(
         child: Column(
           children: [
             const Card(
@@ -34,23 +35,7 @@ class EventosCreate extends StatelessWidget {
                 ),
               ),
             ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const ControlPanelEvent(),
-                      ),
-                    );
-                  },
-                  icon: const Icon(Icons.settings),
-                  label: const Text('Panel de control'),
-                ),
-              ],
-            ),
+
             const Divider(),
             const FormCreateEvent(),
           ],
@@ -71,8 +56,8 @@ class _FormCreateEventState extends State<FormCreateEvent> {
   String? selectedValue;
   LatLng? ubicacionTemporal;
   String? selectedValue2;
-  TimeOfDay hora1select = TimeOfDay.now();
-  TimeOfDay hora2select = TimeOfDay.now();
+  TimeOfDay hora1select = firtTimeHour;
+  TimeOfDay hora2select = lastTimeHour;
   TimeOfDay hora1 = TimeOfDay.now();
 
   Future<void> fechaselect2(BuildContext context) async {
@@ -149,19 +134,28 @@ class _FormCreateEventState extends State<FormCreateEvent> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildLabel('Nombre del evento'),
-          TextFormField(controller: nombreEventoController),
+          TextFormField(
+            controller: nombreEventoController,
+            validator: validateName,
+          ),
 
           const SizedBox(height: 15),
           _buildLabel('Dirección Física'),
-          TextFormField(controller: direccionController),
+          TextFormField(
+            controller: direccionController,
+            validator: validateName,
+          ),
 
           const SizedBox(height: 15),
           _buildLabel('Contacto'),
-          TextFormField(controller: contactoController),
+          TextFormField(
+            controller: contactoController,
+            validator: validateName,
+          ),
 
           const SizedBox(height: 15),
           _buildLabel('Aforo'),
-          TextFormField(controller: aforoController),
+          TextFormField(controller: aforoController, validator: validateAforo),
 
           const SizedBox(height: 15),
           _buildLabel('Tipo de evento'),
@@ -182,7 +176,7 @@ class _FormCreateEventState extends State<FormCreateEvent> {
           _buildLabel('Fecha Inicio'),
           TextField(
             controller: fecha1C,
-            decoration: InputDecoration(
+            decoration: const InputDecoration(
               hintText: 'Fecha de inicio del evento',
               filled: true,
               prefixIcon: Icon(Icons.calendar_view_day_rounded),
@@ -202,7 +196,7 @@ class _FormCreateEventState extends State<FormCreateEvent> {
           _buildLabel('Fecha Fin'),
           TextField(
             controller: fecha2C,
-            decoration: InputDecoration(
+            decoration: const InputDecoration(
               hintText: 'Fecha de fin del evento',
               filled: true,
               prefixIcon: Icon(Icons.calendar_view_day_rounded),
@@ -260,7 +254,7 @@ class _FormCreateEventState extends State<FormCreateEvent> {
               Padding(
                 padding: EdgeInsetsGeometry.all(2),
                 child: Container(
-                  padding: EdgeInsets.only(
+                  padding: const EdgeInsets.only(
                     left: 10,
                     right: 10,
                     top: 5,
@@ -303,7 +297,7 @@ class _FormCreateEventState extends State<FormCreateEvent> {
               Padding(
                 padding: EdgeInsetsGeometry.all(2),
                 child: Container(
-                  padding: EdgeInsets.only(
+                  padding: const EdgeInsets.only(
                     left: 10,
                     right: 10,
                     top: 5,
@@ -380,6 +374,7 @@ class ControlPanelEvent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      drawer: const Navbar(),
       appBar: AppBar(
         title: Text('Bochinche'),
         backgroundColor: Colors.deepPurple,
@@ -429,6 +424,10 @@ class _MyEventsState extends State<MyEvents> {
         Text(
           'Panel de control de eventos',
           style: TextStyle(fontSize: 25, fontWeight: FontWeight.w900),
+        ),
+        Text(
+          'Aqui puedes ver todos tus eventos creados',
+          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w900),
         ),
         FutureBuilder<List<dynamic>>(
           future: chargeEvents(),
@@ -580,6 +579,7 @@ class ModifyEvents extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      drawer: const Navbar(),
       appBar: AppBar(
         title: const Text("Bochinche"),
         backgroundColor: Colors.deepPurple,
@@ -699,19 +699,28 @@ class _FormCreateEvent2State extends State<FormCreateEvent2> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildLabel('Nombre del evento'),
-          TextFormField(controller: nombreEventoController),
+          TextFormField(
+            controller: nombreEventoController,
+            validator: validateName,
+          ),
 
           const SizedBox(height: 15),
           _buildLabel('Dirección Física'),
-          TextFormField(controller: direccionController),
+          TextFormField(
+            controller: direccionController,
+            validator: validateName,
+          ),
 
           const SizedBox(height: 15),
           _buildLabel('Contacto'),
-          TextFormField(controller: contactoController),
+          TextFormField(
+            controller: contactoController,
+            validator: validateName,
+          ),
 
           const SizedBox(height: 15),
           _buildLabel('Aforo'),
-          TextFormField(controller: aforoController),
+          TextFormField(controller: aforoController, validator: validateAforo),
 
           const SizedBox(height: 15),
           _buildLabel('Estado del evento'),
@@ -758,6 +767,43 @@ class _FormCreateEvent2State extends State<FormCreateEvent2> {
     return Text(
       text,
       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+    );
+  }
+}
+
+class Navbar extends StatelessWidget {
+  const Navbar({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Drawer(
+      child: ListView(
+        children: [
+          ListTile(leading: Icon(Icons.map), title: Text('Mapa'), onTap: () {}),
+          ListTile(
+            leading: Icon(Icons.view_array),
+            title: Text('Crear eventos'),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const EventosCreate()),
+              );
+            },
+          ),
+          ListTile(
+            leading: Icon(Icons.view_array),
+            title: Text('Panel de control'),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ControlPanelEvent(),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
     );
   }
 }
