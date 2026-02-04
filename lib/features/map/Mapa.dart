@@ -83,7 +83,8 @@ class _MapaState extends State<Mapa> {
             children: [
               TileLayer(
                 urlTemplate:
-                    "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                    "https://.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                userAgentPackageName: 'com.bochinche_app',
               ),
               CurrentLocationLayer(
                 alignPositionOnUpdate: AlignOnUpdate.once,
