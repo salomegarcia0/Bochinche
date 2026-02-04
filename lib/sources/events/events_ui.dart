@@ -743,7 +743,15 @@ class _FormCreateEvent2State extends State<FormCreateEvent2> {
                   backgroundColor: PrimaryPurple,
                   foregroundColor: SecondaryPurple,
                 ),
-                onPressed: () => modifyEvent(context, idmod),
+                onPressed: () {
+                  modifyEvent(context, idmod);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ControlPanelEvent(),
+                    ),
+                  );
+                },
                 icon: const Icon(Icons.cloud_upload),
                 label: const Text('MODIFICAR EVENTO'),
               ),

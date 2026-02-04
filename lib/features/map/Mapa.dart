@@ -134,6 +134,7 @@ class _MapaState extends State<Mapa> {
                 Text(
                   'Hora de finalización: ${data['endTime']['hour'].toString().padLeft(2, '0')}:${data['endTime']['minute'].toString().padLeft(2, '0')}',
                 ),
+                Text('Estado: ${data['state']}'),
               ],
             ),
           ),

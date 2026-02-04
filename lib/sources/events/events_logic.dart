@@ -48,6 +48,14 @@ String? validateAforo(String? r) {
   return null;
 }
 
+String? validateState(String? r) {
+  if (r != null || r!.isNotEmpty) {
+    return 'Seleccione un tipo de evento';
+  } else {
+    return null;
+  }
+}
+
 // --- FUNCIÓN PARA CREAR EL EVENTO EN FIRESTORE ---
 Future<void> createEvent(BuildContext context) async {
   // Verificación básica
@@ -84,8 +92,8 @@ Future<void> createEvent(BuildContext context) async {
       'capacity': aforoController.text,
       'startDate': fecha1!.toIso8601String(),
       'endDate': fecha2!.toIso8601String(),
-      'startTime': {'hour': firtTimeHour!.hour, 'minute': firtTimeHour!.minute},
-      'endTime': {'hour': lastTimeHour!.hour, 'minute': lastTimeHour!.minute},
+      'startTime': {'hour': firtTimeHour.hour, 'minute': firtTimeHour.minute},
+      'endTime': {'hour': lastTimeHour.hour, 'minute': lastTimeHour.minute},
       'location': GeoPoint(latitudC, longitudC),
       'createdAt': FieldValue.serverTimestamp(),
     });
@@ -176,6 +184,21 @@ Future<void> cargarDatosEvento(String idDocumento) async {
 }
 
 Future<void> modifyEvent(BuildContext context, String id) async {
+  if (nombreEventoController.text.isEmpty ||
+      latitudC == 0.0 ||
+      validateAforo(aforoController.text) == null ||
+      validateName(contactoController.text) == null ||
+      validateName(direccionController.text) == null ||
+      validateState(stateC) == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Por favor, ingresa la información completa.'),
+        backgroundColor: Colors.red,
+      ),
+    );
+    return;
+  }
+
   try {
     final newEventRef = FirebaseFirestore.instance.collection('events').doc(id);
 
