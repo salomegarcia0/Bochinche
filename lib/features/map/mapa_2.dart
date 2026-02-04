@@ -90,7 +90,7 @@ class _MapaState extends State<Mapa> {
         children: [
           TileLayer(
             urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-            userAgentPackageName: 'com.bochinche_app',
+            userAgentPackageName: 'com.example.bochinche_app',
           ),
           CurrentLocationLayer(),
           if (puntoSeleccionado != null)
