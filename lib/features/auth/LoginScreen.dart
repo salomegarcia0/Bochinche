@@ -1,9 +1,8 @@
 import 'package:bochinche_app/features/auth/SignUpScreen.dart';
+import 'package:bochinche_app/features/map/Paginna_Inicio.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:bochinche_app/data/auth_service.dart';
-import 'package:bochinche_app/features/map/mapa.dart';
-
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -16,13 +15,11 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final AuthService _authService = AuthService();
-  
+
   bool cargando = false;
   bool showPassword = false;
 
   void ejecutarLogin() async {
-    // Validar campos
-
     if (emailController.text.isEmpty || passwordController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Por favor, ingresa tus credenciales")),
@@ -40,17 +37,15 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       if (user != null && mounted) {
-       // consultar el rol del usuario
+        // consultar el rol del usuario
         String? rol = await _authService.getUserRol(user.uid);
 
         //navegación a mapa si todo ok
         if (rol != null) {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => const Mapa()),
+            MaterialPageRoute(builder: (context) => const Pagina_Principal()),
           );
-          
-          
         }
       }
     } catch (error) {
@@ -77,7 +72,6 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-          
               // Campo de Email
               TextField(
                 controller: emailController,
@@ -98,8 +92,11 @@ class _LoginScreenState extends State<LoginScreen> {
                   labelText: "Contraseña",
                   prefixIcon: const Icon(Icons.lock_outline),
                   suffixIcon: IconButton(
-                    icon: Icon(showPassword ? Icons.visibility : Icons.visibility_off),
-                    onPressed: () => setState(() => showPassword = !showPassword),
+                    icon: Icon(
+                      showPassword ? Icons.visibility : Icons.visibility_off,
+                    ),
+                    onPressed: () =>
+                        setState(() => showPassword = !showPassword),
                   ),
                   border: const OutlineInputBorder(),
                 ),
@@ -115,9 +112,17 @@ class _LoginScreenState extends State<LoginScreen> {
                         backgroundColor: Colors.deepPurple,
                         foregroundColor: Colors.white,
                         minimumSize: const Size(double.infinity, 55),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                       ),
-                      child: const Text("INICIAR SESIÓN", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      child: const Text(
+                        "INICIAR SESIÓN",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
 
               const SizedBox(height: 20),
@@ -131,12 +136,17 @@ class _LoginScreenState extends State<LoginScreen> {
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const SignUpScreen()),
+                        MaterialPageRoute(
+                          builder: (context) => const SignUpScreen(),
+                        ),
                       );
                     },
                     child: const Text(
                       "Regístrate aquí",
-                      style: TextStyle(color: Colors.deepPurple, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        color: Colors.deepPurple,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ],

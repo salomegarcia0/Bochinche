@@ -1,7 +1,10 @@
 import 'dart:ui';
+import 'package:bochinche_app/data/auth_service.dart';
+import 'package:bochinche_app/features/auth/LoginScreen.dart';
 import 'package:bochinche_app/features/map/Paginna_Inicio.dart';
 import 'package:bochinche_app/styles/BochincheAppBar.dart';
 import 'package:bochinche_app/styles/Color.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:latlong2/latlong.dart';
@@ -146,7 +149,7 @@ class _FormCreateEventState extends State<FormCreateEvent> {
           ),
 
           const SizedBox(height: 15),
-          _buildLabel('Contacto'),
+          _buildLabel('Contacto o Pagina Web'),
           TextFormField(
             controller: contactoController,
             validator: validateName,
@@ -773,50 +776,94 @@ class _FormCreateEvent2State extends State<FormCreateEvent2> {
 class Navbar extends StatelessWidget {
   const Navbar({super.key});
 
+  // Función para obtener el rol desde Firestore
+  Future<String> _getUserRole() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return 'guest';
+
+    final doc = await FirebaseFirestore.instance
+        .collection('users') // Asegúrate que tu colección se llame así
+        .doc(user.uid)
+        .get();
+
+    return doc.data()!['rol'];
+  }
+
   @override
   Widget build(BuildContext context) {
     return Drawer(
-      child: ListView(
-        children: [
-          ListTile(
-            leading: Icon(Icons.map),
-            title: Text('Mapa'),
-            onTap: () {
-              clearAllFields();
-              Navigator.push(
+      child: FutureBuilder<String>(
+        future: _getUserRole(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          final String role = snapshot.data ?? 'user';
+          final bool isOrganizador = role == 'organizador';
+
+          return ListView(
+            children: [
+              _buildListTile(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const Pagina_Principal(),
+                Icons.map,
+                'Mapa',
+                const Pagina_Principal(),
+              ),
+
+              // ESTOS SE OCULTAN SI ES ORGANIZADOR
+              if (isOrganizador) ...[
+                _buildListTile(
+                  context,
+                  Icons.view_array,
+                  'Crear eventos',
+                  const EventosCreate(),
                 ),
-              );
-            },
-          ),
-          ListTile(
-            leading: Icon(Icons.view_array),
-            title: Text('Crear eventos'),
-            onTap: () {
-              clearAllFields();
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const EventosCreate()),
-              );
-            },
-          ),
-          ListTile(
-            leading: Icon(Icons.view_array),
-            title: Text('Panel de control'),
-            onTap: () {
-              clearAllFields();
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const ControlPanelEvent(),
+                _buildListTile(
+                  context,
+                  Icons.view_array,
+                  'Panel de control',
+                  const ControlPanelEvent(),
                 ),
-              );
-            },
-          ),
-        ],
+              ],
+
+              // ESTE SE MUESTRA SIEMPRE
+              ListTile(
+                leading: const Icon(Icons.logout),
+                title: const Text('Salir de sesion'),
+                onTap: () {
+                  clearAllFields();
+                  FirebaseAuth.instance.signOut();
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const LoginScreen(),
+                    ),
+                    (route) => false, // Limpia el historial de navegación
+                  );
+                },
+              ),
+            ],
+          );
+        },
       ),
+    );
+  }
+
+  // Función auxiliar para no repetir código de navegación
+  Widget _buildListTile(
+    BuildContext context,
+    IconData icon,
+    String title,
+    Widget page,
+  ) {
+    return ListTile(
+      leading: Icon(icon),
+      title: Text(title),
+      onTap: () {
+        clearAllFields();
+        Navigator.push(context, MaterialPageRoute(builder: (context) => page));
+      },
     );
   }
 }

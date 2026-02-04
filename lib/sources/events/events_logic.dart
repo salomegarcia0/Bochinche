@@ -1,5 +1,8 @@
+import 'package:bochinche_app/features/auth/LoginScreen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:bochinche_app/data/auth_service.dart';
 
 // --- CONTROLADORES DE TEXTO GLOBALES ---
 final nombreEventoController = TextEditingController();
@@ -87,7 +90,7 @@ Future<void> createEvent(BuildContext context) async {
       'contact': contactoController.text,
       'type': typeC,
       'state': 'Proximo',
-      'id_organizer': 'id',
+      'id_organizer': FirebaseAuth.instance.currentUser!.uid,
       'description': descripcionController.text,
       'capacity': aforoController.text,
       'startDate': fecha1!.toIso8601String(),
@@ -96,6 +99,8 @@ Future<void> createEvent(BuildContext context) async {
       'endTime': {'hour': lastTimeHour.hour, 'minute': lastTimeHour.minute},
       'location': GeoPoint(latitudC, longitudC),
       'createdAt': FieldValue.serverTimestamp(),
+      'stars': 0,
+      'total_review': 0,
     });
 
     // Mostrar mensaje de éxito
@@ -143,6 +148,10 @@ Future<List<Map<String, dynamic>>> chargeEvents() async {
   try {
     QuerySnapshot querySnapshot = await FirebaseFirestore.instance
         .collection('events')
+        .where(
+          'id_organizer',
+          isEqualTo: FirebaseAuth.instance.currentUser!.uid,
+        )
         .get();
 
     for (var doc in querySnapshot.docs) {

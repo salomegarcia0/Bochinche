@@ -119,7 +119,7 @@ class _MapaState extends State<Mapa> {
               children: [
                 Text('Nombre del evento: ${data['name']}'),
                 Text('Dirección: ${data['address']}'),
-                Text('Contacto: ${data['contact']}'),
+                Text('Contacto o Pagina Web: ${data['contact']}'),
                 Text('Descripción: ${data['description']}'),
                 Text('Aforo: ${data['capacity']}'),
                 Text(
@@ -135,6 +135,14 @@ class _MapaState extends State<Mapa> {
                   'Hora de finalización: ${data['endTime']['hour'].toString().padLeft(2, '0')}:${data['endTime']['minute'].toString().padLeft(2, '0')}',
                 ),
                 Text('Estado: ${data['state']}'),
+                ElevatedButton(
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Entrada obtenida!')),
+                    );
+                  },
+                  child: Text('Comprar entradas'),
+                ),
               ],
             ),
           ),
