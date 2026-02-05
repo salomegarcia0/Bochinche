@@ -6,12 +6,14 @@ import 'package:flutter/material.dart';
 import 'features/map/mapa.dart';
 import 'features/auth/SignUpScreen.dart';
 import 'features/map/Paginna_Inicio.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Inicializa Firebase usando las opciones de tu archivo firebase_options.dart
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await FirebaseAuth.instance.signOut();
 
   debugPrint("Conectado a Firebase: ${Firebase.app().name}");
 
@@ -30,7 +32,7 @@ class MyApp extends StatelessWidget {
       home: const Pagina_Principal(),
     );
   }
-} 
+}
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});

@@ -39,7 +39,7 @@ class BochincheAppBar extends StatelessWidget implements PreferredSizeWidget {
           );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Hola, ${usuario.email ?? 'Usuario'}")),
+            SnackBar(content: Text("Hola, ${usuario.displayName ?? 'Bochinchero'}")),
           );
         }
       },

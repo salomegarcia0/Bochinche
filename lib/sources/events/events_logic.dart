@@ -118,11 +118,7 @@ Future<void> createEvent(BuildContext context) async {
       context,
     ).showSnackBar(SnackBar(content: Text('Error al crear: $e')));
   }
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: Text('Error al crear: Alguno de los campos son erroneos'),
-    ),
-  );
+
 }
 
 // --- FUNCIÓN PARA LIMPIAR EL FORMULARIO ---

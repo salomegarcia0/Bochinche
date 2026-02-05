@@ -19,7 +19,7 @@ class _CommentsSectionState extends State<CommentsSection> {
 
   String get _currentUid => FirebaseAuth.instance.currentUser?.uid ?? '';
   String get _currentName =>
-      FirebaseAuth.instance.currentUser?.displayName ?? 'Anónimo';
+      FirebaseAuth.instance.currentUser?.displayName ?? 'Bochinchero';
 
   @override
   Widget build(BuildContext context) {
@@ -107,7 +107,8 @@ class _CommentsSectionState extends State<CommentsSection> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                        builder: (context) => const LoginScreen()),
+                      builder: (context) => const LoginScreen(),
+                    ),
                   );
                   return;
                 }
