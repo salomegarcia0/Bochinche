@@ -5,6 +5,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'features/map/mapa.dart';
 import 'features/auth/SignUpScreen.dart';
+import 'features/map/Paginna_Inicio.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,10 +27,10 @@ class MyApp extends StatelessWidget {
       title: 'Flutter Demo',
       theme: ThemeData(colorScheme: .fromSeed(seedColor: Colors.deepPurple)),
       debugShowCheckedModeBanner: false,
-      home: SignUpScreen(),
+      home: const Pagina_Principal(),
     );
   }
-}
+} 
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});

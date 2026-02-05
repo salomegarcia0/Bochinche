@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:bochinche_app/styles/Color.dart';
+import 'package:bochinche_app/features/auth/LoginScreen.dart';
 
 class BochincheAppBar extends StatelessWidget implements PreferredSizeWidget {
   const BochincheAppBar({super.key});
@@ -28,7 +30,18 @@ class BochincheAppBar extends StatelessWidget implements PreferredSizeWidget {
     return IconButton(
       icon: const Icon(Icons.person, color: SecondaryPurple),
       onPressed: () {
-        // mostrara una ventana emergente al presionar el icono
+        User? usuario = FirebaseAuth.instance.currentUser;
+
+        if (usuario == null) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const LoginScreen()),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Hola, ${usuario.email ?? 'Usuario'}")),
+          );
+        }
       },
     );
   }

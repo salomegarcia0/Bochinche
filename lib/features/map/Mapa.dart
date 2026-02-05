@@ -4,6 +4,8 @@ import 'package:latlong2/latlong.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:bochinche_app/sources/events/comments_section.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:bochinche_app/features/auth/LoginScreen.dart';
 
 class Mapa extends StatefulWidget implements PreferredSizeWidget {
   const Mapa({super.key});
@@ -180,6 +182,15 @@ class _MapaState extends State<Mapa> {
                     const SizedBox(height: 12),
                     ElevatedButton(
                       onPressed: () {
+                        if (FirebaseAuth.instance.currentUser == null) {
+                          Navigator.pop(context);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => const LoginScreen()),
+                          );
+                          return;
+                        }
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(content: Text('Entrada obtenida!')),
                         );

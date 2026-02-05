@@ -829,21 +829,34 @@ class Navbar extends StatelessWidget {
               ],
 
               // ESTE SE MUESTRA SIEMPRE
-              ListTile(
-                leading: const Icon(Icons.logout),
-                title: const Text('Cerrar sesión'),
-                onTap: () {
-                  clearAllFields();
-                  FirebaseAuth.instance.signOut();
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const LoginScreen(),
-                    ),
-                    (route) => false, // Limpia el historial de navegación
-                  );
-                },
-              ),
+              if (role == 'guest')
+                ListTile(
+                  leading: const Icon(Icons.login),
+                  title: const Text('Iniciar sesión'),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const LoginScreen()),
+                    );
+                  },
+                )
+              else
+                ListTile(
+                  leading: const Icon(Icons.logout),
+                  title: const Text('Cerrar sesión'),
+                  onTap: () {
+                    clearAllFields();
+                    FirebaseAuth.instance.signOut();
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const LoginScreen(),
+                      ),
+                      (route) => false,
+                    );
+                  },
+                ),
             ],
           );
         },

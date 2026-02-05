@@ -5,6 +5,7 @@ import 'package:bochinche_app/features/map/Paginna_Inicio.dart';
 import 'package:bochinche_app/features/map/mapa.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/services.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -22,6 +23,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   final AuthService _authService = AuthService();
   bool cargando = false;
+  bool showPassword = false;
 
   // Variable para manejar la selección de tipo de documento
   String tipoDocumento = 'V';
@@ -32,6 +34,38 @@ class _SignUpScreenState extends State<SignUpScreen> {
         extraDataController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Por favor, rellena todos los campos")),
+      );
+      return;
+    }
+
+    String password = passwordController.text;
+
+    if (password.length < 6) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("La contraseña debe tener al menos 6 caracteres")),
+      );
+      return;
+    }
+
+    if (!password.contains(RegExp(r'[0-9]'))) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("La contraseña debe incluir al menos un número")),
+      );
+      return;
+    }
+
+    if (!password.contains(RegExp(r'[!@#\$%^&*(),.?":{}|<>]'))) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("La contraseña debe incluir un carácter especial (ej: @, #, *)")),
+      );
+      return;
+    }
+
+    if (phoneController.text.trim().length != 11) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("El número telefónico debe tener 11 dígitos"),
+        ),
       );
       return;
     }
@@ -133,9 +167,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       decoration: const InputDecoration(
                         labelText: "Número de Identidad",
                         border: OutlineInputBorder(),
+                        counterText: "",
                       ),
-
-                      keyboardType: TextInputType.text,
+                      keyboardType: TextInputType.number,
+                      maxLength: 9,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     ),
                   ),
                 ],
@@ -147,17 +183,31 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 decoration: const InputDecoration(
                   labelText: "Teléfono",
                   border: OutlineInputBorder(),
+                  counterText: "",
                 ),
                 keyboardType: TextInputType.phone,
+                maxLength: 11,
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(11),
+                ],
               ),
               const SizedBox(height: 15),
               TextField(
                 controller: passwordController,
-                decoration: const InputDecoration(
+                obscureText: !showPassword,
+                decoration: InputDecoration(
                   labelText: "Contraseña",
-                  border: OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.lock_outline),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      showPassword ? Icons.visibility : Icons.visibility_off,
+                    ),
+                    onPressed: () =>
+                        setState(() => showPassword = !showPassword),
+                  ),
+                  border: const OutlineInputBorder(),
                 ),
-                obscureText: true,
               ),
               const SizedBox(height: 25),
 

@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'events_logic.dart';
+import 'package:bochinche_app/features/auth/LoginScreen.dart';
 
 class CommentsSection extends StatefulWidget {
   final String eventoId;
@@ -102,6 +103,14 @@ class _CommentsSectionState extends State<CommentsSection> {
             const Spacer(),
             ElevatedButton(
               onPressed: () async {
+                if (FirebaseAuth.instance.currentUser == null) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const LoginScreen()),
+                  );
+                  return;
+                }
                 final texto = _commentController.text.trim();
                 if (texto.isEmpty) return;
                 try {
