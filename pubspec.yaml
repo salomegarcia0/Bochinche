@@ -2,7 +2,7 @@ name: bochinche_app
 description: "A new Flutter project."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
-publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+publish_to: "none" # Remove this line if you wish to publish to pub.dev
 
 # The following defines the version and build number for your application.
 # A version number is three numbers separated by dots, like 1.2.43
@@ -24,13 +24,14 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  flutter_map: ^7.0.2
+  flutter_map: ^8.2.2
   latlong2: ^0.9.1
-  flutter_map_location_marker: ^9.1.1
+  flutter_map_location_marker: ^10.2.0
   cupertino_icons: ^1.0.8
   firebase_core: ^4.4.0
   firebase_auth: ^6.1.4
   cloud_firestore: ^6.1.2
+  flutter_svg: ^2.0.7
 
 dev_dependencies:
   flutter_test:
@@ -48,11 +49,13 @@ dev_dependencies:
 
 # The following section is specific to Flutter packages.
 flutter:
-
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+
+  assets:
+    - assets/svgs/2451996.svg
 
   # To add assets to your application, add an assets section, like this:
   # assets:

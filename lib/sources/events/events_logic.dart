@@ -215,7 +215,7 @@ Future<void> modifyEvent(BuildContext context, String id) async {
       'name': nombreEventoController.text,
       'address': direccionController.text,
       'contact': contactoController.text,
-      'state': stateC ?? 'Proximo',
+      'state': stateC ?? 'Próximo',
       'id_organizer': 'id',
       'description': descripcionController.text,
       'capacity': aforoController.text,
@@ -236,4 +236,93 @@ Future<void> modifyEvent(BuildContext context, String id) async {
       context,
     ).showSnackBar(SnackBar(content: Text('Error al modificar: $e')));
   }
+}
+
+// --- COMENTARIOS Y VALORACIONES ---
+Future<void> agregarComentario({
+  required String eventoId,
+  required String texto,
+  required String usuarioNombre,
+  required String usuarioUid,
+  int? rating,
+}) async {
+  try {
+    final comentariosColl = FirebaseFirestore.instance
+        .collection('events')
+        .doc(eventoId)
+        .collection('comments');
+    await comentariosColl.add({
+      'usuarioUid': usuarioUid,
+      'nombre': usuarioNombre,
+      'texto': texto,
+      'rating': rating ?? 0,
+      'fecha': FieldValue.serverTimestamp(),
+    });
+  } catch (e) {
+    print("Error al guardar comentario: $e");
+    rethrow;
+  }
+}
+
+Stream<List<Map<String, dynamic>>> obtenerComentariosStream(String eventoId) {
+  return FirebaseFirestore.instance
+      .collection('events')
+      .doc(eventoId)
+      .collection('comments')
+      .orderBy('fecha', descending: true)
+      .snapshots()
+      .map(
+        (snap) => snap.docs
+            .map((d) => {...(d.data() as Map<String, dynamic>), 'id': d.id})
+            .toList(),
+      );
+}
+
+/// Agrega o actualiza la valoración del usuario y actualiza promedio de forma atómica.
+Future<void> agregarValoracion({
+  required String eventoId,
+  required int rating, // 1..5
+  required String usuarioUid,
+}) async {
+  final eventRef = FirebaseFirestore.instance
+      .collection('events')
+      .doc(eventoId);
+  final userRatingRef = eventRef.collection('ratings').doc(usuarioUid);
+
+  await FirebaseFirestore.instance.runTransaction((tx) async {
+    final eventSnap = await tx.get(eventRef);
+    if (!eventSnap.exists) throw Exception('Evento no existe');
+
+    final Map<String, dynamic> eventData =
+        eventSnap.data() as Map<String, dynamic>? ?? {};
+    final int total = (eventData['total_review'] ?? 0) is int
+        ? (eventData['total_review'] ?? 0) as int
+        : (eventData['total_review'] ?? 0).toInt();
+    final double stars = (eventData['stars'] ?? 0).toDouble();
+
+    int previous = 0;
+    final userRatingSnap = await tx.get(userRatingRef);
+    bool hadPrevious = userRatingSnap.exists;
+    if (hadPrevious) {
+      previous = (userRatingSnap.data() as Map<String, dynamic>)['rating'] ?? 0;
+    }
+
+    int newTotal = total;
+    double newStars;
+    if (hadPrevious) {
+      // reemplaza la valoración previa
+      newStars = (stars * total - previous + rating) / (total == 0 ? 1 : total);
+    } else {
+      newTotal = total + 1;
+      newStars = (stars * total + rating) / newTotal;
+    }
+
+    tx.set(userRatingRef, {
+      'rating': rating,
+      'usuarioUid': usuarioUid,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+
+    tx.update(eventRef, {'stars': newStars, 'total_review': newTotal});
+  });
 }

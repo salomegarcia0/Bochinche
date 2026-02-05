@@ -13,6 +13,7 @@ import 'package:latlong2/latlong.dart';
 // Usamos 'package:' que es la forma más segura en Flutter para evitar errores de ruta
 import 'package:bochinche_app/sources/events/events_logic.dart';
 import 'package:bochinche_app/features/map/mapa_2.dart';
+import 'package:bochinche_app/sources/events/comments_section.dart';
 
 class EventosCreate extends StatelessWidget {
   const EventosCreate({super.key});
@@ -830,7 +831,7 @@ class Navbar extends StatelessWidget {
               // ESTE SE MUESTRA SIEMPRE
               ListTile(
                 leading: const Icon(Icons.logout),
-                title: const Text('Salir de sesion'),
+                title: const Text('Cerrar sesión'),
                 onTap: () {
                   clearAllFields();
                   FirebaseAuth.instance.signOut();
@@ -864,6 +865,132 @@ class Navbar extends StatelessWidget {
         clearAllFields();
         Navigator.push(context, MaterialPageRoute(builder: (context) => page));
       },
+    );
+  }
+}
+
+class DetalleEvento extends StatefulWidget {
+  const DetalleEvento({super.key});
+
+  @override
+  State<DetalleEvento> createState() => _DetalleEventoState();
+}
+
+class _DetalleEventoState extends State<DetalleEvento> {
+  final String idDelEvento = "ID_DEL_EVENTO"; // Reemplaza esto con el ID real
+  final commentsKey = GlobalKey();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Detalle del Evento')),
+      body: FutureBuilder<DocumentSnapshot>(
+        future: FirebaseFirestore.instance
+            .collection('events')
+            .doc(idDelEvento)
+            .get(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (!snapshot.hasData || !snapshot.data!.exists) {
+            return const Center(child: Text('Evento no encontrado'));
+          }
+
+          final evento = snapshot.data!;
+          final Map<String, dynamic> data =
+              evento.data() as Map<String, dynamic>;
+
+          return SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    data['name'],
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Organizador: ${data['organizer'] ?? 'N/A'}',
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Tipo: ${data['type'] ?? 'N/A'}',
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Estado: ${data['status'] ?? 'N/A'}',
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Aforo: ${data['capacity'] ?? 'N/A'}',
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Contacto: ${data['contact'] ?? 'N/A'}',
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Dirección: ${data['address'] ?? 'N/A'}',
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Descripción: ${data['description'] ?? 'N/A'}',
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Fechas: ${DateTime.parse(data['startDate']).day}/${DateTime.parse(data['startDate']).month}/${DateTime.parse(data['startDate']).year} hasta ${DateTime.parse(data['endDate']).day}/${DateTime.parse(data['endDate']).month}/${DateTime.parse(data['endDate']).year}',
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Horarios: ${data['startTime']['hour']}:${data['startTime']['minute'].toString().padLeft(2, '0')} hasta ${data['endTime']['hour']}:${data['endTime']['minute'].toString().padLeft(2, '0')}',
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Localización: ${data['location'].latitude}, ${data['location'].longitude}',
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                  const SizedBox(height: 20),
+                  ElevatedButton(
+                    onPressed: () {
+                      // Aquí puedes agregar la lógica para registrarse en el evento
+                    },
+                    child: const Text('Registrarse en este evento'),
+                  ),
+                  const SizedBox(height: 20),
+                  ElevatedButton(
+                    onPressed: () {
+                      Scrollable.ensureVisible(
+                        commentsKey.currentContext!,
+                        duration: const Duration(milliseconds: 500),
+                        curve: Curves.easeInOut,
+                      );
+                    },
+                    child: const Text('Dejar un comentario'),
+                  ),
+                  const SizedBox(height: 20),
+                  CommentsSection(key: commentsKey, eventoId: idDelEvento),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 }
