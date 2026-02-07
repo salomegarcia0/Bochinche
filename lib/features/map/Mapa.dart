@@ -187,7 +187,8 @@ class _MapaState extends State<Mapa> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (context) => const LoginScreen()),
+                              builder: (context) => const LoginScreen(),
+                            ),
                           );
                           return;
                         }

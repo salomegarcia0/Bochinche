@@ -10,19 +10,17 @@ final direccionController = TextEditingController();
 final contactoController = TextEditingController();
 final descripcionController = TextEditingController();
 final aforoController = TextEditingController();
-final fecha1C = TextEditingController(); // Fecha Inicio (texto)
-final fecha2C = TextEditingController(); // Fecha Fin (texto)
+final fecha1C = TextEditingController();
+final fecha2C = TextEditingController();
 
-// --- VARIABLES DE ESTADO GLOBALES ---
-String? typeC; // Tipo de evento (Cine, Teatro, etc.)
+String? typeC;
 String? stateC;
-DateTime? fecha1; // Objeto fecha inicio
-DateTime? fecha2; // Objeto fecha fin
-TimeOfDay firtTimeHour = TimeOfDay(hour: 0, minute: 0); // Hora inicio
-TimeOfDay lastTimeHour = TimeOfDay(hour: 23, minute: 59); // Hora cierre
+DateTime? fecha1;
+DateTime? fecha2;
+TimeOfDay firtTimeHour = TimeOfDay(hour: 0, minute: 0);
+TimeOfDay lastTimeHour = TimeOfDay(hour: 23, minute: 59);
 var idmod;
 
-// --- VARIABLES DE UBICACIÓN (MAPA) ---
 double latitudC = 0.0;
 double longitudC = 0.0;
 
@@ -59,9 +57,39 @@ String? validateState(String? r) {
   }
 }
 
-// --- FUNCIÓN PARA CREAR EL EVENTO EN FIRESTORE ---
+DateTime? validateDate(
+  DateTime dia1,
+  DateTime dia2,
+  TimeOfDay hora1,
+  TimeOfDay hora2,
+) {
+  if (dia2.isBefore(dia1)) {
+    return null;
+  } else {
+    if (dia1.isAtSameMomentAs(dia2)) {
+      if (hora2.hour < hora1.hour ||
+          (hora2.hour == hora1.hour && hora2.minute <= hora1.minute)) {
+        return null;
+      } else {
+        return dia2;
+      }
+    }
+  }
+}
+
 Future<void> createEvent(BuildContext context) async {
-  // Verificación básica
+  print(latitudC);
+  print(longitudC);
+  print(aforoController.text);
+  print(contactoController.text);
+  print(direccionController.text);
+  print(fecha1);
+  print(fecha2);
+  print(firtTimeHour);
+  print(lastTimeHour);
+  print(nombreEventoController.text);
+  print(descripcionController.text);
+  print(typeC);
   if (nombreEventoController.text.isEmpty ||
       latitudC == 0.0 ||
       validateAforo(aforoController.text) == null ||
@@ -79,10 +107,8 @@ Future<void> createEvent(BuildContext context) async {
   }
 
   try {
-    // 1. Generamos la referencia ANTES de guardar para obtener el ID
     final newEventRef = FirebaseFirestore.instance.collection('events').doc();
 
-    // 2. Usamos .set() en lugar de .add()
     await newEventRef.set({
       'id': newEventRef.id,
       'name': nombreEventoController.text,
@@ -118,7 +144,6 @@ Future<void> createEvent(BuildContext context) async {
       context,
     ).showSnackBar(SnackBar(content: Text('Error al crear: $e')));
   }
-
 }
 
 // --- FUNCIÓN PARA LIMPIAR EL FORMULARIO ---
@@ -152,8 +177,7 @@ Future<List<Map<String, dynamic>>> chargeEvents() async {
 
     for (var doc in querySnapshot.docs) {
       Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-      data['id'] =
-          doc.id; // Agregamos el ID de Firebase para poder borrar/editar
+      data['id'] = doc.id;
       eventos.add(data);
     }
   } catch (e) {
@@ -165,13 +189,11 @@ Future<List<Map<String, dynamic>>> chargeEvents() async {
 
 Future<void> cargarDatosEvento(String idDocumento) async {
   try {
-    // 1. Obtener el documento de Firestore
     DocumentSnapshot doc = await FirebaseFirestore.instance
-        .collection('events') // Asegúrate de que la colección sea correcta
+        .collection('events')
         .doc(idDocumento)
         .get();
 
-    // 2. Verificar si el documento existe
     if (doc.exists) {
       Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
 
@@ -201,36 +223,36 @@ Future<void> modifyEvent(BuildContext context, String id) async {
         backgroundColor: Colors.red,
       ),
     );
-    return;
-  }
+  } else {
+    try {
+      final newEventRef = FirebaseFirestore.instance
+          .collection('events')
+          .doc(id);
 
-  try {
-    final newEventRef = FirebaseFirestore.instance.collection('events').doc(id);
+      await newEventRef.update({
+        'name': nombreEventoController.text,
+        'address': direccionController.text,
+        'contact': contactoController.text,
+        'state': stateC ?? 'Próximo',
+        'description': descripcionController.text,
+        'capacity': aforoController.text,
+      });
 
-    await newEventRef.update({
-      'name': nombreEventoController.text,
-      'address': direccionController.text,
-      'contact': contactoController.text,
-      'state': stateC ?? 'Próximo',
-      'id_organizer': 'id',
-      'description': descripcionController.text,
-      'capacity': aforoController.text,
-    });
+      // Mostrar mensaje de éxito
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('¡Evento modificado con éxito!'),
+          backgroundColor: Colors.green,
+        ),
+      );
 
-    // Mostrar mensaje de éxito
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('¡Evento modificado con éxito!'),
-        backgroundColor: Colors.green,
-      ),
-    );
-
-    // LIMPIAR TODOS LOS CAMPOS
-    clearAllFields();
-  } catch (e) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text('Error al modificar: $e')));
+      // LIMPIAR TODOS LOS CAMPOS
+      clearAllFields();
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error al modificar: $e')));
+    }
   }
 }
 

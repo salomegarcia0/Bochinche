@@ -777,13 +777,12 @@ class _FormCreateEvent2State extends State<FormCreateEvent2> {
 class Navbar extends StatelessWidget {
   const Navbar({super.key});
 
-  // Función para obtener el rol desde Firestore
   Future<String> _getUserRole() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return 'guest';
 
     final doc = await FirebaseFirestore.instance
-        .collection('users') // Asegúrate que tu colección se llame así
+        .collection('users')
         .doc(user.uid)
         .get();
 
@@ -812,7 +811,6 @@ class Navbar extends StatelessWidget {
                 const Pagina_Principal(),
               ),
 
-              // ESTOS SE OCULTAN SI ES ORGANIZADOR
               if (isOrganizador) ...[
                 _buildListTile(
                   context,
@@ -828,7 +826,6 @@ class Navbar extends StatelessWidget {
                 ),
               ],
 
-              // ESTE SE MUESTRA SIEMPRE
               if (role == 'guest')
                 ListTile(
                   leading: const Icon(Icons.login),
@@ -837,7 +834,8 @@ class Navbar extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (context) => const LoginScreen()),
+                        builder: (context) => const LoginScreen(),
+                      ),
                     );
                   },
                 )
@@ -864,7 +862,6 @@ class Navbar extends StatelessWidget {
     );
   }
 
-  // Función auxiliar para no repetir código de navegación
   Widget _buildListTile(
     BuildContext context,
     IconData icon,
@@ -890,7 +887,7 @@ class DetalleEvento extends StatefulWidget {
 }
 
 class _DetalleEventoState extends State<DetalleEvento> {
-  final String idDelEvento = "ID_DEL_EVENTO"; // Reemplaza esto con el ID real
+  final String idDelEvento = "ID_DEL_EVENTO";
   final commentsKey = GlobalKey();
 
   @override
@@ -980,9 +977,7 @@ class _DetalleEventoState extends State<DetalleEvento> {
                   ),
                   const SizedBox(height: 20),
                   ElevatedButton(
-                    onPressed: () {
-                      // Aquí puedes agregar la lógica para registrarse en el evento
-                    },
+                    onPressed: () {},
                     child: const Text('Registrarse en este evento'),
                   ),
                   const SizedBox(height: 20),
