@@ -1,5 +1,3 @@
-import 'dart:ui';
-import 'package:bochinche_app/data/auth_service.dart';
 import 'package:bochinche_app/features/auth/LoginScreen.dart';
 import 'package:bochinche_app/features/map/Paginna_Inicio.dart';
 import 'package:bochinche_app/styles/BochincheAppBar.dart';
@@ -26,7 +24,7 @@ class EventosCreate extends StatelessWidget {
       body: const SingleChildScrollView(
         child: Column(
           children: [
-            const Card(
+            Card(
               color: Colors.white,
               elevation: 4,
               margin: EdgeInsets.all(23),
@@ -39,8 +37,8 @@ class EventosCreate extends StatelessWidget {
               ),
             ),
 
-            const Divider(),
-            const FormCreateEvent(),
+            Divider(),
+            FormCreateEvent(),
           ],
         ),
       ),

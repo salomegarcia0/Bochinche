@@ -1,5 +1,5 @@
 import 'package:bochinche_app/data/auth_service.dart';
-import 'package:bochinche_app/features/map/mapa.dart';
+import 'package:bochinche_app/features/map/Mapa.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/services.dart';
@@ -42,21 +42,29 @@ class _OrganizadorSignUpScreenState extends State<OrganizadorSignUpScreen> {
 
     if (password.length < 6) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("La contraseña debe tener al menos 6 caracteres")),
+        const SnackBar(
+          content: Text("La contraseña debe tener al menos 6 caracteres"),
+        ),
       );
       return;
     }
 
     if (!password.contains(RegExp(r'[0-9]'))) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("La contraseña debe incluir al menos un número")),
+        const SnackBar(
+          content: Text("La contraseña debe incluir al menos un número"),
+        ),
       );
       return;
     }
 
     if (!password.contains(RegExp(r'[!@#\$%^&*(),.?":{}|<>]'))) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("La contraseña debe incluir un carácter especial (ej: @, #, *)")),
+        const SnackBar(
+          content: Text(
+            "La contraseña debe incluir un carácter especial (ej: @, #, *)",
+          ),
+        ),
       );
       return;
     }
@@ -103,10 +111,11 @@ class _OrganizadorSignUpScreenState extends State<OrganizadorSignUpScreen> {
         );
       }
     } finally {
-      if (mounted)
+      if (mounted) {
         setState(() {
           cargando = false;
         });
+      }
     }
   }
 
@@ -175,9 +184,7 @@ class _OrganizadorSignUpScreenState extends State<OrganizadorSignUpScreen> {
                       ),
                       keyboardType: TextInputType.number,
                       maxLength: 9,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                      ],
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     ),
                   ),
                 ],

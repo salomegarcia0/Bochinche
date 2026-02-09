@@ -3,6 +3,8 @@ import 'package:bochinche_app/features/map/Paginna_Inicio.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:bochinche_app/data/auth_service.dart';
+import 'package:bochinche_app/styles/Color.dart';
+import 'package:flutter/services.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -64,19 +66,73 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: Center(
+    return Stack(
+      children: [
+        Container(color: PrimaryBackGroundPurple),
+
+        Scaffold(
+          backgroundColor: Colors.transparent,
+          resizeToAvoidBottomInset: true,
+          appBar: AppBar(
+            title: const Text(
+              "Iniciar Sesión",
+              style: TextStyle(
+                color: SecondaryPurple,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            centerTitle: true,
+            actionsPadding: const EdgeInsets.symmetric(horizontal: 16.0),
+            backgroundColor: PrimaryPurple,
+            elevation: 0,
+          ),
+          body: SafeArea(
+            child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10.0,
+                  vertical: 20.0,
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [contenido(context)],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget contenido(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AccentPurple,
+        borderRadius: BorderRadius.circular(40.0),
+      ),
+      child: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(30.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              Padding(
+                padding: const EdgeInsets.all(20),
+                //Se va a cambiar por el logo de la app
+                child: Icon(
+                  Icons.person_2_outlined,
+                  size: 100,
+                  color: PrimaryBackGroundPurple,
+                ),
+              ),
               // Campo de Email
               TextField(
                 controller: emailController,
                 keyboardType: TextInputType.emailAddress,
                 decoration: const InputDecoration(
+                  filled: true,
+                  fillColor: SecondaryPurple,
                   labelText: "Correo Electrónico",
                   prefixIcon: Icon(Icons.email_outlined),
                   border: OutlineInputBorder(),
@@ -89,6 +145,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 controller: passwordController,
                 obscureText: !showPassword,
                 decoration: InputDecoration(
+                  filled: true,
+                  fillColor: SecondaryPurple,
                   labelText: "Contraseña",
                   prefixIcon: const Icon(Icons.lock_outline),
                   suffixIcon: IconButton(
@@ -109,7 +167,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   : ElevatedButton(
                       onPressed: ejecutarLogin,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.deepPurple,
+                        backgroundColor: PrimaryBackGroundPurple,
                         foregroundColor: Colors.white,
                         minimumSize: const Size(double.infinity, 55),
                         shape: RoundedRectangleBorder(
@@ -144,7 +202,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: const Text(
                       "Regístrate aquí",
                       style: TextStyle(
-                        color: Colors.deepPurple,
+                        color: PrimaryBackGroundPurple,
                         fontWeight: FontWeight.bold,
                       ),
                     ),

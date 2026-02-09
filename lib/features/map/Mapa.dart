@@ -47,8 +47,9 @@ class _MapaState extends State<Mapa> {
         // Escuchamos la colección "lugares"
         stream: FirebaseFirestore.instance.collection('events').snapshots(),
         builder: (context, snapshot) {
-          if (snapshot.hasError)
+          if (snapshot.hasError) {
             return Center(child: Text('Error al cargar datos'));
+          }
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(child: CircularProgressIndicator());
           }
@@ -64,13 +65,11 @@ class _MapaState extends State<Mapa> {
               height: 40,
               child: GestureDetector(
                 onTap: () => _mostrarDetalles(context, data, doc.id),
-                child: getIconoPin(data['type']) != null
-                    ? Icon(
-                        getIconoPin(data['type']),
-                        color: Colors.red,
-                        size: 30,
-                      )
-                    : Icon(Icons.location_on, color: Colors.red, size: 30),
+                child: Icon(
+                  getIconoPin(data['type']),
+                  color: Colors.red,
+                  size: 30,
+                ),
               ),
             );
           }).toList();

@@ -7,7 +7,7 @@ import 'package:bochinche_app/features/auth/LoginScreen.dart';
 
 class CommentsSection extends StatefulWidget {
   final String eventoId;
-  const CommentsSection({Key? key, required this.eventoId}) : super(key: key);
+  const CommentsSection({super.key, required this.eventoId});
 
   @override
   State<CommentsSection> createState() => _CommentsSectionState();

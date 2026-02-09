@@ -2,10 +2,10 @@ import 'package:bochinche_app/data/auth_service.dart';
 import 'package:bochinche_app/features/auth/LoginScreen.dart';
 import 'package:bochinche_app/features/auth/OrganizadorSignUpScreen.dart';
 import 'package:bochinche_app/features/map/Paginna_Inicio.dart';
-import 'package:bochinche_app/features/map/mapa.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/services.dart';
+import 'package:bochinche_app/styles/Color.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -42,21 +42,29 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
     if (password.length < 6) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("La contraseña debe tener al menos 6 caracteres")),
+        const SnackBar(
+          content: Text("La contraseña debe tener al menos 6 caracteres"),
+        ),
       );
       return;
     }
 
     if (!password.contains(RegExp(r'[0-9]'))) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("La contraseña debe incluir al menos un número")),
+        const SnackBar(
+          content: Text("La contraseña debe incluir al menos un número"),
+        ),
       );
       return;
     }
 
     if (!password.contains(RegExp(r'[!@#\$%^&*(),.?":{}|<>]'))) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("La contraseña debe incluir un carácter especial (ej: @, #, *)")),
+        const SnackBar(
+          content: Text(
+            "La contraseña debe incluir un carácter especial (ej: @, #, *)",
+          ),
+        ),
       );
       return;
     }
@@ -111,16 +119,65 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text("Registro de Bochinchero")),
-      body: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: SingleChildScrollView(
+    return Stack(
+      children: [
+        //fondo
+        Container(color: PrimaryBackGroundPurple),
+        Scaffold(
+          backgroundColor: Colors.transparent,
+          resizeToAvoidBottomInset: true,
+          appBar: AppBar(
+            title: const Text(
+              "Registro",
+              style: TextStyle(
+                color: SecondaryPurple,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            centerTitle: true,
+            actionsPadding: const EdgeInsets.symmetric(horizontal: 16.0),
+            backgroundColor: PrimaryPurple,
+            elevation: 0,
+          ),
+          body: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(10.0, 20, 10, 0),
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.only(bottom: 20),
+                child: contenido(context),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget contenido(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AccentPurple,
+        borderRadius: BorderRadius.circular(40.0),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(15.0),
+        child: Center(
           child: Column(
             children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
+                //Se va a cambiar por el logo de la app
+                child: Icon(
+                  Icons.person_2_outlined,
+                  size: 80,
+                  color: PrimaryBackGroundPurple,
+                ),
+              ),
               TextField(
                 controller: nameController,
                 decoration: const InputDecoration(
+                  filled: true,
+                  fillColor: SecondaryPurple,
                   labelText: "Nombre Completo",
                   border: OutlineInputBorder(),
                 ),
@@ -129,6 +186,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
               TextField(
                 controller: emailController,
                 decoration: const InputDecoration(
+                  filled: true,
+                  fillColor: SecondaryPurple,
                   labelText: "Correo Electrónico",
                   border: OutlineInputBorder(),
                 ),
@@ -142,7 +201,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                     decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey),
+                      border: Border.all(color: PrimaryPurple),
+                      color: SecondaryPurple,
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: DropdownButton<String>(
@@ -165,6 +225,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     child: TextField(
                       controller: extraDataController,
                       decoration: const InputDecoration(
+                        filled: true,
+                        fillColor: SecondaryPurple,
                         labelText: "Número de Identidad",
                         border: OutlineInputBorder(),
                         counterText: "",
@@ -181,6 +243,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
               TextField(
                 controller: phoneController,
                 decoration: const InputDecoration(
+                  filled: true,
+                  fillColor: SecondaryPurple,
                   labelText: "Teléfono",
                   border: OutlineInputBorder(),
                   counterText: "",
@@ -197,6 +261,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 controller: passwordController,
                 obscureText: !showPassword,
                 decoration: InputDecoration(
+                  filled: true,
+                  fillColor: SecondaryPurple,
                   labelText: "Contraseña",
                   prefixIcon: const Icon(Icons.lock_outline),
                   suffixIcon: IconButton(
@@ -219,38 +285,58 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           onPressed: executeSignUp,
                           style: ElevatedButton.styleFrom(
                             minimumSize: const Size(double.infinity, 50),
-                            backgroundColor: Colors.deepPurple,
+                            backgroundColor: PrimaryBackGroundPurple,
                             foregroundColor: Colors.white,
                           ),
                           child: const Text("CREAR MI CUENTA"),
                         ),
-                        const SizedBox(height: 15),
-                        TextButton(
-                          onPressed: () {
-                            // Navegar a la pantalla de registro de organizador
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    const OrganizadorSignUpScreen(),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            const Text("¿Eres organizador?"),
+                            TextButton(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const SignUpScreen(),
+                                  ),
+                                );
+                              },
+                              child: const Text(
+                                "Crea cuenta de empresa aquí",
+                                style: TextStyle(
+                                  color: PrimaryBackGroundPurple,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
-                            );
-                          },
-                          child: const Text(
-                            "¿Eres organizador? Crea cuenta de empresa aquí",
-                          ),
+                            ),
+                          ],
                         ),
-                        TextButton(
-                          onPressed: () {
-                            // Navegar a la pantalla de registro de organizador
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const LoginScreen(),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            const Text("¿Tienes cuenta?"),
+                            TextButton(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const SignUpScreen(),
+                                  ),
+                                );
+                              },
+                              child: const Text(
+                                "Ingresa por aqui",
+                                style: TextStyle(
+                                  color: PrimaryBackGroundPurple,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
-                            );
-                          },
-                          child: const Text("¿Tienes cuenta? Ingresa por aqui"),
+                            ),
+                          ],
                         ),
                       ],
                     ),

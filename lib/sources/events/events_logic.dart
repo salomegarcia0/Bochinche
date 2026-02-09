@@ -43,7 +43,7 @@ String? validateAforo(String? r) {
       return null;
     }
   } catch (e) {
-    print('No es un valor numerico ${e}');
+    print('No es un valor numerico $e');
     return null;
   }
   return null;
@@ -75,6 +75,7 @@ DateTime? validateDate(
       }
     }
   }
+  return null;
 }
 
 Future<void> createEvent(BuildContext context) async {
@@ -289,11 +290,7 @@ Stream<List<Map<String, dynamic>>> obtenerComentariosStream(String eventoId) {
       .collection('comments')
       .orderBy('fecha', descending: true)
       .snapshots()
-      .map(
-        (snap) => snap.docs
-            .map((d) => {...(d.data() as Map<String, dynamic>), 'id': d.id})
-            .toList(),
-      );
+      .map((snap) => snap.docs.map((d) => {...d.data(), 'id': d.id}).toList());
 }
 
 /// Agrega o actualiza la valoración del usuario y actualiza promedio de forma atómica.
@@ -311,8 +308,7 @@ Future<void> agregarValoracion({
     final eventSnap = await tx.get(eventRef);
     if (!eventSnap.exists) throw Exception('Evento no existe');
 
-    final Map<String, dynamic> eventData =
-        eventSnap.data() as Map<String, dynamic>? ?? {};
+    final Map<String, dynamic> eventData = eventSnap.data() ?? {};
     final int total = (eventData['total_review'] ?? 0) is int
         ? (eventData['total_review'] ?? 0) as int
         : (eventData['total_review'] ?? 0).toInt();

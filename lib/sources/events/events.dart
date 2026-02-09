@@ -22,8 +22,8 @@ class Events {
   );
 
   void setLocation(String lon, String lat) {
-    this.longitude = lon;
-    this.latitude = lat;
+    longitude = lon;
+    latitude = lat;
   }
 }
 
