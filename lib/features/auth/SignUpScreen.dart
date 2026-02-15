@@ -1,6 +1,5 @@
 import 'package:bochinche_app/data/auth_service.dart';
-import 'package:bochinche_app/features/auth/LoginScreen.dart';
-import 'package:bochinche_app/features/auth/OrganizadorSignUpScreen.dart';
+import 'package:bochinche_app/features/auth/LoginScreen.dart'; 
 import 'package:bochinche_app/features/map/Paginna_Inicio.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -40,11 +39,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
     String password = passwordController.text;
 
+    // --- Validaciones de Contraseña ---
     if (password.length < 6) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text("La contraseña debe tener al menos 6 caracteres"),
-        ),
+            content: Text("La contraseña debe tener al menos 6 caracteres")),
       );
       return;
     }
@@ -52,8 +51,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     if (!password.contains(RegExp(r'[0-9]'))) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text("La contraseña debe incluir al menos un número"),
-        ),
+            content: Text("La contraseña debe incluir al menos un número")),
       );
       return;
     }
@@ -62,8 +60,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            "La contraseña debe incluir un carácter especial (ej: @, #, *)",
-          ),
+              "La contraseña debe incluir un carácter especial (ej: @, #, *)"),
         ),
       );
       return;
@@ -83,7 +80,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     });
 
     try {
-      // Concatenamos el tipo de documento con el número
+
       String identificacionCompleta =
           "$tipoDocumento-${extraDataController.text.trim()}";
 
@@ -91,8 +88,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
         email: emailController.text.trim(),
         password: passwordController.text.trim(),
         name: nameController.text.trim(),
-        rol: 'usuario', // Rol fijo para esta pantalla
-        cedula: identificacionCompleta,
+        // Ya no diferenciamos rol 'organizador' vs 'usuario', todos son iguales
+        rol: 'usuario', 
+        cedula: identificacionCompleta, 
         phone: phoneController.text.trim(),
       );
 
@@ -105,7 +103,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
     } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error: $error"), backgroundColor: Colors.red),
+          SnackBar(
+              content: Text("Error: $error"), backgroundColor: Colors.red),
         );
       }
     } finally {
@@ -122,13 +121,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
     return Stack(
       children: [
         //fondo
-        Container(color: PrimaryBackGroundPurple),
+        Container(color: const Color.fromARGB(255, 239, 233, 240)),
         Scaffold(
           backgroundColor: Colors.transparent,
           resizeToAvoidBottomInset: true,
           appBar: AppBar(
             title: const Text(
-              "Registro",
+              "Crear Cuenta",
               style: TextStyle(
                 color: SecondaryPurple,
                 fontWeight: FontWeight.bold,
@@ -138,6 +137,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
             actionsPadding: const EdgeInsets.symmetric(horizontal: 16.0),
             backgroundColor: PrimaryPurple,
             elevation: 0,
+            iconTheme: const IconThemeData(color: SecondaryPurple),
           ),
           body: SafeArea(
             child: Padding(
@@ -166,23 +166,28 @@ class _SignUpScreenState extends State<SignUpScreen> {
             children: [
               Padding(
                 padding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
-                //Se va a cambiar por el logo de la app
+                // Se cambiará por el logo
                 child: Icon(
-                  Icons.person_2_outlined,
+                  Icons.person_add_alt_1_outlined,
                   size: 80,
                   color: PrimaryBackGroundPurple,
                 ),
               ),
+              const SizedBox(height: 20),
+              
+              // --- Nombre Completo o Razón Social ---
               TextField(
                 controller: nameController,
                 decoration: const InputDecoration(
                   filled: true,
                   fillColor: SecondaryPurple,
-                  labelText: "Nombre Completo",
+                  labelText: "Nombre Completo / Razón Social",
                   border: OutlineInputBorder(),
                 ),
               ),
               const SizedBox(height: 15),
+              
+              // --- Correo ---
               TextField(
                 controller: emailController,
                 decoration: const InputDecoration(
@@ -195,7 +200,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
               ),
               const SizedBox(height: 15),
 
-              // CAMPO  (V, E, P)
+              // --- Identificación (Unificada: V, E, P, J, G) ---
               Row(
                 children: [
                   Container(
@@ -216,7 +221,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       items: const [
                         DropdownMenuItem(value: 'V', child: Text('V')),
                         DropdownMenuItem(value: 'E', child: Text('E')),
-                        DropdownMenuItem(value: 'P', child: Text('P')),
+                        DropdownMenuItem(value: 'J', child: Text('J')), 
                       ],
                     ),
                   ),
@@ -227,12 +232,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       decoration: const InputDecoration(
                         filled: true,
                         fillColor: SecondaryPurple,
-                        labelText: "Número de Identidad",
+                        labelText: "Cédula o RIF",
                         border: OutlineInputBorder(),
                         counterText: "",
                       ),
                       keyboardType: TextInputType.number,
-                      maxLength: 9,
+                      maxLength: 10, 
                       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     ),
                   ),
@@ -240,6 +245,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
               ),
 
               const SizedBox(height: 15),
+              
+              // --- Teléfono ---
               TextField(
                 controller: phoneController,
                 decoration: const InputDecoration(
@@ -257,6 +264,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 ],
               ),
               const SizedBox(height: 15),
+              
+              // --- Contraseña ---
               TextField(
                 controller: passwordController,
                 obscureText: !showPassword,
@@ -277,6 +286,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
               ),
               const SizedBox(height: 25),
 
+              // --- Botón Registrar ---
               cargando
                   ? const CircularProgressIndicator()
                   : Column(
@@ -288,48 +298,29 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             backgroundColor: PrimaryBackGroundPurple,
                             foregroundColor: Colors.white,
                           ),
-                          child: const Text("CREAR MI CUENTA"),
+                          child: const Text("CREAR CUENTA"),
                         ),
+                        
+                        const SizedBox(height: 20),
+                        
+                        // --- Link al Login ---
                         Row(
                           mainAxisSize: MainAxisSize.min,
-                          mainAxisAlignment: MainAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Text("¿Eres organizador?"),
+                            const Text("¿Ya tienes cuenta?"),
                             TextButton(
                               onPressed: () {
-                                Navigator.push(
+                                // Redirige al Login
+                                Navigator.pushReplacement(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => const SignUpScreen(),
+                                    builder: (context) => const LoginScreen(),
                                   ),
                                 );
                               },
                               child: const Text(
-                                "Crea cuenta de empresa aquí",
-                                style: TextStyle(
-                                  color: PrimaryBackGroundPurple,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: [
-                            const Text("¿Tienes cuenta?"),
-                            TextButton(
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => const SignUpScreen(),
-                                  ),
-                                );
-                              },
-                              child: const Text(
-                                "Ingresa por aqui",
+                                "Ingresa aquí",
                                 style: TextStyle(
                                   color: PrimaryBackGroundPurple,
                                   fontWeight: FontWeight.bold,
