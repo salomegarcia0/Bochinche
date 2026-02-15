@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
+String? reportId;
 String? eventToReport;
 String? userToReport;
 bool? locationError = false;
@@ -11,6 +12,7 @@ bool? incumplimientoLey = false;
 bool? infrastructureFail = false;
 bool? otherError = false;
 TextEditingController reportDetailsController = TextEditingController();
+TextEditingController feedbackController = TextEditingController();
 
 Future<void> reportEvent(BuildContext context) async {
   List<String> selectedReasons = [];
@@ -78,4 +80,51 @@ Future<List<Map<String, dynamic>>> chargeReportsUser() async {
   }
 
   return reportes;
+}
+
+Future<List<Map<String, dynamic>>> chargeReportsAdmin() async {
+  List<Map<String, dynamic>> reportes = [];
+
+  try {
+    QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+        .collection('reports')
+        .where('status', isEqualTo: 'Pendiente')
+        .get();
+
+    for (var doc in querySnapshot.docs) {
+      Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+      data['id'] = doc.id;
+      reportes.add(data);
+    }
+  } catch (e) {
+    print("Error cargando reportes: $e");
+  }
+
+  return reportes;
+}
+
+Future<void> updateReportStatus(String reportId) async {
+  try {
+    await FirebaseFirestore.instance.collection('reports').doc(reportId).update(
+      {'status': 'Resuelto', 'feedback': feedbackController.text.trim()},
+    );
+    print('Reporte $reportId actualizado a estado: Resuelto');
+    feedbackController.text = '';
+    QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+        .collection('reports')
+        .where('reportId', isEqualTo: reportId)
+        .get();
+    if (querySnapshot.docs.isNotEmpty) {
+      final data = querySnapshot.docs.first.data() as Map<String, dynamic>;
+      final evento = data['eventId'];
+      await FirebaseFirestore.instance
+          .collection('events')
+          .doc(evento)
+          .delete();
+    } else {
+      print("No report found");
+    }
+  } catch (e) {
+    print('Error al actualizar el reporte: $e');
+  }
 }

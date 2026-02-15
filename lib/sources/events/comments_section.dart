@@ -54,6 +54,11 @@ class _CommentsSectionState extends State<CommentsSection> {
                       children: [
                         Text(c['texto'] ?? ''),
                         const SizedBox(height: 6),
+                        ElevatedButton(
+                          onPressed: null,
+                          child: Text('Reportar usuario'),
+                        ),
+                        const SizedBox(height: 6),
                         Row(
                           children: List.generate(5, (index) {
                             final colored = index < rating;

@@ -190,7 +190,6 @@ class _MyReportsCardsState extends State<MyReportsCards> {
                 List<Map<String, dynamic>> reportes = snapshot.data!;
                 return ListView.builder(
                   shrinkWrap: true,
-                  physics: NeverScrollableScrollPhysics(),
                   itemCount: reportes.length,
                   itemBuilder: (context, index) {
                     Map<String, dynamic> j = reportes[index];
@@ -233,5 +232,141 @@ class _MyReportsCardsState extends State<MyReportsCards> {
         ],
       ),
     );
+  }
+}
+
+class AdminReports extends StatelessWidget {
+  const AdminReports({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      drawer: Navbar(),
+      appBar: BochincheAppBar(),
+      body: AdminReportsView(),
+    );
+  }
+}
+
+class AdminReportsView extends StatefulWidget {
+  const AdminReportsView({super.key});
+
+  @override
+  State<AdminReportsView> createState() => _AdminReportsViewState();
+}
+
+class _AdminReportsViewState extends State<AdminReportsView> {
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          SizedBox(height: 20),
+          Text(
+            'Mis Reportes',
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          ),
+          Divider(),
+          FutureBuilder<List<Map<String, dynamic>>>(
+            future: chargeReportsAdmin(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return CircularProgressIndicator();
+              } else if (snapshot.hasError) {
+                return Text('Error al cargar los reportes');
+              } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                return Text('No has realizado ningún reporte aún.');
+              } else {
+                List<Map<String, dynamic>> reportes = snapshot.data!;
+                return ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: reportes.length,
+                  itemBuilder: (context, index) {
+                    Map<String, dynamic> j = reportes[index];
+                    return Card(
+                      margin: EdgeInsets.symmetric(
+                        horizontal: 16.0,
+                        vertical: 8.0,
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              j['eventId'] ?? 'Evento sin nombre',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            SizedBox(height: 8),
+                            Text('Razones: ${j['reason'] ?? 'Desconocido'}'),
+                            SizedBox(height: 8),
+                            Text(
+                              'Fecha del reporte: ${j['timestamp'] ?? 'Fecha no disponible'}',
+                            ),
+                            SizedBox(height: 8),
+                            ElevatedButton(
+                              onPressed: () {
+                                showDialog(
+                                  context: context,
+                                  builder: (context) {
+                                    return AlertDialog(
+                                      title: Text('Resolver reporte'),
+                                      content: TextField(
+                                        controller: feedbackController,
+                                        maxLines: 3,
+                                        decoration: const InputDecoration(
+                                          hintText:
+                                              'Escribe aquí tu feedback para el usuario...',
+                                          border: OutlineInputBorder(),
+                                          filled: true,
+                                          fillColor: Colors.white,
+                                        ),
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () {
+                                            Navigator.of(context).pop();
+                                          },
+                                          child: Text('Cancelar'),
+                                        ),
+                                        TextButton(
+                                          onPressed: () {
+                                            setState(() {
+                                              reportId = j['reportId'];
+                                            });
+                                            updateReportStatus(j['reportId']);
+                                            Navigator.of(context).pop();
+                                          },
+                                          child: Text(
+                                            'Eliminar evento/usuario',
+                                          ),
+                                        ),
+                                        TextButton(
+                                          onPressed: () {},
+                                          child: Text('Ignorar reporte'),
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                );
+                              },
+                              child: Text('Resolver reporte'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                );
+              }
+            },
+          ),
+        ],
+      ),
+    );
+    ;
   }
 }

@@ -838,7 +838,7 @@ class Navbar extends StatelessWidget {
                   context,
                   Icons.view_array,
                   'Administrar reportes',
-                  const EventosCreate(),
+                  const AdminReports(),
                 ),
               ],
 
