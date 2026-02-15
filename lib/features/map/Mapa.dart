@@ -6,6 +6,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:bochinche_app/sources/events/comments_section.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:bochinche_app/features/auth/LoginScreen.dart';
+import 'package:bochinche_app/sources/reports/reports_logic.dart';
+import 'package:bochinche_app/sources/reports/reports_ui.dart';
 
 class Mapa extends StatefulWidget implements PreferredSizeWidget {
   const Mapa({super.key});
@@ -197,8 +199,56 @@ class _MapaState extends State<Mapa> {
                       },
                       child: const Text('Comprar entradas'),
                     ),
+                    ElevatedButton(
+                      onPressed: () {
+                        if (FirebaseAuth.instance.currentUser == null) {
+                          Navigator.pop(context);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const LoginScreen(),
+                            ),
+                          );
+                          return;
+                        } else {
+                          Navigator.pop(context);
+                          showDialog(
+                            context: context,
+                            builder: (context) {
+                              return AlertDialog(
+                                title: const Text('Reportar evento'),
+                                content: const Text(
+                                  '¿Deseas reportar este evento por incumplimiento de las normas?',
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(context),
+                                    child: const Text('Cancelar'),
+                                  ),
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.pop(context);
+                                      eventToReport = eventoId;
+                                      print(eventToReport);
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              const ReportEvents(),
+                                        ),
+                                      );
+                                    },
+                                    child: const Text('Reportar'),
+                                  ),
+                                ],
+                              );
+                            },
+                          );
+                        }
+                      },
+                      child: const Text('Reportar evento'),
+                    ),
                     const Divider(),
-                    // CommentsSection maneja lectura/escritura en Firestore y muestra nombre + fecha
                     CommentsSection(eventoId: eventoId),
                     const SizedBox(height: 8),
                   ],
@@ -208,6 +258,27 @@ class _MapaState extends State<Mapa> {
           },
         );
       },
+    );
+  }
+
+  Widget _buildCheck({
+    required bool? value,
+    required String title,
+    String? subtitle,
+  }) {
+    return CheckboxListTile(
+      value: value,
+      onChanged: (bool? newValue) {
+        setState(() {
+          value = newValue;
+        });
+      },
+      activeColor: Colors.green,
+      checkColor: Colors.white,
+      title: Text(title),
+      subtitle: subtitle != null ? Text(subtitle) : null,
+      controlAffinity: ListTileControlAffinity.leading,
+      tristate: true,
     );
   }
 }

@@ -1,17 +1,21 @@
 import 'package:bochinche_app/features/auth/LoginScreen.dart';
 import 'package:bochinche_app/features/map/Paginna_Inicio.dart';
+import 'package:bochinche_app/sources/reports/reports_ui.dart';
 import 'package:bochinche_app/styles/BochincheAppBar.dart';
 import 'package:bochinche_app/styles/Color.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:bochinche_app/sources/reports/reports_logic.dart';
 
 // --- CORRECCIÓN DE RUTAS ---
 // Usamos 'package:' que es la forma más segura en Flutter para evitar errores de ruta
 import 'package:bochinche_app/sources/events/events_logic.dart';
 import 'package:bochinche_app/features/map/mapa_2.dart';
 import 'package:bochinche_app/sources/events/comments_section.dart';
+
+bool botonVerEventos = true;
 
 class EventosCreate extends StatelessWidget {
   const EventosCreate({super.key});
@@ -426,6 +430,8 @@ class _MyEventsState extends State<MyEvents> {
           'Aqui puedes ver todos tus eventos creados',
           style: TextStyle(fontSize: 13, fontWeight: FontWeight.w900),
         ),
+        Divider(),
+
         FutureBuilder<List<dynamic>>(
           future: chargeEvents(),
           builder: (context, snapshot) {
@@ -562,7 +568,7 @@ class _MyEventsState extends State<MyEvents> {
                     .toList(),
               );
             }
-            return LinearProgressIndicator();
+            return CircularProgressIndicator();
           },
         ),
       ],
@@ -797,7 +803,7 @@ class Navbar extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           }
 
-          final String role = snapshot.data ?? 'user';
+          final String role = snapshot.data ?? 'usuario';
           final bool isOrganizador = role == 'organizador';
 
           return ListView(
@@ -808,19 +814,31 @@ class Navbar extends StatelessWidget {
                 'Mapa',
                 const Pagina_Principal(),
               ),
+              _buildListTile(
+                context,
+                Icons.view_array,
+                'Crear eventos',
+                const EventosCreate(),
+              ),
+              _buildListTile(
+                context,
+                Icons.view_array,
+                'Panel de control',
+                const ControlPanelEvent(),
+              ),
+              _buildListTile(
+                context,
+                Icons.view_array,
+                'Ver mis reportes',
+                MyReports(),
+              ),
 
               if (isOrganizador) ...[
                 _buildListTile(
                   context,
                   Icons.view_array,
-                  'Crear eventos',
+                  'Administrar reportes',
                   const EventosCreate(),
-                ),
-                _buildListTile(
-                  context,
-                  Icons.view_array,
-                  'Panel de control',
-                  const ControlPanelEvent(),
                 ),
               ],
 
