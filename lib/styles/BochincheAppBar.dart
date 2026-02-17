@@ -1,3 +1,4 @@
+import 'package:bochinche_app/features/profile/profile_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:bochinche_app/styles/Color.dart';
@@ -38,9 +39,7 @@ class BochincheAppBar extends StatelessWidget implements PreferredSizeWidget {
             MaterialPageRoute(builder: (context) => const LoginScreen()),
           );
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Hola, ${usuario.displayName ?? 'Bochinchero'}")),
-          );
+          Navigator.push(context, MaterialPageRoute(builder: (context) => const ProfileScreen()));
         }
       },
     );
