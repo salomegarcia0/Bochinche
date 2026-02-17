@@ -1,5 +1,6 @@
 import 'package:bochinche_app/data/user_model.dart';
 import 'package:bochinche_app/features/auth/LoginScreen.dart';
+import 'package:bochinche_app/features/profile/edit_profile_screen.dart';
 import 'package:bochinche_app/styles/Color.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -113,9 +114,21 @@ class _ProfileScreenState extends State<ProfileScreen>
                         const SizedBox(height: 15),
                         // BOTON PARA EDITAR
                         ElevatedButton.icon(
-                          onPressed: () {
-             
-                            print("Editar perfil presionado");
+                          onPressed: () async {
+                            if (_usuario != null) {
+                              // Navega a la pantalla de edición y espera un resultado
+                              final result = await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => EditProfileScreen(usuario: _usuario!),
+                                ),
+                              );
+                              
+                              // Si se guardaron cambios (result == true), refresca los datos en la pantalla principal
+                              if (result == true) {
+                                _cargarUsuario();
+                              }
+                            }
                           },
                           icon: const Icon(Icons.edit,
                               size: 16, color: PrimaryPurple),
