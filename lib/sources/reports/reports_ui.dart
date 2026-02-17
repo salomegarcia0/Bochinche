@@ -16,6 +16,19 @@ class ReportEvents extends StatelessWidget {
   }
 }
 
+class ReportUser extends StatelessWidget {
+  const ReportUser({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      drawer: Navbar(),
+      appBar: BochincheAppBar(),
+      body: ReportUserView(),
+    );
+  }
+}
+
 class ReportEventsForm extends StatefulWidget {
   const ReportEventsForm({super.key});
 
@@ -127,12 +140,125 @@ class _ReportEventsFormState extends State<ReportEventsForm> {
               ElevatedButton(
                 onPressed: () {
                   reportEvent(context);
+                  setState(() {
+                    setReportEventsFalse();
+                  });
+                  Navigator.pop(context);
+                },
+                child: Text('Reportar'),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class ReportUserView extends StatefulWidget {
+  const ReportUserView({super.key});
+
+  @override
+  State<ReportUserView> createState() => _ReportUserViewState();
+}
+
+class _ReportUserViewState extends State<ReportUserView> {
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          SizedBox(height: 20),
+          Text(
+            'Reportar Usuario',
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          ),
+          Text(
+            'Describa el problema que encontró con el usuario seleccionado.',
+            style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+          ),
+          Divider(),
+          CheckboxListTile(
+            title: Text('Odio'),
+            subtitle: Text(
+              'Palabras ofensivas, estereotipos racistas o sexistas, deshumanización, incitación al miedo o la discriminación.',
+            ),
+            value: isHate,
+            onChanged: (value) {
+              setState(() {
+                isHate = value;
+              });
+            },
+            controlAffinity: ListTileControlAffinity.leading,
+          ),
+          CheckboxListTile(
+            title: Text('Abuso y acoso'),
+            subtitle: Text(
+              'Insultos, contenido no deseado de carácter sexual y cosificación explícita, contenido no apto para el ambiente laboral.',
+            ),
+            value: isHarassment,
+            onChanged: (value) {
+              setState(() {
+                isHarassment = value;
+              });
+            },
+
+            controlAffinity: ListTileControlAffinity.leading,
+          ),
+          CheckboxListTile(
+            title: Text('Discurso violento'),
+            subtitle: Text(
+              'Amenazas, intimidación, incitación a la violencia, etc.',
+            ),
+            value: isViolentDiscourse,
+            onChanged: (value) {
+              setState(() {
+                isViolentDiscourse = value;
+              });
+            },
+            controlAffinity: ListTileControlAffinity.leading,
+          ),
+          CheckboxListTile(
+            title: Text('Spam'),
+            subtitle: Text('Mensajes no deseados, publicidad excesiva, etc.'),
+            value: isSpam,
+            onChanged: (value) {
+              setState(() {
+                isSpam = value;
+              });
+            },
+            controlAffinity: ListTileControlAffinity.leading,
+          ),
+          CheckboxListTile(
+            title: Text('Comportamientos ilegales o sujetos a reglamentación'),
+            subtitle: Text(
+              'Explotación humana, servicios sexuales, drogas, armas, especies en peligro de extinción, facilitación de actividades ilegales.',
+            ),
+            value: isInappropriateContent,
+            onChanged: (value) {
+              setState(() {
+                isInappropriateContent = value;
+              });
+            },
+            controlAffinity: ListTileControlAffinity.leading,
+          ),
+
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              ElevatedButton(
+                onPressed: () {
                   eventToReport = null;
-                  locationError = false;
-                  montoError = false;
-                  incumplimientoLey = false;
-                  infrastructureFail = false;
-                  otherError = false;
+                  Navigator.pop(context);
+                },
+                child: Text('Cancelar'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  reportUser(context);
+                  setState(() {
+                    setReportUserFalse();
+                  });
                   Navigator.pop(context);
                 },
                 child: Text('Reportar'),
@@ -204,7 +330,9 @@ class _MyReportsCardsState extends State<MyReportsCards> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              j['eventId'] ?? 'Evento sin nombre',
+                              j['eventId'] ??
+                                  j['userId'] ??
+                                  'Reportado sin nombre',
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
@@ -294,7 +422,7 @@ class _AdminReportsViewState extends State<AdminReportsView> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              j['eventId'] ?? 'Evento sin nombre',
+                              'Evento: ${j['eventId'] ?? 'Usuario: ${j['userId'] ?? 'Reportado sin nombre'}'}',
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
@@ -336,8 +464,17 @@ class _AdminReportsViewState extends State<AdminReportsView> {
                                           onPressed: () {
                                             setState(() {
                                               reportId = j['reportId'];
+
+                                              if (j['evento'] == true) {
+                                                updateReportStatus(
+                                                  j['reportId'],
+                                                );
+                                              } else {
+                                                updateReportStatusUser(
+                                                  j['reportId'],
+                                                );
+                                              }
                                             });
-                                            updateReportStatus(j['reportId']);
                                             Navigator.of(context).pop();
                                           },
                                           child: Text(
@@ -367,6 +504,5 @@ class _AdminReportsViewState extends State<AdminReportsView> {
         ],
       ),
     );
-    ;
   }
 }

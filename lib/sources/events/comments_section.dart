@@ -1,9 +1,11 @@
+import 'package:bochinche_app/sources/reports/reports_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'events_logic.dart';
 import 'package:bochinche_app/features/auth/LoginScreen.dart';
+import 'package:bochinche_app/sources/reports/reports_logic.dart';
 
 class CommentsSection extends StatefulWidget {
   final String eventoId;
@@ -16,7 +18,6 @@ class CommentsSection extends StatefulWidget {
 class _CommentsSectionState extends State<CommentsSection> {
   final TextEditingController _commentController = TextEditingController();
   int _rating = 5;
-
   String get _currentUid => FirebaseAuth.instance.currentUser?.uid ?? '';
   String get _currentName =>
       FirebaseAuth.instance.currentUser?.displayName ?? 'Bochinchero';
@@ -55,7 +56,18 @@ class _CommentsSectionState extends State<CommentsSection> {
                         Text(c['texto'] ?? ''),
                         const SizedBox(height: 6),
                         ElevatedButton(
-                          onPressed: null,
+                          onPressed: () {
+                            setState(() {
+                              userToReport = c['usuarioUid'];
+                              print(userToReport);
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const ReportUser(),
+                                ),
+                              );
+                            });
+                          },
                           child: Text('Reportar usuario'),
                         ),
                         const SizedBox(height: 6),

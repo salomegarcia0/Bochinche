@@ -26,6 +26,25 @@ class BochincheAppBar extends StatelessWidget implements PreferredSizeWidget {
     );
   }
 
+  Widget iconbell(BuildContext context) {
+    return IconButton(
+      icon: const Icon(Icons.notifications, color: SecondaryPurple),
+      onPressed: () {
+        User? usuario = FirebaseAuth.instance.currentUser;
+        if (usuario == null) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const LoginScreen()),
+          );
+        } else {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text("Tienes 2 reportes")));
+        }
+      },
+    );
+  }
+
   Widget iconpersona(BuildContext context) {
     return IconButton(
       icon: const Icon(Icons.person, color: SecondaryPurple),
@@ -39,7 +58,9 @@ class BochincheAppBar extends StatelessWidget implements PreferredSizeWidget {
           );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Hola, ${usuario.displayName ?? 'Bochinchero'}")),
+            SnackBar(
+              content: Text("Hola, ${usuario.displayName ?? 'Bochinchero'}"),
+            ),
           );
         }
       },

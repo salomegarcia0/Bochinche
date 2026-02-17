@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 String? reportId;
 String? eventToReport;
@@ -11,6 +12,12 @@ bool? montoError = false;
 bool? incumplimientoLey = false;
 bool? infrastructureFail = false;
 bool? otherError = false;
+bool? isViolentDiscourse = false;
+bool? isInappropriateContent = false;
+bool? isSpam = false;
+bool? isHarassment = false;
+bool? isHate = false;
+
 TextEditingController reportDetailsController = TextEditingController();
 TextEditingController feedbackController = TextEditingController();
 
@@ -54,6 +61,7 @@ Future<void> reportEvent(BuildContext context) async {
         'status': 'Pendiente',
         'feedback': 'Ninguno',
         'timestamp': FieldValue.serverTimestamp(),
+        'evento': true,
       });
     } catch (e) {
       print('Error al enviar el reporte: $e');
@@ -121,10 +129,119 @@ Future<void> updateReportStatus(String reportId) async {
           .collection('events')
           .doc(evento)
           .delete();
+      final usuarioreportador = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(data['reporterId'])
+          .get();
+      final reportadormail = usuarioreportador.data()?['email'];
+      String? encodeQueryParameters(Map<String, String> params) {
+        return params.entries
+            .map(
+              (MapEntry<String, String> e) =>
+                  '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}',
+            )
+            .join('&');
+      }
+
+      final Uri emailLaunchUri = Uri(
+        scheme: 'mailto',
+        path: reportadormail,
+        query: encodeQueryParameters(<String, String>{
+          'subject': 'Resultado de tu reporte en Bochinche',
+          'body': 'Cuerpo del mensaje ${feedbackController.text}',
+        }),
+      );
+
+      if (await canLaunchUrl(emailLaunchUri)) {
+        await launchUrl(emailLaunchUri);
+      } else {
+        print('No se pudo abrir el cliente de correo');
+      }
+      feedbackController.text = '';
     } else {
       print("No report found");
     }
   } catch (e) {
     print('Error al actualizar el reporte: $e');
   }
+}
+
+Future<void> reportUser(BuildContext context) async {
+  List<String> selectedReasons = [];
+  if (isHate == false &&
+      isHarassment == false &&
+      isSpam == false &&
+      isViolentDiscourse == false &&
+      isInappropriateContent == false) {
+    print('No se ha seleccionado ningún error para reportar.');
+  } else {
+    print('Reporte enviado:');
+    print('Evento ID: $eventToReport');
+    print('Usuario ID: $userToReport');
+    print('Errores:');
+    if (isHate == true) selectedReasons.add('Odio');
+    if (isHarassment == true) selectedReasons.add('Abuso y acoso');
+    if (isViolentDiscourse == true) selectedReasons.add('Discurso violento');
+    if (isSpam == true) selectedReasons.add('Spam');
+    if (isInappropriateContent == true)
+      selectedReasons.add('Comportamientos ilegales');
+    try {
+      final newReportRef = FirebaseFirestore.instance
+          .collection('reports')
+          .doc();
+      await newReportRef.set({
+        'reportId': newReportRef.id,
+        'userId': userToReport,
+        'reporterId': FirebaseAuth.instance.currentUser?.uid,
+        'reason': selectedReasons,
+        'status': 'Pendiente',
+        'feedback': 'Ninguno',
+        'timestamp': FieldValue.serverTimestamp(),
+        'evento': false,
+      });
+    } catch (e) {
+      print('Error al enviar el reporte: $e');
+    }
+  }
+}
+
+Future<void> updateReportStatusUser(String reportId) async {
+  try {
+    await FirebaseFirestore.instance.collection('reports').doc(reportId).update(
+      {'status': 'Resuelto', 'feedback': feedbackController.text.trim()},
+    );
+    print('Reporte $reportId actualizado a estado: Resuelto');
+    feedbackController.text = '';
+    QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+        .collection('reports')
+        .where('reportId', isEqualTo: reportId)
+        .get();
+    if (querySnapshot.docs.isNotEmpty) {
+      final data = querySnapshot.docs.first.data() as Map<String, dynamic>;
+      final usuario = data['userId'];
+      await FirebaseFirestore.instance.collection('users').doc(usuario).update({
+        'banned': true,
+      });
+    } else {
+      print("No report found");
+    }
+  } catch (e) {
+    print('Error al actualizar el reporte: $e');
+  }
+}
+
+void setReportEventsFalse() {
+  locationError = false;
+  montoError = false;
+  incumplimientoLey = false;
+  infrastructureFail = false;
+  otherError = false;
+}
+
+void setReportUserFalse() {
+  isHate = false;
+  isHarassment = false;
+  isSpam = false;
+  isViolentDiscourse = false;
+  isInappropriateContent = false;
 }

@@ -96,10 +96,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
         phone: phoneController.text.trim(),
       );
 
-      if (user != null && mounted) {
+      if (user != null && user.emailVerified == false && mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("Registro exitoso")));
+        await FirebaseAuth.instance.signOut();
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const Pagina_Principal()),
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
         );
       }
     } catch (error) {
@@ -324,7 +328,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => const SignUpScreen(),
+                                    builder: (context) => const LoginScreen(),
                                   ),
                                 );
                               },

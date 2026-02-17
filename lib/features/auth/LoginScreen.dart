@@ -1,5 +1,6 @@
 import 'package:bochinche_app/features/auth/SignUpScreen.dart';
 import 'package:bochinche_app/features/map/Paginna_Inicio.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:bochinche_app/data/auth_service.dart';
@@ -32,22 +33,80 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => cargando = true);
 
     try {
-      //iniciar sesión
+      // 1. Iniciar sesión en Authentication
       User? user = await _authService.signInWithEmailAndPassword(
         emailController.text.trim(),
         passwordController.text.trim(),
       );
 
       if (user != null && mounted) {
-        // consultar el rol del usuario
-        String? rol = await _authService.getUserRol(user.uid);
+        QuerySnapshot snapshot = await FirebaseFirestore.instance
+            .collection('users')
+            .where('uid', isEqualTo: user.uid)
+            .get();
+        bool estaBaneado = false;
 
-        //navegación a mapa si todo ok
-        if (rol != null) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const Pagina_Principal()),
-          );
+        if (snapshot.docs.isNotEmpty) {
+          var data = snapshot.docs.first.data() as Map<String, dynamic>;
+          if (snapshot.docs.isNotEmpty) {
+            var data = snapshot.docs.first.data() as Map<String, dynamic>;
+
+            estaBaneado = data['banned'] ?? false;
+          }
+
+          if (estaBaneado) {
+            await FirebaseAuth.instance.signOut();
+
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text(
+                    "Tu cuenta ha sido suspendida. Contacta a soporte.",
+                  ),
+                  backgroundColor: Colors.red,
+                  duration: Duration(seconds: 4),
+                ),
+              );
+
+              setState(() => cargando = false);
+              return;
+            }
+          }
+
+          String? rol = await _authService.getUserRol(user.uid);
+
+          if (rol != null && user.emailVerified == true) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text("Login exitoso!."),
+                backgroundColor: Color.fromARGB(255, 17, 255, 9),
+                duration: Duration(seconds: 4),
+              ),
+            );
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const Pagina_Principal()),
+            );
+          } else {
+            if (rol != null && user.emailVerified == false) {
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      "Verifica tu correo primero para iniciar sesión.",
+                    ),
+                    backgroundColor: Colors.orange,
+                    duration: Duration(seconds: 4),
+                  ),
+                );
+                if (user != null) {
+                  user.sendEmailVerification();
+                }
+                setState(() => cargando = false);
+                return;
+              }
+            }
+          }
         }
       }
     } catch (error) {
@@ -100,6 +159,33 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
           ),
+        ),
+      ],
+    );
+  }
+
+  Widget waitTilVerification(BuildContext context) {
+    return Stack(
+      children: [
+        Container(color: PrimaryBackGroundPurple),
+
+        Scaffold(
+          backgroundColor: Colors.transparent,
+          resizeToAvoidBottomInset: true,
+          appBar: AppBar(
+            title: const Text(
+              "Espera la verificación de tu correo",
+              style: TextStyle(
+                color: SecondaryPurple,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            centerTitle: true,
+            actionsPadding: const EdgeInsets.symmetric(horizontal: 16.0),
+            backgroundColor: PrimaryPurple,
+            elevation: 0,
+          ),
+          body: SafeArea(child: Center(child: Text('Espere unos segundos'))),
         ),
       ],
     );
