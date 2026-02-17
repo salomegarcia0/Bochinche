@@ -119,13 +119,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ),
                             child: Column(
                               children: [
-                                _buildInfoItem("Nombre / Razón Social", _usuario!.name, Icons.person),
+                                _buildInfoItem("Nombre / Razón Social", _usuario!.nombre, Icons.person),
                                 const Divider(color: PrimaryPurple),
                                 _buildInfoItem("Correo", _usuario!.email, Icons.email),
                                 const Divider(color: PrimaryPurple),
                                 _buildInfoItem("Cédula / RIF", _usuario!.identification, Icons.badge),
                                 const Divider(color: PrimaryPurple),
-                                _buildInfoItem("Teléfono", _usuario!.phone, Icons.phone),
+                                _buildInfoItem("Teléfono", _usuario!.telefono, Icons.phone),
                               ],
                             ),
                           ),

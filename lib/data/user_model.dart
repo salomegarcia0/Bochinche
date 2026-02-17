@@ -1,17 +1,17 @@
 class UserModel {
   final String uid;
   final String email;
-  final String name;
+  final String nombre;
   final String identification; //documento
-  final String phone;
+  final String telefono;
   final String? profileImageUrl;
 
   UserModel({
     required this.uid,
     required this.email,
-    required this.name,
+    required this.nombre,
     required this.identification,
-    required this.phone,
+    required this.telefono,
     this.profileImageUrl,
   });
 
@@ -19,18 +19,18 @@ class UserModel {
     return UserModel(
       uid: uid,
       email: map['email'] ?? '',
-      name: map['name'] ?? '',
+      nombre: map['nombre'] ?? '',
       identification: map['cedula'] ?? '',
-      phone: map['phone'] ?? '',
+      telefono: map['telefono'] ?? '',
       profileImageUrl: map['profileImageUrl'],
     );
   }
   Map<String, dynamic> toMap() {
     return {
       'email': email,
-      'name': name,
+      'nombre': nombre,
       'cedula': identification,
-      'phone': phone,
+      'telefono': telefono,
       'profileImageUrl': profileImageUrl,
     };
   }
