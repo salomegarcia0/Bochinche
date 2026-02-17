@@ -3,11 +3,12 @@ import 'package:bochinche_app/features/map/Paginna_Inicio.dart';
 import 'package:bochinche_app/sources/reports/reports_ui.dart';
 import 'package:bochinche_app/styles/BochincheAppBar.dart';
 import 'package:bochinche_app/styles/Color.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:bochinche_app/sources/reports/reports_logic.dart';
+
+import 'package:bochinche_app/styles/NavBar.dart';
 
 // --- CORRECCIÓN DE RUTAS ---
 // Usamos 'package:' que es la forma más segura en Flutter para evitar errores de ruta
@@ -353,7 +354,15 @@ class _FormCreateEventState extends State<FormCreateEvent> {
                   backgroundColor: PrimaryPurple,
                   foregroundColor: SecondaryPurple,
                 ),
-                onPressed: () => createEvent(context),
+                onPressed: () {
+                  createEvent(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ControlPanelEvent(),
+                    ),
+                  );
+                },
                 icon: const Icon(Icons.cloud_upload),
                 label: const Text('PUBLICAR EVENTO'),
               ),
@@ -774,123 +783,6 @@ class _FormCreateEvent2State extends State<FormCreateEvent2> {
     return Text(
       text,
       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-    );
-  }
-}
-
-class Navbar extends StatelessWidget {
-  const Navbar({super.key});
-
-  Future<String> _getUserRole() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return 'guest';
-
-    final doc = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(user.uid)
-        .get();
-
-    return doc.data()!['rol'];
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Drawer(
-      child: FutureBuilder<String>(
-        future: _getUserRole(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          final String role = snapshot.data ?? 'usuario';
-          final bool isOrganizador = role == 'organizador';
-
-          return ListView(
-            children: [
-              _buildListTile(
-                context,
-                Icons.map,
-                'Mapa',
-                const Pagina_Principal(),
-              ),
-              _buildListTile(
-                context,
-                Icons.view_array,
-                'Crear eventos',
-                const EventosCreate(),
-              ),
-              _buildListTile(
-                context,
-                Icons.view_array,
-                'Panel de control',
-                const ControlPanelEvent(),
-              ),
-              _buildListTile(
-                context,
-                Icons.view_array,
-                'Ver mis reportes',
-                MyReports(),
-              ),
-
-              if (isOrganizador) ...[
-                _buildListTile(
-                  context,
-                  Icons.view_array,
-                  'Administrar reportes',
-                  const AdminReports(),
-                ),
-              ],
-
-              if (role == 'guest')
-                ListTile(
-                  leading: const Icon(Icons.login),
-                  title: const Text('Iniciar sesión'),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const LoginScreen(),
-                      ),
-                    );
-                  },
-                )
-              else
-                ListTile(
-                  leading: const Icon(Icons.logout),
-                  title: const Text('Cerrar sesión'),
-                  onTap: () {
-                    clearAllFields();
-                    FirebaseAuth.instance.signOut();
-                    Navigator.pushAndRemoveUntil(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const LoginScreen(),
-                      ),
-                      (route) => false,
-                    );
-                  },
-                ),
-            ],
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildListTile(
-    BuildContext context,
-    IconData icon,
-    String title,
-    Widget page,
-  ) {
-    return ListTile(
-      leading: Icon(icon),
-      title: Text(title),
-      onTap: () {
-        clearAllFields();
-        Navigator.push(context, MaterialPageRoute(builder: (context) => page));
-      },
     );
   }
 }

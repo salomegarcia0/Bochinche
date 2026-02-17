@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:bochinche_app/styles/BochincheAppBar.dart';
 import 'package:bochinche_app/sources/reports/reports_logic.dart';
-import 'package:bochinche_app/sources/events/events_ui.dart';
+import 'package:bochinche_app/styles/NavBar.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ReportEvents extends StatelessWidget {
   const ReportEvents({super.key});
@@ -329,24 +330,56 @@ class _MyReportsCardsState extends State<MyReportsCards> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              j['eventId'] ??
-                                  j['userId'] ??
-                                  'Reportado sin nombre',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
+                            j['evento'] == true
+                                ? FutureBuilder<String>(
+                                    future: getEventName(j['reportId']),
+                                    builder: (context, snapshot) {
+                                      if (snapshot.connectionState ==
+                                          ConnectionState.waiting) {
+                                        return Text("Cargando...");
+                                      }
+                                      if (snapshot.hasError) {
+                                        return Text("Error");
+                                      }
+                                      return Text(
+                                        'Evento: ${snapshot.data ?? "Evento sin nombre"}',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 20,
+                                        ),
+                                      );
+                                    },
+                                  )
+                                : FutureBuilder<String>(
+                                    future: getUserName(j['reportId']),
+                                    builder: (context, snapshot) {
+                                      if (snapshot.connectionState ==
+                                          ConnectionState.waiting) {
+                                        return Text("Cargando...");
+                                      }
+                                      if (snapshot.hasError) {
+                                        return Text("Error");
+                                      }
+                                      return Text(
+                                        'Usuario: ${snapshot.data ?? "Usuario sin nombre"}',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 20,
+                                        ),
+                                      );
+                                    },
+                                  ),
                             SizedBox(height: 8),
-                            Text('Razones: ${j['reason'] ?? 'Desconocido'}'),
+                            Text(
+                              'Razones:  ${j['reason'].toString().replaceFirst('[', '').replaceFirst(']', '')}',
+                            ),
                             SizedBox(height: 8),
                             Text('Estado: ${j['status'] ?? 'Desconocido'}'),
                             SizedBox(height: 8),
                             Text('Feedback: ${j['feedback'] ?? 'Desconocido'}'),
                             SizedBox(height: 8),
                             Text(
-                              'Fecha del reporte: ${j['timestamp'] ?? 'Fecha no disponible'}',
+                              'Fecha del reporte: ${j['timestamp'] != null ? (j['timestamp'] as Timestamp).toDate().toString() : 'Fecha no disponible'}',
                             ),
                           ],
                         ),
@@ -421,18 +454,52 @@ class _AdminReportsViewState extends State<AdminReportsView> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            j['evento'] == true
+                                ? FutureBuilder<String>(
+                                    future: getEventName(j['reportId']),
+                                    builder: (context, snapshot) {
+                                      if (snapshot.connectionState ==
+                                          ConnectionState.waiting) {
+                                        return Text("Cargando...");
+                                      }
+                                      if (snapshot.hasError) {
+                                        return Text("Error");
+                                      }
+                                      return Text(
+                                        'Evento: ${snapshot.data ?? "Evento sin nombre"}',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 20,
+                                        ),
+                                      );
+                                    },
+                                  )
+                                : FutureBuilder<String>(
+                                    future: getUserName(j['reportId']),
+                                    builder: (context, snapshot) {
+                                      if (snapshot.connectionState ==
+                                          ConnectionState.waiting) {
+                                        return Text("Cargando...");
+                                      }
+                                      if (snapshot.hasError) {
+                                        return Text("Error");
+                                      }
+                                      return Text(
+                                        'Usuario: ${snapshot.data ?? "Usuario sin nombre"}',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 20,
+                                        ),
+                                      );
+                                    },
+                                  ),
+                            SizedBox(height: 8),
                             Text(
-                              'Evento: ${j['eventId'] ?? 'Usuario: ${j['userId'] ?? 'Reportado sin nombre'}'}',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
+                              'Razones:  ${j['reason'].toString().replaceFirst('[', '').replaceFirst(']', '')}',
                             ),
                             SizedBox(height: 8),
-                            Text('Razones: ${j['reason'] ?? 'Desconocido'}'),
-                            SizedBox(height: 8),
                             Text(
-                              'Fecha del reporte: ${j['timestamp'] ?? 'Fecha no disponible'}',
+                              'Fecha del reporte: ${j['timestamp'] != null ? (j['timestamp'] as Timestamp).toDate().toString() : 'Fecha no disponible'}',
                             ),
                             SizedBox(height: 8),
                             ElevatedButton(
@@ -482,7 +549,9 @@ class _AdminReportsViewState extends State<AdminReportsView> {
                                           ),
                                         ),
                                         TextButton(
-                                          onPressed: () {},
+                                          onPressed: () {
+                                            ignoreReport(j['reportId']);
+                                          },
                                           child: Text('Ignorar reporte'),
                                         ),
                                       ],

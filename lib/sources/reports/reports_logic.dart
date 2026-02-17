@@ -230,6 +230,72 @@ Future<void> updateReportStatusUser(String reportId) async {
   }
 }
 
+Future<void> ignoreReport(String reportId) async {
+  try {
+    await FirebaseFirestore.instance.collection('reports').doc(reportId).update({
+      'status': 'Resuelto',
+      'feedback':
+          'Reporte ignorado por el administrador: ${feedbackController.text.trim()}',
+    });
+    feedbackController.text = '';
+    print('Reporte $reportId actualizado a estado: Ignorado');
+  } catch (e) {
+    print('Error al ignorar el reporte: $e');
+  }
+}
+
+Future<String> getEventName(String reportId) async {
+  try {
+    DocumentSnapshot doc = await FirebaseFirestore.instance
+        .collection('reports')
+        .doc(reportId)
+        .get();
+    if (doc.exists) {
+      doc['eventId'] ?? 'Evento sin nombre';
+      DocumentSnapshot eventDoc = await FirebaseFirestore.instance
+          .collection('events')
+          .doc(doc['eventId'])
+          .get();
+      if (eventDoc.exists) {
+        return eventDoc['name'] ?? 'Evento sin nombre';
+      } else {
+        return 'Evento no encontrado';
+      }
+    } else {
+      return 'Evento no encontrado';
+    }
+  } catch (e) {
+    print('Error al obtener el nombre del evento: $e');
+    return 'Error al cargar evento';
+  }
+}
+
+Future<String> getUserName(String reportId) async {
+  try {
+    DocumentSnapshot doc = await FirebaseFirestore.instance
+        .collection('reports')
+        .doc(reportId)
+        .get();
+    if (doc.exists) {
+      doc['userId'] ?? 'Usuario sin nombre';
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(doc['userId'])
+          .get();
+      if (userDoc.exists) {
+        return userDoc['nombre'] ?? 'Usuario sin nombre';
+      } else {
+        return 'Usuario no encontrado';
+      }
+    } else {
+      return 'Usuario no encontrado';
+    }
+  } catch (e) {
+    print('Error al obtener el nombre del usuario: $e');
+    return 'Error al cargar usuario';
+  }
+}
+
 void setReportEventsFalse() {
   locationError = false;
   montoError = false;

@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:bochinche_app/features/auth/LoginScreen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -57,25 +59,25 @@ String? validateState(String? r) {
   }
 }
 
-DateTime? validateDate(
-  DateTime dia1,
-  DateTime dia2,
-  TimeOfDay hora1,
-  TimeOfDay hora2,
-) {
-  if (dia2.isBefore(dia1)) {
+DateTime? validateDate(DateTime date1, DateTime date2) {
+  if (date2.isBefore(date1)) {
     return null;
   } else {
-    if (dia1.isAtSameMomentAs(dia2)) {
-      if (hora2.hour < hora1.hour ||
-          (hora2.hour == hora1.hour && hora2.minute <= hora1.minute)) {
-        return null;
+    if (date1.isAtSameMomentAs(date2)) {
+      if (firtTimeHour.hour < lastTimeHour.hour) {
+        if (firtTimeHour.hour == lastTimeHour.hour &&
+            firtTimeHour.minute >= lastTimeHour.minute) {
+          return null;
+        } else {
+          return date2;
+        }
       } else {
-        return dia2;
+        return null;
       }
+    } else {
+      return date2;
     }
   }
-  return null;
 }
 
 Future<void> createEvent(BuildContext context) async {
@@ -95,7 +97,8 @@ Future<void> createEvent(BuildContext context) async {
       latitudC == 0.0 ||
       validateAforo(aforoController.text) == null ||
       validateName(contactoController.text) == null ||
-      validateName(direccionController.text) == null) {
+      validateName(direccionController.text) == null ||
+      validateDate(fecha1!, fecha2!) == null) {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text(
@@ -104,46 +107,46 @@ Future<void> createEvent(BuildContext context) async {
         backgroundColor: Colors.red,
       ),
     );
-    return;
-  }
+  } else {
+    try {
+      final newEventRef = FirebaseFirestore.instance.collection('events').doc();
 
-  try {
-    final newEventRef = FirebaseFirestore.instance.collection('events').doc();
+      await newEventRef.set({
+        'id': newEventRef.id,
+        'name': nombreEventoController.text,
+        'address': direccionController.text,
+        'contact': contactoController.text,
+        'type': typeC,
+        'state': 'Proximo',
+        'id_organizer': FirebaseAuth.instance.currentUser!.uid,
+        'description': descripcionController.text != null
+            ? descripcionController.text
+            : '',
+        'capacity': aforoController.text,
+        'startDate': fecha1!.toIso8601String(),
+        'endDate': fecha2!.toIso8601String(),
+        'startTime': {'hour': firtTimeHour.hour, 'minute': firtTimeHour.minute},
+        'endTime': {'hour': lastTimeHour.hour, 'minute': lastTimeHour.minute},
+        'location': GeoPoint(latitudC, longitudC),
+        'createdAt': FieldValue.serverTimestamp(),
+        'stars': 0,
+        'total_review': 0,
+      });
 
-    await newEventRef.set({
-      'id': newEventRef.id,
-      'name': nombreEventoController.text,
-      'address': direccionController.text,
-      'contact': contactoController.text,
-      'type': typeC,
-      'state': 'Proximo',
-      'id_organizer': FirebaseAuth.instance.currentUser!.uid,
-      'description': descripcionController.text,
-      'capacity': aforoController.text,
-      'startDate': fecha1!.toIso8601String(),
-      'endDate': fecha2!.toIso8601String(),
-      'startTime': {'hour': firtTimeHour.hour, 'minute': firtTimeHour.minute},
-      'endTime': {'hour': lastTimeHour.hour, 'minute': lastTimeHour.minute},
-      'location': GeoPoint(latitudC, longitudC),
-      'createdAt': FieldValue.serverTimestamp(),
-      'stars': 0,
-      'total_review': 0,
-    });
+      // Mostrar mensaje de éxito
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('¡Evento creado y ubicado en el mapa con éxito!'),
+          backgroundColor: Colors.green,
+        ),
+      );
 
-    // Mostrar mensaje de éxito
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('¡Evento creado y ubicado en el mapa con éxito!'),
-        backgroundColor: Colors.green,
-      ),
-    );
-
-    // LIMPIAR TODOS LOS CAMPOS
-    clearAllFields();
-  } catch (e) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text('Error al crear: $e')));
+      clearAllFields();
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error al crear: $e')));
+    }
   }
 }
 
@@ -168,6 +171,7 @@ Future<List<Map<String, dynamic>>> chargeEvents() async {
   List<Map<String, dynamic>> eventos = [];
 
   try {
+    print(FirebaseAuth.instance.currentUser!.uid);
     QuerySnapshot querySnapshot = await FirebaseFirestore.instance
         .collection('events')
         .where(
@@ -182,7 +186,7 @@ Future<List<Map<String, dynamic>>> chargeEvents() async {
       eventos.add(data);
     }
   } catch (e) {
-    print("Error cargando eventos: $e");
+    print("$e");
   }
 
   return eventos;
