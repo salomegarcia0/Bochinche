@@ -11,7 +11,9 @@ class Pagina_Principal extends StatefulWidget {
 }
 
 class _Pagina_PrincipalState extends State<Pagina_Principal> {
-  Mapa mapa = const Mapa();
+  // Key para acceder al estado del Mapa
+  final GlobalKey<MapaState> _mapaKey = GlobalKey<MapaState>();
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -20,14 +22,17 @@ class _Pagina_PrincipalState extends State<Pagina_Principal> {
 
       body: Stack(
         children: [
-          mapa,
+          // Pasamos la key al widget Mapa
+          Mapa(key: _mapaKey),
           Align(
             alignment: Alignment.bottomCenter,
             child: Padding(
               padding: const EdgeInsets.all(5.0),
-              child: SizedBox(
-                height: MediaQuery.of(context).size.width * 0.5,
-                child: const BuscadorEventoMapa(),
+              child: BuscadorEventoMapa(
+                // Llamamos a la función buscarEventoPrivado del estado del mapa
+                onSearchCode: () {
+                  _mapaKey.currentState?.buscarEventoPrivado(context);
+                },
               ),
             ),
           ),

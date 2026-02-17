@@ -12,7 +12,7 @@ Future<void> main() async {
 
   // Inicializa Firebase usando las opciones de tu archivo firebase_options.dart
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  await FirebaseAuth.instance.signOut();
+  await FirebaseAuth.instance.signOut(); // Cierra sesión al iniciar la aplicación para pruebas
 
   debugPrint("Conectado a Firebase: ${Firebase.app().name}");
 

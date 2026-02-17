@@ -4,6 +4,7 @@ import 'package:bochinche_app/styles/BochincheAppBar.dart';
 import 'package:bochinche_app/styles/Color.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:latlong2/latlong.dart';
 
@@ -12,6 +13,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:bochinche_app/sources/events/events_logic.dart';
 import 'package:bochinche_app/features/map/mapa_2.dart';
 import 'package:bochinche_app/sources/events/comments_section.dart';
+import 'package:bochinche_app/features/payment/payment_page.dart';
 
 class EventosCreate extends StatelessWidget {
   const EventosCreate({super.key});
@@ -339,6 +341,150 @@ class _FormCreateEventState extends State<FormCreateEvent> {
           _buildLabel('Descripción'),
           TextFormField(controller: descripcionController, maxLines: 3),
 
+          const SizedBox(height: 20),
+          const Divider(),
+
+          // --- PRIVACIDAD ---
+          _buildLabel('Privacidad del Evento'),
+          SwitchListTile(
+            title: Text(isPrivateC ? 'Evento Privado' : 'Evento Público'),
+            subtitle: Text(
+              isPrivateC
+                  ? 'Solo accesible mediante enlace de invitación'
+                  : 'Visible para todos en el mapa',
+            ),
+            value: isPrivateC,
+            activeColor: PrimaryPurple,
+            secondary: Icon(
+              isPrivateC ? Icons.lock : Icons.public,
+              color: isPrivateC ? PrimaryPurple : Colors.grey,
+            ),
+            onChanged: (val) => setState(() => isPrivateC = val),
+          ),
+
+          const SizedBox(height: 20),
+          const Divider(),
+
+          // --- DATOS DE PAGO ---
+          _buildLabel('Datos de Pago (Pago Móvil)'),
+          const SizedBox(height: 4),
+          const Text(
+            'Ingresa los datos donde los compradores realizarán el pago.',
+            style: TextStyle(color: Colors.grey, fontSize: 13),
+          ),
+          const SizedBox(height: 12),
+          // --- Banco (Dropdown) ---
+          DropdownButtonFormField<String>(
+            value: selectedBank,
+            isExpanded: true,
+            decoration: const InputDecoration(
+              labelText: 'Banco',
+              prefixIcon: Icon(Icons.account_balance),
+              border: OutlineInputBorder(),
+            ),
+            items: bankList
+                .map((b) => DropdownMenuItem(
+                      value: b,
+                      child: Text(b, overflow: TextOverflow.ellipsis),
+                    ))
+                .toList(),
+            onChanged: (val) => setState(() => selectedBank = val),
+          ),
+          const SizedBox(height: 12),
+
+          // --- Teléfono (Prefijo dropdown + número) ---
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                width: 110,
+                child: DropdownButtonFormField<String>(
+                  value: selectedPhonePrefix,
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Prefijo',
+                    border: OutlineInputBorder(),
+                    contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 15),
+                  ),
+                  items: phonePrefixList
+                      .map((p) => DropdownMenuItem(
+                            value: p,
+                            child:
+                                Text(p, overflow: TextOverflow.ellipsis),
+                          ))
+                      .toList(),
+                  onChanged: (val) => setState(() => selectedPhonePrefix = val),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: TextFormField(
+                  controller: paymentPhoneNumberController,
+                  keyboardType: TextInputType.number,
+                  maxLength: 7,
+                  decoration: const InputDecoration(
+                    labelText: 'Número',
+                    prefixIcon: Icon(Icons.phone),
+                    border: OutlineInputBorder(),
+                    counterText: '',
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // --- Cédula / Identificación (Tipo dropdown + número) ---
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                width: 120,
+                child: DropdownButtonFormField<String>(
+                  value: selectedCIType,
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Tipo',
+                    border: OutlineInputBorder(),
+                    contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 15),
+                  ),
+                  items: ciTypeList
+                      .map((t) => DropdownMenuItem(
+                            value: t,
+                            child: Text(
+                              '$t - ${ciTypeLabels[t]}',
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ))
+                      .toList(),
+                  onChanged: (val) => setState(() => selectedCIType = val),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: TextFormField(
+                  controller: paymentCINumberController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Número de Identificación',
+                    prefixIcon: Icon(Icons.badge),
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          TextFormField(
+            controller: priceController,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: const InputDecoration(
+              labelText: 'Precio por Entrada (Bs)',
+              prefixIcon: Icon(Icons.attach_money),
+              border: OutlineInputBorder(),
+            ),
+          ),
+
           const SizedBox(height: 30),
           Center(
             child: SizedBox(
@@ -431,29 +577,29 @@ class _MyEventsState extends State<MyEvents> {
           builder: (context, snapshot) {
             if (snapshot.hasData) {
               final eventos = snapshot.data!;
-              return Column(
+                return Column(
                 children: eventos
                     .map(
                       (i) => Padding(
-                        padding: EdgeInsetsGeometry.all(10),
+                        padding: const EdgeInsets.all(10),
                         child: Container(
-                          padding: EdgeInsets.all(10),
+                          padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(4),
-                            border: BoxBorder.all(color: Colors.black),
+                            border: Border.all(color: Colors.black),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
                                 i['name'],
-                                style: TextStyle(
+                                style: const TextStyle(
                                   color: Colors.black,
                                   fontWeight: FontWeight.w800,
                                   fontSize: 20,
                                 ),
                               ),
-                              Text(
+                              const Text(
                                 'Organizador',
                                 style: TextStyle(
                                   color: Colors.black,
@@ -463,80 +609,120 @@ class _MyEventsState extends State<MyEvents> {
                               ),
                               Text(
                                 'Aforo: ${i['capacity']}',
-                                style: TextStyle(
-                                  color: Colors.black,
-                                  fontSize: 13,
-                                ),
+                                style: const TextStyle(color: Colors.black, fontSize: 13),
                               ),
                               Text(
                                 'Contacto: ${i['contact']}',
-                                style: TextStyle(
-                                  color: Colors.black,
-                                  fontSize: 13,
-                                ),
+                                style: const TextStyle(color: Colors.black, fontSize: 13),
                               ),
                               Text(
                                 'Tipo: ${i['type']}',
-                                style: TextStyle(
-                                  color: Colors.black,
-                                  fontSize: 13,
-                                ),
+                                style: const TextStyle(color: Colors.black, fontSize: 13),
                               ),
                               Text(
                                 'Direccion corta: ${i['address']}',
-                                style: TextStyle(
-                                  color: Colors.black,
-                                  fontSize: 13,
-                                ),
+                                style: const TextStyle(color: Colors.black, fontSize: 13),
                               ),
                               Text(
                                 'Descripción: ${i['description']}',
-                                style: TextStyle(
-                                  color: Colors.black,
-                                  fontSize: 13,
-                                ),
+                                style: const TextStyle(color: Colors.black, fontSize: 13),
                               ),
                               Text(
                                 'Fechas: ${DateTime.parse(i['startDate']).day}/${DateTime.parse(i['startDate']).month}/${DateTime.parse(i['startDate']).year} hasta ${DateTime.parse(i['endDate']).day}/${DateTime.parse(i['endDate']).month}/${DateTime.parse(i['endDate']).year}',
-                                style: TextStyle(
-                                  color: Colors.black,
-                                  fontSize: 13,
-                                ),
+                                style: const TextStyle(color: Colors.black, fontSize: 13),
                               ),
                               Text(
                                 'Horarios: ${i['startTime']['hour']}:${i['startTime']['minute'].toString().padLeft(2, '0')} hasta ${i['endTime']['hour']}:${i['endTime']['minute'].toString().padLeft(2, '0')}',
-                                style: TextStyle(
-                                  color: Colors.black,
-                                  fontSize: 13,
-                                ),
+                                style: const TextStyle(color: Colors.black, fontSize: 13),
                               ),
                               Text(
                                 'Localización: ${i['location'].latitude}, ${i['location'].longitude}',
-                                style: TextStyle(
-                                  color: Colors.black,
-                                  fontSize: 13,
-                                ),
+                                style: const TextStyle(color: Colors.black, fontSize: 13),
                               ),
+                              const SizedBox(height: 10),
                               ElevatedButton(
                                 onPressed: () {
                                   idmod = i['id'];
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (context) =>
-                                          const ModifyEvents(),
+                                      builder: (context) => const ModifyEvents(),
                                     ),
                                   );
                                   cargarDatosEvento(idmod);
                                 },
                                 child: Row(
-                                  children: [
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: const [
                                     Icon(Icons.change_circle),
+                                    SizedBox(width: 5),
                                     Text('Modificar evento'),
                                   ],
                                 ),
                               ),
-                              SizedBox(height: 10),
+                              const SizedBox(height: 10),
+                              if (i['isPrivate'] == true) ...[
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 6,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.orange[50],
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(color: Colors.orange),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: const [
+                                      Icon(Icons.lock, size: 16, color: Colors.orange),
+                                      SizedBox(width: 4),
+                                      Text(
+                                        'Evento Privado',
+                                        style: TextStyle(
+                                          color: Colors.orange,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(height: 10),
+                                ElevatedButton.icon(
+                                  onPressed: () async {
+                                    await Clipboard.setData(
+                                      ClipboardData(text: i['id']),
+                                    );
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            'Código de invitación copiado: ${i['id']}',
+                                          ),
+                                          backgroundColor: Colors.green,
+                                        ),
+                                      );
+                                    }
+                                  },
+                                  icon: const Icon(Icons.link),
+                                  label: const Text('Copiar Código'),
+                                ),
+                                const SizedBox(height: 10),
+                              ],
+                              ElevatedButton.icon(
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => PaymentPage(eventData: i),
+                                    ),
+                                  );
+                                },
+                                icon: const Icon(Icons.payment),
+                                label: const Text('Pagar (demo)'),
+                              ),
+                              const SizedBox(height: 10),
                               ElevatedButton(
                                 onPressed: () {
                                   try {
@@ -548,8 +734,10 @@ class _MyEventsState extends State<MyEvents> {
                                   }
                                 },
                                 child: Row(
-                                  children: [
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: const [
                                     Icon(Icons.delete),
+                                    SizedBox(width: 5),
                                     Text('Eliminar evento'),
                                   ],
                                 ),
@@ -734,6 +922,129 @@ class _FormCreateEvent2State extends State<FormCreateEvent2> {
 
           _buildLabel('Descripción'),
           TextFormField(controller: descripcionController, maxLines: 3),
+
+          const SizedBox(height: 20),
+          const Divider(),
+
+          // --- DATOS DE PAGO ---
+          _buildLabel('Datos de Pago (Pago Móvil)'),
+          const SizedBox(height: 4),
+          const Text(
+            'Ingresa los datos donde los compradores realizarán el pago.',
+            style: TextStyle(color: Colors.grey, fontSize: 13),
+          ),
+          const SizedBox(height: 12),
+          // --- Banco (Dropdown) ---
+          DropdownButtonFormField<String>(
+            value: selectedBank,
+            isExpanded: true,
+            decoration: const InputDecoration(
+              labelText: 'Banco',
+              prefixIcon: Icon(Icons.account_balance),
+              border: OutlineInputBorder(),
+            ),
+            items: bankList
+                .map((b) => DropdownMenuItem(
+                      value: b,
+                      child: Text(b, overflow: TextOverflow.ellipsis),
+                    ))
+                .toList(),
+            onChanged: (val) => setState(() => selectedBank = val),
+          ),
+          const SizedBox(height: 12),
+
+          // --- Teléfono (Prefijo dropdown + número) ---
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                width: 110,
+                child: DropdownButtonFormField<String>(
+                  value: selectedPhonePrefix,
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Prefijo',
+                    border: OutlineInputBorder(),
+                    contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 15),
+                  ),
+                  items: phonePrefixList
+                      .map((p) => DropdownMenuItem(
+                            value: p,
+                            child:
+                                Text(p, overflow: TextOverflow.ellipsis),
+                          ))
+                      .toList(),
+                  onChanged: (val) => setState(() => selectedPhonePrefix = val),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: TextFormField(
+                  controller: paymentPhoneNumberController,
+                  keyboardType: TextInputType.number,
+                  maxLength: 7,
+                  decoration: const InputDecoration(
+                    labelText: 'Número',
+                    prefixIcon: Icon(Icons.phone),
+                    border: OutlineInputBorder(),
+                    counterText: '',
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // --- Cédula / Identificación (Tipo dropdown + número) ---
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                width: 120,
+                child: DropdownButtonFormField<String>(
+                  value: selectedCIType,
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Tipo',
+                    border: OutlineInputBorder(),
+                    contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 15),
+                  ),
+                  items: ciTypeList
+                      .map((t) => DropdownMenuItem(
+                            value: t,
+                            child: Text(
+                              '$t - ${ciTypeLabels[t]}',
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ))
+                      .toList(),
+                  onChanged: (val) => setState(() => selectedCIType = val),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: TextFormField(
+                  controller: paymentCINumberController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Número de Identificación',
+                    prefixIcon: Icon(Icons.badge),
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          TextFormField(
+            controller: priceController,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: const InputDecoration(
+              labelText: 'Precio por Entrada (Bs)',
+              prefixIcon: Icon(Icons.attach_money),
+              border: OutlineInputBorder(),
+            ),
+          ),
 
           const SizedBox(height: 30),
           Center(

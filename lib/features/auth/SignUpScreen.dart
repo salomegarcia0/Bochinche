@@ -1,6 +1,4 @@
 import 'package:bochinche_app/data/auth_service.dart';
-import 'package:bochinche_app/features/auth/LoginScreen.dart';
-import 'package:bochinche_app/features/auth/OrganizadorSignUpScreen.dart';
 import 'package:bochinche_app/features/map/Paginna_Inicio.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';

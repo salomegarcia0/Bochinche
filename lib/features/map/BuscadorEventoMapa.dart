@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 
 class BuscadorEventoMapa extends StatelessWidget
     implements PreferredSizeWidget {
-  const BuscadorEventoMapa({super.key});
+  final VoidCallback? onSearchCode;
+
+  const BuscadorEventoMapa({super.key, this.onSearchCode});
 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
@@ -11,12 +13,14 @@ class BuscadorEventoMapa extends StatelessWidget
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 55.0),
+      // Reducimos el margen inferior para evitar overflow y lo hacemos responsivo
+      margin: const EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 8.0),
       decoration: BoxDecoration(
         color: PrimaryBackGroundPurple,
         borderRadius: BorderRadius.circular(35.0),
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min, // Ajusta al contenido
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -60,14 +64,17 @@ class BuscadorEventoMapa extends StatelessWidget
           ),
           child: TextField(
             scrollPadding: const EdgeInsets.all(8.0),
-            decoration: const InputDecoration(
-              icon: Icon(Icons.search, color: PrimaryPurple),
+            decoration: InputDecoration(
+              prefixIcon: const Icon(Icons.search, color: PrimaryPurple),
+              suffixIcon: IconButton(
+                icon: const Icon(Icons.vpn_key, color: PrimaryPurple),
+                tooltip: 'Buscar evento privado',
+                onPressed: onSearchCode,
+              ),
               hintText: 'Buscar evento',
               border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(vertical: 14.0),
             ),
-            onSubmitted: (value) {
-              // Lógica de búsqueda de eventos
-            },
           ),
         ),
       ),

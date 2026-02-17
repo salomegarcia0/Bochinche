@@ -6,19 +6,21 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:bochinche_app/sources/events/comments_section.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:bochinche_app/features/auth/LoginScreen.dart';
+import 'package:bochinche_app/features/payment/payment_page.dart';
 
 class Mapa extends StatefulWidget implements PreferredSizeWidget {
   const Mapa({super.key});
 
   @override
-  State<Mapa> createState() => _MapaState();
+  State<Mapa> createState() => MapaState();
 
   @override
   Size get preferredSize => const Size.fromHeight(300);
 }
 
-class _MapaState extends State<Mapa> {
+class MapaState extends State<Mapa> {
   final MapController controladormapa = MapController();
+
   IconData getIconoPin(String tipo) {
     switch (tipo) {
       case 'Concierto':
@@ -44,7 +46,6 @@ class _MapaState extends State<Mapa> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: StreamBuilder<QuerySnapshot>(
-        // Escuchamos la colección "lugares"
         stream: FirebaseFirestore.instance.collection('events').snapshots(),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
@@ -54,8 +55,13 @@ class _MapaState extends State<Mapa> {
             return Center(child: CircularProgressIndicator());
           }
 
-          // Mapeamos los documentos a una lista de Marcadores
-          List<Marker> markers = snapshot.data!.docs.map((doc) {
+          // Filtramos eventos privados: no se muestran en el mapa público
+          final publicDocs = snapshot.data!.docs.where((doc) {
+            final d = doc.data() as Map<String, dynamic>;
+            return d['isPrivate'] != true;
+          }).toList();
+
+          List<Marker> markers = publicDocs.map((doc) {
             final data = doc.data() as Map<String, dynamic>;
             final GeoPoint punto = data['location'];
 
@@ -107,6 +113,69 @@ class _MapaState extends State<Mapa> {
         },
       ),
     );
+  }
+
+  /// Abre un evento privado por su ID (código de invitación).
+  Future<void> buscarEventoPrivado(BuildContext context) async {
+    final codeCtrl = TextEditingController();
+    final eventId = await showDialog<String>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Buscar Evento Privado'),
+        content: TextField(
+          controller: codeCtrl,
+          decoration: const InputDecoration(
+            hintText: 'Pega el código de invitación',
+            border: OutlineInputBorder(),
+            prefixIcon: Icon(Icons.vpn_key),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, codeCtrl.text.trim()),
+            child: const Text('Buscar'),
+          ),
+        ],
+      ),
+    );
+    if (eventId == null || eventId.isEmpty) return;
+
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('events')
+          .doc(eventId)
+          .get();
+      if (!doc.exists) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Evento no encontrado. Verifica el código.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+      final data = doc.data() as Map<String, dynamic>;
+      final GeoPoint punto = data['location'];
+      // Centrar mapa en el evento
+      controladormapa.move(LatLng(punto.latitude, punto.longitude), 16);
+      // Mostrar detalles
+      if (mounted) _mostrarDetalles(context, data, doc.id);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al buscar: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   void _mostrarDetalles(
@@ -191,14 +260,17 @@ class _MapaState extends State<Mapa> {
                           );
                           return;
                         }
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Entrada obtenida!')),
+                        // Abrir flujo de pago unificado con datos del evento
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => PaymentPage(eventData: data),
+                          ),
                         );
                       },
                       child: const Text('Comprar entradas'),
                     ),
                     const Divider(),
-                    // CommentsSection maneja lectura/escritura en Firestore y muestra nombre + fecha
                     CommentsSection(eventoId: eventoId),
                     const SizedBox(height: 8),
                   ],
