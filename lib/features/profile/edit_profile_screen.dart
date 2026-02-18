@@ -30,7 +30,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _identificationController = TextEditingController(text: widget.usuario.identification);
   }
 
-  // --- 1. SELECCIONAR IMAGEN ---
+
   Future<void> _pickImage() async {
     final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
@@ -38,17 +38,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 
-  // --- 2. SUBIR A SUPABASE (Función Auxiliar) ---
+  
   Future<String?> _subirImagenASupabase(File imagen) async {
     try {
       final fileName = 'user_${widget.usuario.uid}_${DateTime.now().millisecondsSinceEpoch}.jpg';
       
-      // A. Subir imagen
+     
       await Supabase.instance.client.storage
           .from('profile_images') 
           .upload(fileName, imagen);
 
-      // B. Obtener URL
+     
       final imageUrl = Supabase.instance.client.storage
           .from('profile_images')
           .getPublicUrl(fileName);
@@ -60,20 +60,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 
-  // --- 3. GUARDAR TODO ---
   Future<void> _guardarCambios() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _subiendo = true);
 
     try {
-      // 1. URL actual por defecto
+     
       String? finalImageUrl = widget.usuario.profileImageUrl;
 
-      // 2. ¿Hay imagen nueva seleccionada?
+    
       if (_imageFile != null) {
-        // AQUÍ ES EL CAMBIO CLAVE:
-        // Usamos la función de SUPABASE, no la de Firebase
+        
         String? nuevaUrl = await _subirImagenASupabase(_imageFile!); 
         
         if (nuevaUrl != null) {
@@ -81,7 +79,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         }
       }
 
-      // 3. Actualizamos los datos (Solo texto y link) en Firestore
+      
       UserModel usuarioActualizado = UserModel(
         uid: widget.usuario.uid,
         email: widget.usuario.email,
@@ -107,7 +105,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   // --- UI ---
   @override
   Widget build(BuildContext context) {
-    // Lógica para decidir qué imagen mostrar
+
     ImageProvider? imagenMostrada;
     if (_imageFile != null) {
       imagenMostrada = FileImage(_imageFile!);

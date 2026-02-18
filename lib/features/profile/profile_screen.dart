@@ -91,7 +91,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                   : Column(
                       children: [
                         const SizedBox(height: 20),
-                        // VISTA PRINCIPAL (Foto y Nombre) 
+                        // VISTA PRINCIPAL 
                         CircleAvatar(
                           radius: 50,
                           backgroundColor: SecondaryPurple,
@@ -116,7 +116,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                         ElevatedButton.icon(
                           onPressed: () async {
                             if (_usuario != null) {
-                              // Navega a la pantalla de edición y espera un resultado
+                      
                               final result = await Navigator.push(
                                 context,
                                 MaterialPageRoute(
@@ -124,7 +124,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                                 ),
                               );
                               
-                              // Si se guardaron cambios (result == true), refresca los datos en la pantalla principal
+                              
                               if (result == true) {
                                 _cargarUsuario();
                               }
@@ -170,14 +170,124 @@ class _ProfileScreenState extends State<ProfileScreen>
 
   // Widget temporal para listar eventos
   Widget _buildEventList(String tipo) {
-    return Center(
-      child: Text(
-        "Lista de eventos: $tipo",
-        style: const TextStyle(color: Colors.white70),
-      ),
+    if (_usuario == null) return const SizedBox();
+
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('events')
+         
+          .where('id_organizer', isEqualTo: _usuario!.uid) 
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return const Center(child: Text("Error al cargar", style: TextStyle(color: Colors.white)));
+        }
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        final docs = snapshot.data?.docs ?? [];
+        if (docs.isEmpty) {
+          return const Center(child: Text("No has creado eventos", style: TextStyle(color: Colors.white54)));
+        }
+
+       
+        final eventosFiltrados = docs.where((doc) {
+          final data = doc.data() as Map<String, dynamic>;
+          
+          
+          String? fechaString = data['startDate']; 
+          DateTime fechaEvento = DateTime.now();
+
+          if (fechaString != null) {
+            try {
+              fechaEvento = DateTime.parse(fechaString);
+            } catch (e) {
+              print("Error al parsear fecha: $e");
+            }
+          }
+          
+          if (tipo == "proximos") {
+            return fechaEvento.isAfter(DateTime.now().subtract(const Duration(days: 1)));
+          } else if (tipo == "pasados") {
+            return fechaEvento.isBefore(DateTime.now());
+          } else if (tipo == "privados") {
+            
+            return false; 
+          }
+          return true;
+        }).toList();
+
+        if (eventosFiltrados.isEmpty) {
+          return const Center(
+            child: Text(
+              "No hay eventos en esta sección",
+              style: TextStyle(color: Colors.white54),
+            ),
+          );
+        }
+
+        return ListView.builder(
+          itemCount: eventosFiltrados.length,
+          padding: const EdgeInsets.all(10),
+          itemBuilder: (context, index) {
+            final doc = eventosFiltrados[index];
+            final data = doc.data() as Map<String, dynamic>;
+            
+           
+            final String? imagenUrl = data['image_url']; 
+
+            
+            String fechaTexto = "Sin fecha";
+            if (data['startDate'] != null) {
+              try {
+                DateTime date = DateTime.parse(data['startDate']);
+                
+                fechaTexto = "${date.day}/${date.month}/${date.year}"; 
+              } catch (_) {
+                fechaTexto = data['startDate'].toString();
+              }
+            }
+
+            return Card(
+              color: Colors.white.withOpacity(0.9),
+              margin: const EdgeInsets.only(bottom: 12),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+              child: ListTile(
+                contentPadding: const EdgeInsets.all(10),
+                leading: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: imagenUrl != null && imagenUrl.isNotEmpty
+                      ? Image.network(imagenUrl, width: 60, height: 60, fit: BoxFit.cover)
+                      : Container(
+                          width: 60, height: 60, 
+                          color: PrimaryPurple,
+                          child: const Icon(Icons.event, color: Colors.white),
+                        ),
+                ),
+                
+                title: Text(
+                  data['name'] ?? "Evento sin nombre",
+                  style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black87),
+                ),
+                subtitle: Text(
+                  fechaTexto,
+                  style: const TextStyle(color: Colors.black54),
+                ),
+                trailing: IconButton(
+                  icon: const Icon(Icons.delete_outline, color: Colors.red),
+                  onPressed: () => //_borrarEvento(doc.id),
+                  print("borrar evento")
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }
+
 
 
 
