@@ -1,11 +1,9 @@
 import 'package:bochinche_app/data/auth_service.dart';
-import 'package:bochinche_app/features/auth/LoginScreen.dart';
-import 'package:bochinche_app/features/auth/OrganizadorSignUpScreen.dart';
-import 'package:bochinche_app/features/map/Paginna_Inicio.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/services.dart';
 import 'package:bochinche_app/styles/Color.dart';
+import 'package:bochinche_app/features/authentication/authentication_steps.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -99,7 +97,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       if (user != null && mounted) {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const Pagina_Principal()),
+          MaterialPageRoute(builder: (context) => const Authetication_steps()),
         );
       }
     } catch (error) {

@@ -43,10 +43,8 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  Mapa mapa = const Mapa();
-
   @override
   Widget build(BuildContext context) {
-    return mapa;
+    return Mapa();
   }
 }
