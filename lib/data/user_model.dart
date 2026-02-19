@@ -2,7 +2,7 @@ class UserModel {
   final String uid;
   final String email;
   final String nombre;
-  final String identification; //documento
+  final String cedula; //documento
   final String telefono;
   final String? profileImageUrl;
 
@@ -10,7 +10,7 @@ class UserModel {
     required this.uid,
     required this.email,
     required this.nombre,
-    required this.identification,
+    required this.cedula,
     required this.telefono,
     this.profileImageUrl,
   });
@@ -20,7 +20,7 @@ class UserModel {
       uid: uid,
       email: map['email'] ?? '',
       nombre: map['nombre'] ?? '',
-      identification: map['cedula'] ?? '',
+      cedula: map['cedula'] ?? '',
       telefono: map['telefono'] ?? '',
       profileImageUrl: map['profileImageUrl'],
     );
@@ -29,7 +29,7 @@ class UserModel {
     return {
       'email': email,
       'nombre': nombre,
-      'cedula': identification,
+      'cedula': cedula,
       'telefono': telefono,
       'profileImageUrl': profileImageUrl,
     };

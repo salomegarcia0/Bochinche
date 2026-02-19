@@ -22,6 +22,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   @override
   void initState() {
     super.initState();
+    // CAMBIO: Ahora son 3 pestañas (Por Realizar, Realizados, Privados)
     _tabController = TabController(length: 3, vsync: this);
     _cargarUsuario();
   }
@@ -42,7 +43,7 @@ class _ProfileScreenState extends State<ProfileScreen>
           });
         }
       } catch (e) {
-        print("Error al obtener datos: $e");
+        debugPrint("Error al obtener datos: $e");
         if (mounted) setState(() => _cargando = false);
       }
     }
@@ -56,6 +57,153 @@ class _ProfileScreenState extends State<ProfileScreen>
         MaterialPageRoute(builder: (context) => const LoginScreen()),
       );
     }
+  }
+
+  // ----------------------------------------------------------------------
+  // LÓGICA DE ESTADOS Y FECHAS
+  // ----------------------------------------------------------------------
+  
+  DateTime _getFechaExacta(Map<String, dynamic> data) {
+    try {
+      String? fechaString = data['startDate'];
+      DateTime fechaBase = fechaString != null 
+          ? DateTime.parse(fechaString) 
+          : DateTime.now();
+
+      if (data['startTime'] != null && data['startTime'] is Map) {
+        int hora = data['startTime']['hour'] ?? 0;
+        int minuto = data['startTime']['minute'] ?? 0;
+        return DateTime(fechaBase.year, fechaBase.month, fechaBase.day, hora, minuto);
+      }
+      return fechaBase;
+    } catch (e) {
+      return DateTime.now();
+    }
+  }
+
+  // Calcula si está Finalizado o Próximo según la hora actual
+  String _calcularEstado(Map<String, dynamic> data) {
+    DateTime inicio = _getFechaExacta(data);
+    DateTime ahora = DateTime.now();
+
+    if (ahora.isAfter(inicio)) {
+      return "Finalizado";
+    } else {
+      return "Próximo";
+    }
+  }
+  
+  Color _colorEstado(String estado) {
+    if (estado == "Finalizado") return Colors.grey;
+    return const Color.fromARGB(255, 88, 24, 100); // Próximo
+  }
+
+  // ----------------------------------------------------------------------
+  // MODAL DE DETALLES
+  // ----------------------------------------------------------------------
+  void _mostrarDetalleEvento(Map<String, dynamic> data) {
+    // Calculamos estado al momento de abrir
+    String estadoReal = _calcularEstado(data);
+    Color colorEstado = _colorEstado(estadoReal);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(25.0)),
+      ),
+      builder: (context) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.5,
+          minChildSize: 0.3,
+          maxChildSize: 0.9,
+          expand: false,
+          builder: (context, scrollController) {
+            return SingleChildScrollView(
+              controller: scrollController,
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 50,
+                      height: 5,
+                      decoration: BoxDecoration(
+                          color: Colors.grey[300],
+                          borderRadius: BorderRadius.circular(10)),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  // Título
+                  Text(
+                    data['name'] ?? "Evento sin nombre",
+                    style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: PrimaryPurple),
+                  ),
+                  const SizedBox(height: 10),
+                  // Imagen grande
+                  if (data['image_url'] != null)
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(15),
+                      child: Image.network(data['image_url'],
+                          width: double.infinity, height: 200, fit: BoxFit.cover),
+                    ),
+                  const SizedBox(height: 20),
+                  
+                  // Detalles
+                  _infoRow(Icons.description, "Descripción", data['description'] ?? "Sin descripción"),
+                  _infoRow(Icons.location_on, "Ubicación", data['address'] ?? "No especificada"),
+                  _infoRow(Icons.people, "Aforo", "${data['capacity'] ?? '?'} personas"),
+                  _infoRow(Icons.phone, "Contacto", data['contact'] ?? "No disponible"),
+                  _infoRow(Icons.category, "Tipo", data['type'] ?? "General"),
+                  
+                  // Estado del evento (CALCULADO)
+                  const SizedBox(height: 20),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: colorEstado.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      "Estado: $estadoReal",
+                      style: TextStyle(
+                          color: colorEstado, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _infoRow(IconData icon, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: SecondaryPurple, size: 20),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black54)),
+                Text(value, style: const TextStyle(fontSize: 16)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -85,13 +233,11 @@ class _ProfileScreenState extends State<ProfileScreen>
               ? const Center(
                   child: CircularProgressIndicator(color: SecondaryPurple))
               : _usuario == null
-                  ? const Center(
-                      child: Text("Error al cargar perfil",
-                          style: TextStyle(color: Colors.white)))
+                  ? const Center(child: Text("Error al cargar perfil"))
                   : Column(
                       children: [
                         const SizedBox(height: 20),
-                        // VISTA PRINCIPAL 
+                        // --- FOTO Y NOMBRE ---
                         CircleAvatar(
                           radius: 50,
                           backgroundColor: SecondaryPurple,
@@ -112,22 +258,18 @@ class _ProfileScreenState extends State<ProfileScreen>
                               fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 15),
-                        // BOTON PARA EDITAR
+
+                        // --- BOTÓN EDITAR ---
                         ElevatedButton.icon(
                           onPressed: () async {
                             if (_usuario != null) {
-                      
                               final result = await Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => EditProfileScreen(usuario: _usuario!),
-                                ),
+                                    builder: (context) =>
+                                        EditProfileScreen(usuario: _usuario!)),
                               );
-                              
-                              
-                              if (result == true) {
-                                _cargarUsuario();
-                              }
+                              if (result == true) _cargarUsuario();
                             }
                           },
                           icon: const Icon(Icons.edit,
@@ -138,7 +280,8 @@ class _ProfileScreenState extends State<ProfileScreen>
                               backgroundColor: SecondaryPurple),
                         ),
                         const SizedBox(height: 20),
-                        // PESTAÑAS (Eventos)
+
+                        // --- PESTAÑAS (3 TABS) ---
                         TabBar(
                           controller: _tabController,
                           labelColor: SecondaryPurple,
@@ -150,7 +293,8 @@ class _ProfileScreenState extends State<ProfileScreen>
                             Tab(text: "Privados"),
                           ],
                         ),
-                        // CONTENIDO DE PESTAÑAS
+
+                        // --- LISTAS ---
                         Expanded(
                           child: TabBarView(
                             controller: _tabController,
@@ -168,62 +312,71 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
-  // Widget temporal para listar eventos
+  // ----------------------------------------------------------------------
+  // CONSTRUCCIÓN DE LA LISTA INTELIGENTE
+  // ----------------------------------------------------------------------
   Widget _buildEventList(String tipo) {
     if (_usuario == null) return const SizedBox();
 
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
           .collection('events')
-         
-          .where('id_organizer', isEqualTo: _usuario!.uid) 
+          .where('id_organizer', isEqualTo: _usuario!.uid)
           .snapshots(),
       builder: (context, snapshot) {
-        if (snapshot.hasError) {
-          return const Center(child: Text("Error al cargar", style: TextStyle(color: Colors.white)));
-        }
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
 
         final docs = snapshot.data?.docs ?? [];
         if (docs.isEmpty) {
-          return const Center(child: Text("No has creado eventos", style: TextStyle(color: Colors.white54)));
+          return const Center(
+              child: Text("No has creado eventos",
+                  style: TextStyle(color: Colors.white54)));
         }
 
-       
+        // --- FILTRADO EN EL CLIENTE ---
         final eventosFiltrados = docs.where((doc) {
           final data = doc.data() as Map<String, dynamic>;
           
-          
-          String? fechaString = data['startDate']; 
-          DateTime fechaEvento = DateTime.now();
+          DateTime fechaEvento = _getFechaExacta(data);
+          DateTime ahora = DateTime.now();
+          bool esPrivado = (data['type'] == 'Privado');
 
-          if (fechaString != null) {
-            try {
-              fechaEvento = DateTime.parse(fechaString);
-            } catch (e) {
-              print("Error al parsear fecha: $e");
+          // Lógica de Pestañas:
+          if (tipo == "privados") {
+            // Pestaña Privados: SOLO muestra privados (futuros o pasados)
+            return esPrivado;
+          } else {
+            // Pestañas Públicas: NO mostrar privados
+            if (esPrivado) return false;
+
+            // Filtro de tiempo para públicos
+            if (tipo == "proximos") {
+              return fechaEvento.isAfter(ahora);
+            } else if (tipo == "pasados") {
+              return fechaEvento.isBefore(ahora);
             }
           }
+          return false;
+        }).toList();
+
+        // --- ORDENAMIENTO ---
+        eventosFiltrados.sort((a, b) {
+          DateTime fechaA = _getFechaExacta(a.data() as Map<String, dynamic>);
+          DateTime fechaB = _getFechaExacta(b.data() as Map<String, dynamic>);
           
           if (tipo == "proximos") {
-            return fechaEvento.isAfter(DateTime.now().subtract(const Duration(days: 1)));
-          } else if (tipo == "pasados") {
-            return fechaEvento.isBefore(DateTime.now());
-          } else if (tipo == "privados") {
-            
-            return false; 
+            return fechaA.compareTo(fechaB); // Ascendente (más cercano primero)
+          } else {
+            return fechaB.compareTo(fechaA); // Descendente (más reciente primero)
           }
-          return true;
-        }).toList();
+        });
 
         if (eventosFiltrados.isEmpty) {
           return const Center(
-            child: Text(
-              "No hay eventos en esta sección",
-              style: TextStyle(color: Colors.white54),
-            ),
+            child: Text("Sin eventos en esta lista",
+                style: TextStyle(color: Colors.white54)),
           );
         }
 
@@ -233,51 +386,57 @@ class _ProfileScreenState extends State<ProfileScreen>
           itemBuilder: (context, index) {
             final doc = eventosFiltrados[index];
             final data = doc.data() as Map<String, dynamic>;
+            final String? imagenUrl = data['image_url'];
             
-           
-            final String? imagenUrl = data['image_url']; 
+            DateTime fechaExacta = _getFechaExacta(data);
+            String fechaTexto = "${fechaExacta.day}/${fechaExacta.month}/${fechaExacta.year}";
+            String horaTexto = "${fechaExacta.hour}:${fechaExacta.minute.toString().padLeft(2, '0')}";
 
-            
-            String fechaTexto = "Sin fecha";
-            if (data['startDate'] != null) {
-              try {
-                DateTime date = DateTime.parse(data['startDate']);
-                
-                fechaTexto = "${date.day}/${date.month}/${date.year}"; 
-              } catch (_) {
-                fechaTexto = data['startDate'].toString();
-              }
-            }
+            // Estado visual calculado
+            String estadoReal = _calcularEstado(data);
+            Color colorEstado = _colorEstado(estadoReal);
 
             return Card(
-              color: Colors.white.withOpacity(0.9),
+              color: Colors.white.withOpacity(0.95),
               margin: const EdgeInsets.only(bottom: 12),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
               child: ListTile(
                 contentPadding: const EdgeInsets.all(10),
+                onTap: () => _mostrarDetalleEvento(data), 
                 leading: ClipRRect(
                   borderRadius: BorderRadius.circular(8),
                   child: imagenUrl != null && imagenUrl.isNotEmpty
                       ? Image.network(imagenUrl, width: 60, height: 60, fit: BoxFit.cover)
                       : Container(
-                          width: 60, height: 60, 
+                          width: 60, height: 60,
                           color: PrimaryPurple,
-                          child: const Icon(Icons.event, color: Colors.white),
+                          child: Icon(
+                            data['type'] == 'Privado' ? Icons.lock : Icons.event, 
+                            color: Colors.white
+                          ),
                         ),
                 ),
-                
                 title: Text(
                   data['name'] ?? "Evento sin nombre",
                   style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black87),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                subtitle: Text(
-                  fechaTexto,
-                  style: const TextStyle(color: Colors.black54),
-                ),
-                trailing: IconButton(
-                  icon: const Icon(Icons.delete_outline, color: Colors.red),
-                  onPressed: () => //_borrarEvento(doc.id),
-                  print("borrar evento")
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text("$fechaTexto - $horaTexto", style: const TextStyle(color: Colors.black54)),
+                    Row(
+                      children: [
+                        Text("Estado: $estadoReal", 
+                             style: TextStyle(color: colorEstado, fontSize: 12, fontWeight: FontWeight.bold)),
+                        const SizedBox(width: 8),
+                        if (data['type'] == 'Privado')
+                           const Text("• PRIVADO", 
+                             style: TextStyle(color: Colors.red, fontSize: 10, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                  ],
                 ),
               ),
             );

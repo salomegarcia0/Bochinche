@@ -27,7 +27,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     super.initState();
     _nameController = TextEditingController(text: widget.usuario.nombre);
     _phoneController = TextEditingController(text: widget.usuario.telefono);
-    _identificationController = TextEditingController(text: widget.usuario.identification);
+    _identificationController = TextEditingController(text: widget.usuario.cedula);
   }
 
 
@@ -84,7 +84,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         uid: widget.usuario.uid,
         email: widget.usuario.email,
         nombre: _nameController.text,
-        identification: _identificationController.text,
+        cedula: _identificationController.text,
         telefono: _phoneController.text,
         profileImageUrl: finalImageUrl,
       );
