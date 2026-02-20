@@ -60,6 +60,7 @@ class _FormCreateEventState extends State<FormCreateEvent> {
   TimeOfDay hora1select = firtTimeHour;
   TimeOfDay hora2select = lastTimeHour;
   TimeOfDay hora1 = TimeOfDay.now();
+  bool isPrivateLocal = false;
 
   Future<void> fechaselect2(BuildContext context) async {
     DateTime? date = await showDatePicker(
@@ -152,6 +153,42 @@ class _FormCreateEventState extends State<FormCreateEvent> {
           TextFormField(
             controller: contactoController,
             validator: validateName,
+          ),
+
+          const SizedBox(height: 15),
+          
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+              color: isPrivateLocal ? Colors.purple.withOpacity(0.1) : Colors.grey.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: isPrivateLocal ? PrimaryPurple : Colors.grey),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildLabel('Evento Privado'),
+                    Text(
+                      isPrivateLocal ? "Solo con código" : "Visible para todos",
+                      style: TextStyle(fontSize: 12, color: Colors.grey[700]),
+                    ),
+                  ],
+                ),
+                Switch(
+                  activeColor: PrimaryPurple,
+                  value: isPrivateLocal,
+                  onChanged: (bool value) {
+                    setState(() {
+                      isPrivateLocal = value;
+                      isPrivate = value; // Actualizamos la variable global
+                    });
+                  },
+                ),
+              ],
+            ),
           ),
 
           const SizedBox(height: 15),
@@ -633,6 +670,7 @@ class _FormCreateEvent2State extends State<FormCreateEvent2> {
   TimeOfDay hora1select = TimeOfDay.now();
   TimeOfDay hora2select = TimeOfDay.now();
   TimeOfDay hora1 = TimeOfDay.now();
+  bool isPrivateLocal = false;
 
   Future<void> fechaselect2(BuildContext context) async {
     DateTime? date = await showDatePicker(
@@ -709,6 +747,43 @@ class _FormCreateEvent2State extends State<FormCreateEvent2> {
           TextFormField(
             controller: contactoController,
             validator: validateName,
+          ),
+
+          const SizedBox(height: 15),
+          
+          // --- 3. AGREGAMOS EL SWITCH DE PRIVACIDAD AQUÍ ---
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+              color: isPrivateLocal ? Colors.purple.withOpacity(0.1) : Colors.grey.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: isPrivateLocal ? PrimaryPurple : Colors.grey),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildLabel('Evento Privado'),
+                    Text(
+                      isPrivateLocal ? "Privado (Solo con invitación)" : "Público (Visible para todos)",
+                      style: TextStyle(fontSize: 12, color: Colors.grey[700]),
+                    ),
+                  ],
+                ),
+                Switch(
+                  activeColor: PrimaryPurple,
+                  value: isPrivateLocal,
+                  onChanged: (bool value) {
+                    setState(() {
+                      isPrivateLocal = value;
+                      isPrivate = value; 
+                    });
+                  },
+                ),
+              ],
+            ),
           ),
 
           const SizedBox(height: 15),
@@ -923,6 +998,37 @@ class _DetalleEventoState extends State<DetalleEvento> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
+
+                  const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: (data['isPrivate'] ?? false) ? Colors.red[50] : Colors.green[50],
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: (data['isPrivate'] ?? false) ? Colors.red : Colors.green,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            (data['isPrivate'] ?? false) ? Icons.lock_outline : Icons.public,
+                            size: 16,
+                            color: (data['isPrivate'] ?? false) ? Colors.red : Colors.green,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            (data['isPrivate'] ?? false) ? 'EVENTO PRIVADO' : 'EVENTO PÚBLICO',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: (data['isPrivate'] ?? false) ? Colors.red : Colors.green,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   const SizedBox(height: 8),
                   Text(
                     'Organizador: ${data['organizer'] ?? 'N/A'}',

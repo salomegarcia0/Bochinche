@@ -23,6 +23,7 @@ var idmod;
 
 double latitudC = 0.0;
 double longitudC = 0.0;
+bool isPrivate = false;
 
 String? validateName(String? r) {
   if (r != '' || r!.isNotEmpty) {
@@ -120,6 +121,7 @@ Future<void> createEvent(BuildContext context) async {
       'id_organizer': FirebaseAuth.instance.currentUser!.uid,
       'description': descripcionController.text,
       'capacity': aforoController.text,
+      'isPrivate': isPrivate,
       'startDate': fecha1!.toIso8601String(),
       'endDate': fecha2!.toIso8601String(),
       'startTime': {'hour': firtTimeHour.hour, 'minute': firtTimeHour.minute},
@@ -154,6 +156,7 @@ void clearAllFields() {
   contactoController.clear();
   descripcionController.clear();
   aforoController.clear();
+  isPrivate = false;
   fecha1C.clear();
   fecha2C.clear();
   typeC = null;
@@ -203,6 +206,7 @@ Future<void> cargarDatosEvento(String idDocumento) async {
       contactoController.text = data['contact'] ?? '';
       descripcionController.text = data['description'] ?? '';
       aforoController.text = data['capacity'] ?? '';
+      isPrivate = data['isPrivate'] ?? false;
     } else {
       print("El documento con id $idDocumento no existe");
     }
@@ -237,6 +241,7 @@ Future<void> modifyEvent(BuildContext context, String id) async {
         'state': stateC ?? 'Próximo',
         'description': descripcionController.text,
         'capacity': aforoController.text,
+        'isPrivate': isPrivate,
       });
 
       // Mostrar mensaje de éxito
