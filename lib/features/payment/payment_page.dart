@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class PaymentPage extends StatefulWidget {
   /// Datos del evento desde Firestore. Contiene 'paymentInfo', 'name', etc.
   final Map<String, dynamic>? eventData;
 
-  const PaymentPage({super.key, this.eventData});
+  /// ID del documento del evento en Firestore.
+  final String eventId;
+
+  const PaymentPage({super.key, this.eventData, required this.eventId});
 
   @override
   State<PaymentPage> createState() => _PaymentPageState();
@@ -13,6 +18,11 @@ class PaymentPage extends StatefulWidget {
 
 class _PaymentPageState extends State<PaymentPage> {
   int quantity = 1;
+
+  // Capacidad y entradas vendidas (leídas del eventData)
+  int _capacity = 0;
+  int _ticketsSold = 0;
+  int get _remaining => (_capacity - _ticketsSold).clamp(0, _capacity);
 
   final TextEditingController _refCtrl = TextEditingController();
   bool _loading = false;
@@ -37,6 +47,12 @@ class _PaymentPageState extends State<PaymentPage> {
     final d = widget.eventData;
     if (d == null) return;
     _eventName = d['name'] ?? 'Evento';
+    _capacity = d['capacity'] is int
+        ? d['capacity'] as int
+        : int.tryParse(d['capacity']?.toString() ?? '0') ?? 0;
+    _ticketsSold = (d['ticketsSold'] ?? 0) as int;
+    // Aseguramos que quantity no supere los lugares disponibles
+    quantity = quantity.clamp(1, _remaining > 0 ? _remaining : 1);
     final pi = d['paymentInfo'] as Map<String, dynamic>?;
     if (pi != null) {
       _bankName = (pi['bank'] as String?)?.isNotEmpty == true
@@ -94,18 +110,66 @@ class _PaymentPageState extends State<PaymentPage> {
     final ok = await _verifyMockPayment(ref);
 
     if (!mounted) return;
-    setState(() => _loading = false);
 
     if (!ok) {
+      setState(() => _loading = false);
       _showMessage('Pago rechazado (código de prueba 0000).', isError: true);
       return;
     }
 
-    final total = _price * quantity;
-    await _showMessage(
-      'Pago confirmado.\nReferencia: $ref\nEntradas: $quantity\nTotal: ${total.toStringAsFixed(2)} Bs',
-    );
-    if (mounted) Navigator.popUntil(context, (route) => route.isFirst);
+    // Guardar en Firestore de forma atómica
+    try {
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid == null) throw Exception('Usuario no autenticado');
+
+      final eventRef = FirebaseFirestore.instance
+          .collection('events')
+          .doc(widget.eventId);
+      final userTicketsRef = FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .collection('tickets')
+          .doc();
+
+      await FirebaseFirestore.instance.runTransaction((txn) async {
+        final eventSnap = await txn.get(eventRef);
+        final currentSold = (eventSnap.data()?['ticketsSold'] ?? 0) as int;
+        final rawCap = eventSnap.data()?['capacity'];
+        final cap = rawCap is int ? rawCap : int.tryParse(rawCap?.toString() ?? '0') ?? 0;
+
+        if (currentSold + quantity > cap) {
+          throw Exception('No hay suficientes entradas disponibles.');
+        }
+
+        // Incrementar entradas vendidas en el evento
+        txn.update(eventRef, {
+          'ticketsSold': FieldValue.increment(quantity),
+        });
+
+        // Guardar la compra en el perfil del usuario
+        txn.set(userTicketsRef, {
+          'eventId': widget.eventId,
+          'eventName': _eventName,
+          'quantity': quantity,
+          'totalPaid': _price * quantity,
+          'reference': ref,
+          'purchasedAt': FieldValue.serverTimestamp(),
+        });
+      });
+
+      if (!mounted) return;
+      setState(() => _loading = false);
+
+      final total = _price * quantity;
+      await _showMessage(
+        'Pago confirmado.\nReferencia: $ref\nEntradas: $quantity\nTotal: ${total.toStringAsFixed(2)} Bs',
+      );
+      if (mounted) Navigator.popUntil(context, (route) => route.isFirst);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _loading = false);
+      _showMessage('Error al guardar el pago: $e', isError: true);
+    }
   }
 
   Future<bool> _verifyMockPayment(String ref) async {
@@ -180,7 +244,10 @@ class _PaymentPageState extends State<PaymentPage> {
                               ),
                             ),
                             IconButton(
-                              onPressed: () => setState(() => quantity++),
+                              // Limitar al máximo de entradas disponibles
+                              onPressed: (_remaining == 0 || quantity >= _remaining)
+                                  ? null
+                                  : () => setState(() => quantity++),
                               icon: const Icon(Icons.add),
                               color: theme.primaryColor,
                             ),

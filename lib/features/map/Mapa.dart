@@ -248,27 +248,42 @@ class MapaState extends State<Mapa> {
                     const SizedBox(height: 8),
                     Text('Estado: ${data['state']}'),
                     const SizedBox(height: 12),
-                    ElevatedButton(
-                      onPressed: () {
-                        if (FirebaseAuth.instance.currentUser == null) {
-                          Navigator.pop(context);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const LoginScreen(),
-                            ),
-                          );
-                          return;
-                        }
-                        // Abrir flujo de pago unificado con datos del evento
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => PaymentPage(eventData: data),
-                          ),
+                    Builder(
+                      builder: (context) {
+                        final int sold = data['ticketsSold'] ?? 0;
+                        final int cap = data['capacity'] is int
+                            ? data['capacity'] as int
+                            : int.tryParse(data['capacity']?.toString() ?? '0') ?? 0;
+                        final bool isAgotado = sold >= cap;
+
+                        return ElevatedButton(
+                          onPressed: isAgotado
+                              ? null
+                              : () {
+                                  if (FirebaseAuth.instance.currentUser == null) {
+                                    Navigator.pop(context);
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => const LoginScreen(),
+                                      ),
+                                    );
+                                    return;
+                                  }
+                                  // Abrir flujo de pago unificado con datos del evento
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => PaymentPage(
+                                        eventData: data,
+                                        eventId: eventoId,
+                                      ),
+                                    ),
+                                  );
+                                },
+                          child: Text(isAgotado ? 'Agotado' : 'Comprar entradas'),
                         );
                       },
-                      child: const Text('Comprar entradas'),
                     ),
                     const Divider(),
                     CommentsSection(eventoId: eventoId),

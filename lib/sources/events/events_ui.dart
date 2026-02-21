@@ -711,16 +711,25 @@ class _MyEventsState extends State<MyEvents> {
                                 const SizedBox(height: 10),
                               ],
                               ElevatedButton.icon(
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => PaymentPage(eventData: i),
-                                    ),
-                                  );
-                                },
+                                onPressed: (int.tryParse(i['capacity']?.toString() ?? '0') ?? 0) <= (i['ticketsSold'] ?? 0)
+                                    ? null
+                                    : () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => PaymentPage(
+                                              eventData: i,
+                                              eventId: i['id'],
+                                            ),
+                                          ),
+                                        );
+                                      },
                                 icon: const Icon(Icons.payment),
-                                label: const Text('Pagar (demo)'),
+                                label: Text(
+                                  (int.tryParse(i['capacity']?.toString() ?? '0') ?? 0) <= (i['ticketsSold'] ?? 0)
+                                      ? 'Agotado'
+                                      : 'Pagar',
+                                ),
                               ),
                               const SizedBox(height: 10),
                               ElevatedButton(
