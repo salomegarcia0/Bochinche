@@ -19,6 +19,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   late TextEditingController _nameController;
   late TextEditingController _phoneController;
   late TextEditingController _identificationController;
+  late TextEditingController _emailController;
   File? _imageFile;
   bool _subiendo = false;
 
@@ -28,6 +29,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _nameController = TextEditingController(text: widget.usuario.nombre);
     _phoneController = TextEditingController(text: widget.usuario.telefono);
     _identificationController = TextEditingController(text: widget.usuario.cedula);
+    _emailController = TextEditingController(text: widget.usuario.email);
   }
 
 
@@ -144,8 +146,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     
                     // --- CAMPOS ---
                     _buildTextField(_nameController, "Nombre / Razón Social", Icons.person),
-                    _buildTextField(_identificationController, "Cédula / RIF", Icons.badge),
+                    _buildTextField(_identificationController, "Cédula / RIF", Icons.badge, TextInputType.text, true),
                     _buildTextField(_phoneController, "Teléfono", Icons.phone, TextInputType.phone),
+                    _buildTextField(_emailController, "Correo Electrónico", Icons.email, TextInputType.emailAddress, true),
                     
                     const SizedBox(height: 30),
                     
@@ -165,12 +168,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
-  Widget _buildTextField(TextEditingController controller, String label, IconData icon, [TextInputType keyboardType = TextInputType.text]) {
+  Widget _buildTextField(TextEditingController controller, String label, IconData icon, [TextInputType keyboardType = TextInputType.text, bool readOnly = false]) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10),
       child: TextFormField(
         controller: controller,
         keyboardType: keyboardType,
+        readOnly: readOnly,
         style: const TextStyle(color: Colors.white),
         decoration: InputDecoration(
           labelText: label,

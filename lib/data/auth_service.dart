@@ -45,7 +45,6 @@ class AuthService {
     required String name,
     required String rol,
     String? cedula,
-    String? rif,
     String? phone,
   }) async {
     try {
@@ -68,13 +67,8 @@ class AuthService {
         'rol': rol,
         'telefono': phone,
         'fecha_creacion': FieldValue.serverTimestamp(),
+        'cedula': cedula,
       };
-
-      if (rol == 'organizador') {
-        userData['rif'] = rif;
-      } else {
-        userData['cedula'] = cedula;
-      }
 
       await _firestore.collection('users').doc(uid).set(userData);
       return credential.user;
