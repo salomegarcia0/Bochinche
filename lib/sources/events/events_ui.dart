@@ -354,7 +354,7 @@ class _FormCreateEventState extends State<FormCreateEvent> {
                   : 'Visible para todos en el mapa',
             ),
             value: isPrivateC,
-            activeColor: PrimaryPurple,
+            activeThumbColor: PrimaryPurple,
             secondary: Icon(
               isPrivateC ? Icons.lock : Icons.public,
               color: isPrivateC ? PrimaryPurple : Colors.grey,
@@ -375,7 +375,7 @@ class _FormCreateEventState extends State<FormCreateEvent> {
           const SizedBox(height: 12),
           // --- Banco (Dropdown) ---
           DropdownButtonFormField<String>(
-            value: selectedBank,
+            initialValue: selectedBank,
             isExpanded: true,
             decoration: const InputDecoration(
               labelText: 'Banco',
@@ -399,7 +399,7 @@ class _FormCreateEventState extends State<FormCreateEvent> {
               SizedBox(
                 width: 110,
                 child: DropdownButtonFormField<String>(
-                  value: selectedPhonePrefix,
+                  initialValue: selectedPhonePrefix,
                   isExpanded: true,
                   decoration: const InputDecoration(
                     labelText: 'Prefijo',
@@ -441,7 +441,7 @@ class _FormCreateEventState extends State<FormCreateEvent> {
               SizedBox(
                 width: 120,
                 child: DropdownButtonFormField<String>(
-                  value: selectedCIType,
+                  initialValue: selectedCIType,
                   isExpanded: true,
                   decoration: const InputDecoration(
                     labelText: 'Tipo',
@@ -945,7 +945,7 @@ class _FormCreateEvent2State extends State<FormCreateEvent2> {
           const SizedBox(height: 12),
           // --- Banco (Dropdown) ---
           DropdownButtonFormField<String>(
-            value: selectedBank,
+            initialValue: selectedBank,
             isExpanded: true,
             decoration: const InputDecoration(
               labelText: 'Banco',
@@ -969,7 +969,7 @@ class _FormCreateEvent2State extends State<FormCreateEvent2> {
               SizedBox(
                 width: 110,
                 child: DropdownButtonFormField<String>(
-                  value: selectedPhonePrefix,
+                  initialValue: selectedPhonePrefix,
                   isExpanded: true,
                   decoration: const InputDecoration(
                     labelText: 'Prefijo',
@@ -1011,7 +1011,7 @@ class _FormCreateEvent2State extends State<FormCreateEvent2> {
               SizedBox(
                 width: 120,
                 child: DropdownButtonFormField<String>(
-                  value: selectedCIType,
+                  initialValue: selectedCIType,
                   isExpanded: true,
                   decoration: const InputDecoration(
                     labelText: 'Tipo',

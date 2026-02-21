@@ -11,7 +11,6 @@ class Pagina_Principal extends StatefulWidget {
 }
 
 class _Pagina_PrincipalState extends State<Pagina_Principal> {
-  // Key para acceder al estado del Mapa
   final GlobalKey<MapaState> _mapaKey = GlobalKey<MapaState>();
 
   @override
@@ -24,7 +23,6 @@ class _Pagina_PrincipalState extends State<Pagina_Principal> {
         appBar: const BochincheAppBar(),
         body: Stack(
           children: [
-            // Pasamos la key al widget Mapa
             Mapa(key: _mapaKey),
             Align(
               alignment: Alignment.bottomCenter,

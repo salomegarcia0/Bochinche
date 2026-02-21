@@ -17,12 +17,13 @@ Future<void> main() async {
   debugPrint("Conectado a Firebase: ${Firebase.app().name}");
 
   await Supabase.initialize(
-    url: 'https://mnsffmoscncicppdmumh.supabase.co', 
-    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1uc2ZmbW9zY25jaWNwcGRtdW1oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEzNTEzNzIsImV4cCI6MjA4NjkyNzM3Mn0.OMfxVszd2T-dKTq-fncwGfvzRNLbtR0JxO2Hm_zjDVE', 
+    url: 'https://mnsffmoscncicppdmumh.supabase.co',
+    anonKey:
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1uc2ZmbW9zY25jaWNwcGRtdW1oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEzNTEzNzIsImV4cCI6MjA4NjkyNzM3Mn0.OMfxVszd2T-dKTq-fncwGfvzRNLbtR0JxO2Hm_zjDVE',
   );
 
   debugPrint("Sistemas iniciados correctamente: Firebase y Supabase");
-  
+
   runApp(const MyApp());
 }
 
