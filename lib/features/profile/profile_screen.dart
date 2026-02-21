@@ -341,7 +341,7 @@ class _ProfileScreenState extends State<ProfileScreen>
           
           DateTime fechaEvento = _getFechaExacta(data);
           DateTime ahora = DateTime.now();
-          bool esPrivado = (data['type'] == 'Privado');
+          bool esPrivado = data['isPrivate'] ?? false;
 
           // Lógica de Pestañas:
           if (tipo == "privados") {
@@ -395,6 +395,7 @@ class _ProfileScreenState extends State<ProfileScreen>
             // Estado visual calculado
             String estadoReal = _calcularEstado(data);
             Color colorEstado = _colorEstado(estadoReal);
+            bool esPrivado = data['isPrivate'] ?? false; 
 
             return Card(
               color: Colors.white.withOpacity(0.95),
@@ -411,7 +412,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                           width: 60, height: 60,
                           color: PrimaryPurple,
                           child: Icon(
-                            data['type'] == 'Privado' ? Icons.lock : Icons.event, 
+                            esPrivado ? Icons.lock : Icons.event, 
                             color: Colors.white
                           ),
                         ),
