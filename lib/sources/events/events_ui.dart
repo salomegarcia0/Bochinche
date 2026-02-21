@@ -62,7 +62,6 @@ class _FormCreateEventState extends State<FormCreateEvent> {
   TimeOfDay hora1select = firtTimeHour;
   TimeOfDay hora2select = lastTimeHour;
   TimeOfDay hora1 = TimeOfDay.now();
-  bool isPrivateLocal = false;
 
   Future<void> fechaselect2(BuildContext context) async {
     DateTime? date = await showDatePicker(
@@ -158,40 +157,6 @@ class _FormCreateEventState extends State<FormCreateEvent> {
           ),
 
           const SizedBox(height: 15),
-          
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            decoration: BoxDecoration(
-              color: isPrivateLocal ? Colors.purple.withOpacity(0.1) : Colors.grey.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: isPrivateLocal ? PrimaryPurple : Colors.grey),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildLabel('Evento Privado'),
-                    Text(
-                      isPrivateLocal ? "Solo con código" : "Visible para todos",
-                      style: TextStyle(fontSize: 12, color: Colors.grey[700]),
-                    ),
-                  ],
-                ),
-                Switch(
-                  activeColor: PrimaryPurple,
-                  value: isPrivateLocal,
-                  onChanged: (bool value) {
-                    setState(() {
-                      isPrivateLocal = value;
-                      isPrivate = value; // Actualizamos la variable global
-                    });
-                  },
-                ),
-              ],
-            ),
-          ),
 
           const SizedBox(height: 15),
           _buildLabel('Aforo'),
@@ -947,41 +912,7 @@ class _FormCreateEvent2State extends State<FormCreateEvent2> {
           ),
 
           const SizedBox(height: 15),
-          
-          // --- 3. AGREGAMOS EL SWITCH DE PRIVACIDAD AQUÍ ---
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            decoration: BoxDecoration(
-              color: isPrivateLocal ? Colors.purple.withOpacity(0.1) : Colors.grey.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: isPrivateLocal ? PrimaryPurple : Colors.grey),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildLabel('Evento Privado'),
-                    Text(
-                      isPrivateLocal ? "Privado (Solo con invitación)" : "Público (Visible para todos)",
-                      style: TextStyle(fontSize: 12, color: Colors.grey[700]),
-                    ),
-                  ],
-                ),
-                Switch(
-                  activeColor: PrimaryPurple,
-                  value: isPrivateLocal,
-                  onChanged: (bool value) {
-                    setState(() {
-                      isPrivateLocal = value;
-                      isPrivate = value; 
-                    });
-                  },
-                ),
-              ],
-            ),
-          ),
+        
 
           const SizedBox(height: 15),
           _buildLabel('Aforo'),
