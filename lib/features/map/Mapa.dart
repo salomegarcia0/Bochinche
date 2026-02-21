@@ -115,34 +115,9 @@ class MapaState extends State<Mapa> {
     );
   }
 
-  /// Abre un evento privado por su ID (código de invitación).
-  Future<void> buscarEventoPrivado(BuildContext context) async {
-    final codeCtrl = TextEditingController();
-    final eventId = await showDialog<String>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Buscar Evento Privado'),
-        content: TextField(
-          controller: codeCtrl,
-          decoration: const InputDecoration(
-            hintText: 'Pega el código de invitación',
-            border: OutlineInputBorder(),
-            prefixIcon: Icon(Icons.vpn_key),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, codeCtrl.text.trim()),
-            child: const Text('Buscar'),
-          ),
-        ],
-      ),
-    );
-    if (eventId == null || eventId.isEmpty) return;
+  /// Busca un evento por su ID (código de invitación) y lo muestra en el mapa.
+  Future<void> buscarPorCodigo(String eventId) async {
+    if (eventId.isEmpty) return;
 
     try {
       final doc = await FirebaseFirestore.instance
@@ -175,6 +150,38 @@ class MapaState extends State<Mapa> {
           ),
         );
       }
+    }
+  }
+
+  /// Abre un evento privado pidiendo el código en un diálogo.
+  Future<void> buscarEventoPrivado(BuildContext context) async {
+    final codeCtrl = TextEditingController();
+    final eventId = await showDialog<String>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Buscar Evento Privado'),
+        content: TextField(
+          controller: codeCtrl,
+          decoration: const InputDecoration(
+            hintText: 'Pega el código de invitación',
+            border: OutlineInputBorder(),
+            prefixIcon: Icon(Icons.vpn_key),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, codeCtrl.text.trim()),
+            child: const Text('Buscar'),
+          ),
+        ],
+      ),
+    );
+    if (eventId != null) {
+      await buscarPorCodigo(eventId);
     }
   }
 

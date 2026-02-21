@@ -1,26 +1,65 @@
 import 'package:bochinche_app/styles/Color.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
-class BuscadorEventoMapa extends StatelessWidget
-    implements PreferredSizeWidget {
-  final VoidCallback? onSearchCode;
+class BuscadorEventoMapa extends StatefulWidget implements PreferredSizeWidget {
+  final ValueChanged<String>? onSubmitted;
 
-  const BuscadorEventoMapa({super.key, this.onSearchCode});
+  const BuscadorEventoMapa({super.key, this.onSubmitted});
+
+  @override
+  State<BuscadorEventoMapa> createState() => _BuscadorEventoMapaState();
 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+}
+
+class _BuscadorEventoMapaState extends State<BuscadorEventoMapa> {
+  final TextEditingController _controller = TextEditingController();
+  bool _showPasteButton = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkClipboard();
+  }
+
+  Future<void> _checkClipboard() async {
+    final data = await Clipboard.getData(Clipboard.kTextPlain);
+    if (data?.text != null && data!.text!.isNotEmpty) {
+      setState(() {
+        _showPasteButton = true;
+      });
+    }
+  }
+
+  void _handleSearch() {
+    FocusScope.of(context).unfocus();
+    if (widget.onSubmitted != null) {
+      widget.onSubmitted!(_controller.text.trim());
+    }
+  }
+
+  Future<void> _pasteFromClipboard() async {
+    final data = await Clipboard.getData(Clipboard.kTextPlain);
+    if (data?.text != null) {
+      setState(() {
+        _controller.text = data!.text!;
+        _showPasteButton = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      // Reducimos el margen inferior para evitar overflow y lo hacemos responsivo
       margin: const EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 8.0),
       decoration: BoxDecoration(
         color: PrimaryBackGroundPurple,
         borderRadius: BorderRadius.circular(35.0),
       ),
       child: Column(
-        mainAxisSize: MainAxisSize.min, // Ajusta al contenido
+        mainAxisSize: MainAxisSize.min,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -58,26 +97,40 @@ class BuscadorEventoMapa extends StatelessWidget
             color: SecondaryPurple,
             borderRadius: BorderRadius.circular(50.0),
             border: Border.all(
-              color: PrimaryPurple, // Color del borde
-              width: 1.0, // Grosor
+              color: PrimaryPurple,
+              width: 1.0,
             ),
           ),
           child: TextField(
+            controller: _controller,
+            onSubmitted: (value) => _handleSearch(),
             scrollPadding: const EdgeInsets.all(8.0),
             decoration: InputDecoration(
-              prefixIcon: const Icon(Icons.search, color: PrimaryPurple),
-              suffixIcon: IconButton(
-                icon: const Icon(Icons.vpn_key, color: PrimaryPurple),
-                tooltip: 'Buscar evento privado',
-                onPressed: onSearchCode,
+              prefixIcon: IconButton(
+                icon: const Icon(Icons.search, color: PrimaryPurple),
+                onPressed: _handleSearch,
+                tooltip: 'Buscar',
               ),
-              hintText: 'Buscar evento',
+              suffixIcon: _showPasteButton
+                  ? IconButton(
+                      icon: const Icon(Icons.content_paste, color: PrimaryPurple),
+                      onPressed: _pasteFromClipboard,
+                      tooltip: 'Pegar desde el portapapeles',
+                    )
+                  : null,
+              hintText: 'Buscar evento o código privado',
               border: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(vertical: 14.0),
+              contentPadding: const EdgeInsets.symmetric(vertical: 14.0, horizontal: 16.0),
             ),
           ),
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 }

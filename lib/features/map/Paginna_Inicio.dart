@@ -16,27 +16,29 @@ class _Pagina_PrincipalState extends State<Pagina_Principal> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      drawer: Navbar(),
-      appBar: const BochincheAppBar(),
-
-      body: Stack(
-        children: [
-          // Pasamos la key al widget Mapa
-          Mapa(key: _mapaKey),
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: Padding(
-              padding: const EdgeInsets.all(5.0),
-              child: BuscadorEventoMapa(
-                // Llamamos a la función buscarEventoPrivado del estado del mapa
-                onSearchCode: () {
-                  _mapaKey.currentState?.buscarEventoPrivado(context);
-                },
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      behavior: HitTestBehavior.opaque,
+      child: Scaffold(
+        drawer: Navbar(),
+        appBar: const BochincheAppBar(),
+        body: Stack(
+          children: [
+            // Pasamos la key al widget Mapa
+            Mapa(key: _mapaKey),
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: Padding(
+                padding: const EdgeInsets.all(5.0),
+                child: BuscadorEventoMapa(
+                  onSubmitted: (value) {
+                    _mapaKey.currentState?.buscarPorCodigo(value.trim());
+                  },
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
