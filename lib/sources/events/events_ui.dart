@@ -161,9 +161,6 @@ class _FormCreateEventState extends State<FormCreateEvent> {
             validator: validateName,
           ),
 
-          const SizedBox(height: 15),
-
-          const SizedBox(height: 15),
           _buildLabel('Aforo'),
           TextFormField(controller: aforoController, validator: validateAforo),
 
@@ -390,10 +387,12 @@ class _FormCreateEventState extends State<FormCreateEvent> {
               border: OutlineInputBorder(),
             ),
             items: bankList
-                .map((b) => DropdownMenuItem(
-                      value: b,
-                      child: Text(b, overflow: TextOverflow.ellipsis),
-                    ))
+                .map(
+                  (b) => DropdownMenuItem(
+                    value: b,
+                    child: Text(b, overflow: TextOverflow.ellipsis),
+                  ),
+                )
                 .toList(),
             onChanged: (val) => setState(() => selectedBank = val),
           ),
@@ -411,14 +410,18 @@ class _FormCreateEventState extends State<FormCreateEvent> {
                   decoration: const InputDecoration(
                     labelText: 'Prefijo',
                     border: OutlineInputBorder(),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 15),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 15,
+                    ),
                   ),
                   items: phonePrefixList
-                      .map((p) => DropdownMenuItem(
-                            value: p,
-                            child:
-                                Text(p, overflow: TextOverflow.ellipsis),
-                          ))
+                      .map(
+                        (p) => DropdownMenuItem(
+                          value: p,
+                          child: Text(p, overflow: TextOverflow.ellipsis),
+                        ),
+                      )
                       .toList(),
                   onChanged: (val) => setState(() => selectedPhonePrefix = val),
                 ),
@@ -453,16 +456,21 @@ class _FormCreateEventState extends State<FormCreateEvent> {
                   decoration: const InputDecoration(
                     labelText: 'Tipo',
                     border: OutlineInputBorder(),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 15),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 15,
+                    ),
                   ),
                   items: ciTypeList
-                      .map((t) => DropdownMenuItem(
-                            value: t,
-                            child: Text(
-                              '$t - ${ciTypeLabels[t]}',
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ))
+                      .map(
+                        (t) => DropdownMenuItem(
+                          value: t,
+                          child: Text(
+                            '$t - ${ciTypeLabels[t]}',
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      )
                       .toList(),
                   onChanged: (val) => setState(() => selectedCIType = val),
                 ),
@@ -594,7 +602,7 @@ class _MyEventsState extends State<MyEvents> {
           builder: (context, snapshot) {
             if (snapshot.hasData) {
               final eventos = snapshot.data!;
-                return Column(
+              return Column(
                 children: eventos
                     .map(
                       (i) => Padding(
@@ -626,35 +634,59 @@ class _MyEventsState extends State<MyEvents> {
                               ),
                               Text(
                                 'Aforo: ${i['capacity']}',
-                                style: const TextStyle(color: Colors.black, fontSize: 13),
+                                style: const TextStyle(
+                                  color: Colors.black,
+                                  fontSize: 13,
+                                ),
                               ),
                               Text(
                                 'Contacto: ${i['contact']}',
-                                style: const TextStyle(color: Colors.black, fontSize: 13),
+                                style: const TextStyle(
+                                  color: Colors.black,
+                                  fontSize: 13,
+                                ),
                               ),
                               Text(
                                 'Tipo: ${i['type']}',
-                                style: const TextStyle(color: Colors.black, fontSize: 13),
+                                style: const TextStyle(
+                                  color: Colors.black,
+                                  fontSize: 13,
+                                ),
                               ),
                               Text(
                                 'Direccion corta: ${i['address']}',
-                                style: const TextStyle(color: Colors.black, fontSize: 13),
+                                style: const TextStyle(
+                                  color: Colors.black,
+                                  fontSize: 13,
+                                ),
                               ),
                               Text(
                                 'Descripción: ${i['description']}',
-                                style: const TextStyle(color: Colors.black, fontSize: 13),
+                                style: const TextStyle(
+                                  color: Colors.black,
+                                  fontSize: 13,
+                                ),
                               ),
                               Text(
                                 'Fechas: ${DateTime.parse(i['startDate']).day}/${DateTime.parse(i['startDate']).month}/${DateTime.parse(i['startDate']).year} hasta ${DateTime.parse(i['endDate']).day}/${DateTime.parse(i['endDate']).month}/${DateTime.parse(i['endDate']).year}',
-                                style: const TextStyle(color: Colors.black, fontSize: 13),
+                                style: const TextStyle(
+                                  color: Colors.black,
+                                  fontSize: 13,
+                                ),
                               ),
                               Text(
                                 'Horarios: ${i['startTime']['hour']}:${i['startTime']['minute'].toString().padLeft(2, '0')} hasta ${i['endTime']['hour']}:${i['endTime']['minute'].toString().padLeft(2, '0')}',
-                                style: const TextStyle(color: Colors.black, fontSize: 13),
+                                style: const TextStyle(
+                                  color: Colors.black,
+                                  fontSize: 13,
+                                ),
                               ),
                               Text(
                                 'Localización: ${i['location'].latitude}, ${i['location'].longitude}',
-                                style: const TextStyle(color: Colors.black, fontSize: 13),
+                                style: const TextStyle(
+                                  color: Colors.black,
+                                  fontSize: 13,
+                                ),
                               ),
                               const SizedBox(height: 10),
                               ElevatedButton(
@@ -663,7 +695,8 @@ class _MyEventsState extends State<MyEvents> {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (context) => const ModifyEvents(),
+                                      builder: (context) =>
+                                          const ModifyEvents(),
                                     ),
                                   );
                                   cargarDatosEvento(idmod);
@@ -692,7 +725,11 @@ class _MyEventsState extends State<MyEvents> {
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: const [
-                                      Icon(Icons.lock, size: 16, color: Colors.orange),
+                                      Icon(
+                                        Icons.lock,
+                                        size: 16,
+                                        color: Colors.orange,
+                                      ),
                                       SizedBox(width: 4),
                                       Text(
                                         'Evento Privado',
@@ -712,7 +749,9 @@ class _MyEventsState extends State<MyEvents> {
                                       ClipboardData(text: i['id']),
                                     );
                                     if (context.mounted) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
                                         SnackBar(
                                           content: Text(
                                             'Código de invitación copiado: ${i['id']}',
@@ -728,7 +767,12 @@ class _MyEventsState extends State<MyEvents> {
                                 const SizedBox(height: 10),
                               ],
                               ElevatedButton.icon(
-                                onPressed: (int.tryParse(i['capacity']?.toString() ?? '0') ?? 0) <= (i['ticketsSold'] ?? 0)
+                                onPressed:
+                                    (int.tryParse(
+                                              i['capacity']?.toString() ?? '0',
+                                            ) ??
+                                            0) <=
+                                        (i['ticketsSold'] ?? 0)
                                     ? null
                                     : () {
                                         Navigator.push(
@@ -743,7 +787,12 @@ class _MyEventsState extends State<MyEvents> {
                                       },
                                 icon: const Icon(Icons.payment),
                                 label: Text(
-                                  (int.tryParse(i['capacity']?.toString() ?? '0') ?? 0) <= (i['ticketsSold'] ?? 0)
+                                  (int.tryParse(
+                                                i['capacity']?.toString() ??
+                                                    '0',
+                                              ) ??
+                                              0) <=
+                                          (i['ticketsSold'] ?? 0)
                                       ? 'Agotado'
                                       : 'Pagar',
                                 ),
@@ -847,7 +896,6 @@ class _FormCreateEvent2State extends State<FormCreateEvent2> {
   TimeOfDay hora1select = TimeOfDay.now();
   TimeOfDay hora2select = TimeOfDay.now();
   TimeOfDay hora1 = TimeOfDay.now();
-  bool isPrivateLocal = false;
 
   Future<void> fechaselect2(BuildContext context) async {
     DateTime? date = await showDatePicker(
@@ -927,9 +975,6 @@ class _FormCreateEvent2State extends State<FormCreateEvent2> {
           ),
 
           const SizedBox(height: 15),
-        
-
-          const SizedBox(height: 15),
           _buildLabel('Aforo'),
           TextFormField(controller: aforoController, validator: validateAforo),
 
@@ -952,7 +997,6 @@ class _FormCreateEvent2State extends State<FormCreateEvent2> {
 
           _buildLabel('Descripción'),
           TextFormField(controller: descripcionController, maxLines: 3),
-
           const SizedBox(height: 20),
           const Divider(),
 
@@ -974,10 +1018,12 @@ class _FormCreateEvent2State extends State<FormCreateEvent2> {
               border: OutlineInputBorder(),
             ),
             items: bankList
-                .map((b) => DropdownMenuItem(
-                      value: b,
-                      child: Text(b, overflow: TextOverflow.ellipsis),
-                    ))
+                .map(
+                  (b) => DropdownMenuItem(
+                    value: b,
+                    child: Text(b, overflow: TextOverflow.ellipsis),
+                  ),
+                )
                 .toList(),
             onChanged: (val) => setState(() => selectedBank = val),
           ),
@@ -995,14 +1041,18 @@ class _FormCreateEvent2State extends State<FormCreateEvent2> {
                   decoration: const InputDecoration(
                     labelText: 'Prefijo',
                     border: OutlineInputBorder(),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 15),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 15,
+                    ),
                   ),
                   items: phonePrefixList
-                      .map((p) => DropdownMenuItem(
-                            value: p,
-                            child:
-                                Text(p, overflow: TextOverflow.ellipsis),
-                          ))
+                      .map(
+                        (p) => DropdownMenuItem(
+                          value: p,
+                          child: Text(p, overflow: TextOverflow.ellipsis),
+                        ),
+                      )
                       .toList(),
                   onChanged: (val) => setState(() => selectedPhonePrefix = val),
                 ),
@@ -1037,16 +1087,21 @@ class _FormCreateEvent2State extends State<FormCreateEvent2> {
                   decoration: const InputDecoration(
                     labelText: 'Tipo',
                     border: OutlineInputBorder(),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 15),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 15,
+                    ),
                   ),
                   items: ciTypeList
-                      .map((t) => DropdownMenuItem(
-                            value: t,
-                            child: Text(
-                              '$t - ${ciTypeLabels[t]}',
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ))
+                      .map(
+                        (t) => DropdownMenuItem(
+                          value: t,
+                          child: Text(
+                            '$t - ${ciTypeLabels[t]}',
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      )
                       .toList(),
                   onChanged: (val) => setState(() => selectedCIType = val),
                 ),
@@ -1161,35 +1216,50 @@ class _DetalleEventoState extends State<DetalleEvento> {
                   ),
 
                   const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: (data['isPrivate'] ?? false) ? Colors.red[50] : Colors.green[50],
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: (data['isPrivate'] ?? false) ? Colors.red : Colors.green,
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            (data['isPrivate'] ?? false) ? Icons.lock_outline : Icons.public,
-                            size: 16,
-                            color: (data['isPrivate'] ?? false) ? Colors.red : Colors.green,
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            (data['isPrivate'] ?? false) ? 'EVENTO PRIVADO' : 'EVENTO PÚBLICO',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: (data['isPrivate'] ?? false) ? Colors.red : Colors.green,
-                            ),
-                          ),
-                        ],
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: (data['isPrivate'] ?? false)
+                          ? Colors.red[50]
+                          : Colors.green[50],
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: (data['isPrivate'] ?? false)
+                            ? Colors.red
+                            : Colors.green,
                       ),
                     ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          (data['isPrivate'] ?? false)
+                              ? Icons.lock_outline
+                              : Icons.public,
+                          size: 16,
+                          color: (data['isPrivate'] ?? false)
+                              ? Colors.red
+                              : Colors.green,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          (data['isPrivate'] ?? false)
+                              ? 'EVENTO PRIVADO'
+                              : 'EVENTO PÚBLICO',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: (data['isPrivate'] ?? false)
+                                ? Colors.red
+                                : Colors.green,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   Text(
                     'Organizador: ${data['organizer'] ?? 'N/A'}',

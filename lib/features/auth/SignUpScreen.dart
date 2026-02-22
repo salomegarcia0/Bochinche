@@ -1,5 +1,5 @@
 import 'package:bochinche_app/data/auth_service.dart';
-import 'package:bochinche_app/features/auth/LoginScreen.dart'; 
+import 'package:bochinche_app/features/auth/LoginScreen.dart';
 import 'package:bochinche_app/features/map/Paginna_Inicio.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -43,7 +43,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
     if (password.length < 6) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content: Text("La contraseña debe tener al menos 6 caracteres")),
+          content: Text("La contraseña debe tener al menos 6 caracteres"),
+        ),
       );
       return;
     }
@@ -51,7 +52,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
     if (!password.contains(RegExp(r'[0-9]'))) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content: Text("La contraseña debe incluir al menos un número")),
+          content: Text("La contraseña debe incluir al menos un número"),
+        ),
       );
       return;
     }
@@ -60,7 +62,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-              "La contraseña debe incluir un carácter especial (ej: @, #, *)"),
+            "La contraseña debe incluir un carácter especial (ej: @, #, *)",
+          ),
         ),
       );
       return;
@@ -80,7 +83,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
     });
 
     try {
-
       String identificacionCompleta =
           "$tipoDocumento-${extraDataController.text.trim()}";
 
@@ -89,8 +91,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
         password: passwordController.text.trim(),
         name: nameController.text.trim(),
         // Ya no diferenciamos rol 'organizador' vs 'usuario', todos son iguales
-        rol: 'organizador', 
-        cedula: identificacionCompleta, 
+        rol: 'organizador',
+        cedula: identificacionCompleta,
         phone: phoneController.text.trim(),
       );
 
@@ -99,16 +101,21 @@ class _SignUpScreenState extends State<SignUpScreen> {
           context,
         ).showSnackBar(const SnackBar(content: Text("Registro exitoso")));
         await FirebaseAuth.instance.signOut();
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const LoginScreen()),
-        );
+        if (user != null && user.emailVerified == false && mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text("Registro exitoso")));
+          await FirebaseAuth.instance.signOut();
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const LoginScreen()),
+          );
+        }
       }
     } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text("Error: $error"), backgroundColor: Colors.red),
+          SnackBar(content: Text("Error: $error"), backgroundColor: Colors.red),
         );
       }
     } finally {
@@ -178,7 +185,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 ),
               ),
               const SizedBox(height: 20),
-              
+
               // --- Nombre Completo o Razón Social ---
               TextField(
                 controller: nameController,
@@ -190,7 +197,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 ),
               ),
               const SizedBox(height: 15),
-              
+
               // --- Correo ---
               TextField(
                 controller: emailController,
@@ -225,7 +232,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       items: const [
                         DropdownMenuItem(value: 'V', child: Text('V')),
                         DropdownMenuItem(value: 'E', child: Text('E')),
-                        DropdownMenuItem(value: 'J', child: Text('J')), 
+                        DropdownMenuItem(value: 'J', child: Text('J')),
                       ],
                     ),
                   ),
@@ -241,7 +248,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         counterText: "",
                       ),
                       keyboardType: TextInputType.number,
-                      maxLength: 10, 
+                      maxLength: 10,
                       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     ),
                   ),
@@ -249,7 +256,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
               ),
 
               const SizedBox(height: 15),
-              
+
               // --- Teléfono ---
               TextField(
                 controller: phoneController,
@@ -268,7 +275,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 ],
               ),
               const SizedBox(height: 15),
-              
+
               // --- Contraseña ---
               TextField(
                 controller: passwordController,
@@ -304,9 +311,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           ),
                           child: const Text("CREAR CUENTA"),
                         ),
-                        
+
                         const SizedBox(height: 20),
-                        
+
                         // --- Link al Login ---
                         Row(
                           mainAxisSize: MainAxisSize.min,
