@@ -63,6 +63,10 @@ class BochincheAppBar extends StatelessWidget implements PreferredSizeWidget {
               content: Text("Hola, ${usuario.displayName ?? 'Bochinchero'}"),
             ),
           );
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const ProfileScreen()),
+          );
         }
       },
     );
