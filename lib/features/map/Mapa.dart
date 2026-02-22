@@ -1,3 +1,4 @@
+import 'package:bochinche_app/features/payment/payment_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:latlong2/latlong.dart';
@@ -13,14 +14,15 @@ class Mapa extends StatefulWidget implements PreferredSizeWidget {
   const Mapa({super.key});
 
   @override
-  State<Mapa> createState() => _MapaState();
+  State<Mapa> createState() => MapaState();
 
   @override
   Size get preferredSize => const Size.fromHeight(300);
 }
 
-class _MapaState extends State<Mapa> {
+class MapaState extends State<Mapa> {
   final MapController controladormapa = MapController();
+
   IconData getIconoPin(String tipo) {
     switch (tipo) {
       case 'Concierto':
@@ -46,7 +48,6 @@ class _MapaState extends State<Mapa> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: StreamBuilder<QuerySnapshot>(
-        // Escuchamos la colección "lugares"
         stream: FirebaseFirestore.instance.collection('events').snapshots(),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
@@ -56,8 +57,13 @@ class _MapaState extends State<Mapa> {
             return Center(child: CircularProgressIndicator());
           }
 
-          // Mapeamos los documentos a una lista de Marcadores
-          List<Marker> markers = snapshot.data!.docs.map((doc) {
+          // Filtramos eventos privados: no se muestran en el mapa público
+          final publicDocs = snapshot.data!.docs.where((doc) {
+            final d = doc.data() as Map<String, dynamic>;
+            return d['isPrivate'] != true;
+          }).toList();
+
+          List<Marker> markers = publicDocs.map((doc) {
             final data = doc.data() as Map<String, dynamic>;
             final GeoPoint punto = data['location'];
 
@@ -109,6 +115,76 @@ class _MapaState extends State<Mapa> {
         },
       ),
     );
+  }
+
+  /// Busca un evento por su ID (código de invitación) y lo muestra en el mapa.
+  Future<void> buscarPorCodigo(String eventId) async {
+    if (eventId.isEmpty) return;
+
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('events')
+          .doc(eventId)
+          .get();
+      if (!doc.exists) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Evento no encontrado. Verifica el código.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+      final data = doc.data() as Map<String, dynamic>;
+      final GeoPoint punto = data['location'];
+      // Centrar mapa en el evento
+      controladormapa.move(LatLng(punto.latitude, punto.longitude), 16);
+      // Mostrar detalles
+      if (mounted) _mostrarDetalles(context, data, doc.id);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al buscar: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  /// Abre un evento privado pidiendo el código en un diálogo.
+  Future<void> buscarEventoPrivado(BuildContext context) async {
+    final codeCtrl = TextEditingController();
+    final eventId = await showDialog<String>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Buscar Evento Privado'),
+        content: TextField(
+          controller: codeCtrl,
+          decoration: const InputDecoration(
+            hintText: 'Pega el código de invitación',
+            border: OutlineInputBorder(),
+            prefixIcon: Icon(Icons.vpn_key),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, codeCtrl.text.trim()),
+            child: const Text('Buscar'),
+          ),
+        ],
+      ),
+    );
+    if (eventId != null) {
+      await buscarPorCodigo(eventId);
+    }
   }
 
   void _mostrarDetalles(
@@ -181,23 +257,49 @@ class _MapaState extends State<Mapa> {
                     const SizedBox(height: 8),
                     Text('Estado: ${data['state']}'),
                     const SizedBox(height: 12),
-                    ElevatedButton(
-                      onPressed: () {
-                        if (FirebaseAuth.instance.currentUser == null) {
-                          Navigator.pop(context);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const LoginScreen(),
-                            ),
-                          );
-                          return;
-                        }
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Entrada obtenida!')),
+                    Builder(
+                      builder: (context) {
+                        final int sold = data['ticketsSold'] ?? 0;
+                        final int cap = data['capacity'] is int
+                            ? data['capacity'] as int
+                            : int.tryParse(
+                                    data['capacity']?.toString() ?? '0',
+                                  ) ??
+                                  0;
+                        final bool isAgotado = sold >= cap;
+
+                        return ElevatedButton(
+                          onPressed: isAgotado
+                              ? null
+                              : () {
+                                  if (FirebaseAuth.instance.currentUser ==
+                                      null) {
+                                    Navigator.pop(context);
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            const LoginScreen(),
+                                      ),
+                                    );
+                                    return;
+                                  }
+                                  // Abrir flujo de pago unificado con datos del evento
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => PaymentPage(
+                                        eventData: data,
+                                        eventId: eventoId,
+                                      ),
+                                    ),
+                                  );
+                                },
+                          child: Text(
+                            isAgotado ? 'Agotado' : 'Comprar entradas',
+                          ),
                         );
                       },
-                      child: const Text('Comprar entradas'),
                     ),
                     ElevatedButton(
                       onPressed: () {

@@ -28,11 +28,15 @@ dependencies:
   latlong2: ^0.9.1
   flutter_map_location_marker: ^10.2.0
   cupertino_icons: ^1.0.8
-  firebase_core: ^4.4.0
-  firebase_auth: ^6.1.4
-  cloud_firestore: ^6.1.2
+
+  firebase_core: ^3.0.0
+  firebase_auth: ^5.0.0
+  cloud_firestore: ^5.0.0
   flutter_svg: ^2.0.7
   url_launcher: ^6.3.2
+
+  image_picker: ^1.0.4
+  supabase_flutter: ^2.8.0
 
 dev_dependencies:
   flutter_test:

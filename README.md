@@ -21,6 +21,7 @@ lib/
  │    ├── auth/     # Login, Register
  │    ├── map/      # Mapa y marcadores
  │    ├── events/   # Detalle del evento, creación
+ |    ├── profile/  # Detalles y edición del Perfil 
  ├── data/          # Modelos de datos y servicios (Firebase)
  └── main.dart
 

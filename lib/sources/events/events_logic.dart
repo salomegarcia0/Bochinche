@@ -4,7 +4,6 @@ import 'package:bochinche_app/features/auth/LoginScreen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:bochinche_app/data/auth_service.dart';
 
 // --- CONTROLADORES DE TEXTO GLOBALES ---
 final nombreEventoController = TextEditingController();
@@ -15,6 +14,66 @@ final aforoController = TextEditingController();
 final fecha1C = TextEditingController();
 final fecha2C = TextEditingController();
 
+// --- CONTROLADORES PARA DATOS DE PAGO ---
+final paymentPhoneNumberController = TextEditingController();
+final paymentCINumberController = TextEditingController();
+final priceController = TextEditingController();
+
+// --- ESTADO DE DROPDOWNS DE PAGO ---
+String? selectedBank;
+String? selectedPhonePrefix;
+String? selectedCIType;
+
+// --- LISTAS DE OPCIONES ---
+const List<String> bankList = [
+  '0102 - Banco De Venezuela',
+  '0104 - Venezolano de Crédito',
+  '0105 - Banco Mercantil',
+  '0108 - Banco Provincial',
+  '0114 - Banco Del Caribe',
+  '0115 - Banco Exterior',
+  '0128 - Banco Caroni',
+  '0134 - Banesco Banco Universal',
+  '0137 - Banco Sofitasa',
+  '0138 - Banco Plaza',
+  '0146 - Bangente',
+  '0151 - BFC Banco Fondo Común',
+  '0156 - 100% Banco',
+  '0157 - Del Sur Banco Universal',
+  '0163 - Banco Del Tesoro',
+  '0166 - Banco Agrícola de Venezuela',
+  '0168 - Bancrecer',
+  '0169 - R4 Banco Microfinanciero',
+  '0171 - Banco Activo',
+  '0172 - Bancamiga',
+  '0175 - Banco Digital De Los Trabajadores',
+  '0177 - Banco De La Fuerza Armada Nacional Bolivariana',
+  '0178 - N58 Banco Digital',
+  '0191 - Banco Nacional Crédito',
+];
+
+const List<String> phonePrefixList = ['0412', '0414', '0416', '0424', '0426'];
+
+const List<String> ciTypeList = [
+  'V', // Venezolano
+  'E', // Extranjero
+  'P', // Pasaporte
+  'J', // Jurídico
+  'C', // Comuna
+  'G', // Gubernamental
+  'R', // Firma Personal
+];
+
+const Map<String, String> ciTypeLabels = {
+  'V': 'Venezolano',
+  'E': 'Extranjero',
+  'P': 'Pasaporte',
+  'J': 'Jurídico',
+  'C': 'Comuna',
+  'G': 'Gubernamental',
+  'R': 'Firma Personal',
+};
+
 String? typeC;
 String? stateC;
 DateTime? fecha1;
@@ -22,13 +81,15 @@ DateTime? fecha2;
 TimeOfDay firtTimeHour = TimeOfDay(hour: 0, minute: 0);
 TimeOfDay lastTimeHour = TimeOfDay(hour: 23, minute: 59);
 var idmod;
+bool isPrivateC = false;
 
 double latitudC = 0.0;
 double longitudC = 0.0;
+bool isPrivate = false;
 
 String? validateName(String? r) {
   if (r != '' || r!.isNotEmpty) {
-    return 'Nombbre existente';
+    return 'Nombre existente';
   } else {
     return null;
   }
@@ -123,6 +184,7 @@ Future<void> createEvent(BuildContext context) async {
             ? descripcionController.text
             : '',
         'capacity': aforoController.text,
+        'isPrivate': isPrivate,
         'startDate': fecha1!.toIso8601String(),
         'endDate': fecha2!.toIso8601String(),
         'startTime': {'hour': firtTimeHour.hour, 'minute': firtTimeHour.minute},
@@ -131,6 +193,21 @@ Future<void> createEvent(BuildContext context) async {
         'createdAt': FieldValue.serverTimestamp(),
         'stars': 0,
         'total_review': 0,
+        'isPrivate': isPrivateC,
+        'paymentInfo': {
+          'bank': selectedBank ?? '',
+          'phone':
+              selectedPhonePrefix != null &&
+                  paymentPhoneNumberController.text.isNotEmpty
+              ? '$selectedPhonePrefix-${paymentPhoneNumberController.text}'
+              : '',
+          'ci':
+              selectedCIType != null &&
+                  paymentCINumberController.text.isNotEmpty
+              ? '$selectedCIType-${paymentCINumberController.text}'
+              : '',
+          'price': double.tryParse(priceController.text) ?? 0.0,
+        },
       });
 
       // Mostrar mensaje de éxito
@@ -157,9 +234,17 @@ void clearAllFields() {
   contactoController.clear();
   descripcionController.clear();
   aforoController.clear();
+  isPrivate = false;
   fecha1C.clear();
   fecha2C.clear();
+  paymentPhoneNumberController.clear();
+  paymentCINumberController.clear();
+  priceController.clear();
+  selectedBank = null;
+  selectedPhonePrefix = null;
+  selectedCIType = null;
   typeC = null;
+  isPrivateC = false;
   latitudC = 10.0;
   longitudC = -60.0;
   firtTimeHour = TimeOfDay(hour: 0, minute: 0);
@@ -207,6 +292,30 @@ Future<void> cargarDatosEvento(String idDocumento) async {
       contactoController.text = data['contact'] ?? '';
       descripcionController.text = data['description'] ?? '';
       aforoController.text = data['capacity'] ?? '';
+      isPrivateC = data['isPrivate'] ?? false;
+      final pi = data['paymentInfo'] as Map<String, dynamic>?;
+      if (pi != null) {
+        // Bank dropdown
+        final bankStr = pi['bank'] ?? '';
+        if (bankStr.isNotEmpty && bankList.contains(bankStr)) {
+          selectedBank = bankStr;
+        }
+        // Phone: split "prefix-number"
+        final phoneStr = pi['phone'] ?? '';
+        if (phoneStr.contains('-')) {
+          final parts = phoneStr.split('-');
+          selectedPhonePrefix = parts[0];
+          paymentPhoneNumberController.text = parts.sublist(1).join('-');
+        }
+        // CI: split "type-number"
+        final ciStr = pi['ci'] ?? '';
+        if (ciStr.contains('-')) {
+          final parts = ciStr.split('-');
+          selectedCIType = parts[0];
+          paymentCINumberController.text = parts.sublist(1).join('-');
+        }
+        priceController.text = (pi['price'] ?? 0.0).toString();
+      }
     } else {
       print("El documento con id $idDocumento no existe");
     }
@@ -241,6 +350,21 @@ Future<void> modifyEvent(BuildContext context, String id) async {
         'state': stateC ?? 'Próximo',
         'description': descripcionController.text,
         'capacity': aforoController.text,
+        'isPrivate': isPrivateC,
+        'paymentInfo': {
+          'bank': selectedBank ?? '',
+          'phone':
+              selectedPhonePrefix != null &&
+                  paymentPhoneNumberController.text.isNotEmpty
+              ? '$selectedPhonePrefix-${paymentPhoneNumberController.text}'
+              : '',
+          'ci':
+              selectedCIType != null &&
+                  paymentCINumberController.text.isNotEmpty
+              ? '$selectedCIType-${paymentCINumberController.text}'
+              : '',
+          'price': double.tryParse(priceController.text) ?? 0.0,
+        },
       });
 
       // Mostrar mensaje de éxito
