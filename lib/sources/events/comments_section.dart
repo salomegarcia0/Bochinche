@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'events_logic.dart';
 import 'package:bochinche_app/features/auth/LoginScreen.dart';
+import 'package:bochinche_app/widgets/verification_badge.dart';
 import 'package:bochinche_app/sources/reports/reports_logic.dart';
 
 class CommentsSection extends StatefulWidget {
@@ -49,7 +50,16 @@ class _CommentsSectionState extends State<CommentsSection> {
                             ? (c['rating'] as double).toInt()
                             : 0);
                   return ListTile(
-                    title: Text(c['nombre'] ?? 'Usuario'),
+                    title: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(c['nombre'] ?? 'Usuario'),
+                        if (c['usuarioUid'] != null) ...[
+                          const SizedBox(width: 4),
+                          VerificationBadge(uid: c['usuarioUid'], size: 16),
+                        ],
+                      ],
+                    ),
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
