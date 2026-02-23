@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/services.dart';
 import 'package:bochinche_app/styles/Color.dart';
+import 'package:bochinche_app/features/authentication/authentication_steps.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -99,18 +100,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
       if (user != null && user.emailVerified == false && mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text("Registro exitoso")));
-        await FirebaseAuth.instance.signOut();
-        if (user != null && user.emailVerified == false && mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text("Registro exitoso")));
-          await FirebaseAuth.instance.signOut();
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const LoginScreen()),
-          );
-        }
+          MaterialPageRoute(builder: (context) => const Authetication_steps()),
+        );
       }
     } catch (error) {
       if (mounted) {
