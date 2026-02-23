@@ -1,4 +1,5 @@
 import 'package:bochinche_app/data/firebase_options.dart';
+import 'package:bochinche_app/features/authentication/authentication_steps.dart';
 // import 'package:bochinche_app/features/auth/SignUpScreen.dart';
 // import 'package:bochinche_app/features/auth/loginScreen.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -28,23 +29,7 @@ class MyApp extends StatelessWidget {
       title: 'Flutter Demo',
       theme: ThemeData(colorScheme: .fromSeed(seedColor: Colors.deepPurple)),
       debugShowCheckedModeBanner: false,
-      home: const Pagina_Principal(),
+      home: const Authetication_steps(),
     );
-  }
-}
-
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  final String title;
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  @override
-  Widget build(BuildContext context) {
-    return Mapa();
   }
 }

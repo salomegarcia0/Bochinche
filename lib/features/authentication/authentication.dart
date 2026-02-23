@@ -114,14 +114,23 @@ class _AutheticationState extends State<Authetication> {
                             );
                             return;
                           }
-                          Pagina_Principal();
+                          alerta(context);
                         },
                         style: ElevatedButton.styleFrom(
-                          minimumSize: const Size(double.infinity, 50),
-                          backgroundColor: Colors.deepPurple,
-                          foregroundColor: Colors.white,
+                          minimumSize: const Size(double.infinity, 55),
+                          backgroundColor: PrimaryBackGroundPurple,
+                          foregroundColor: AccentPurple,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
-                        child: const Text("Verificar Identidad"),
+                        child: const Text(
+                          "Continuar",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -131,6 +140,37 @@ class _AutheticationState extends State<Authetication> {
           );
         },
       ),
+    );
+  }
+
+  void alerta(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("¡Bienvenido a Bochinche!"),
+          content: const Text(
+            "Tu autenticación ha sido exitosa. Ahora puedes disfrutar de todas las funciones de la aplicación.",
+          ),
+          actions: [
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const Pagina_Principal(),
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: PrimaryPurple,
+                foregroundColor: AccentPurple,
+              ),
+              child: const Text("Empecemos"),
+            ),
+          ],
+        );
+      },
     );
   }
 
