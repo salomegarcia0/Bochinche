@@ -7,6 +7,7 @@ import 'package:bochinche_app/sources/events/comments_section.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:bochinche_app/features/auth/LoginScreen.dart';
 import 'package:bochinche_app/features/payment/payment_page.dart';
+import 'package:bochinche_app/widgets/verification_badge.dart';
 
 class Mapa extends StatefulWidget implements PreferredSizeWidget {
   const Mapa({super.key});
@@ -226,9 +227,20 @@ class MapaState extends State<Mapa> {
                         ),
                       ),
                     ),
-                    Text(
-                      'Nombre del evento: ${data['name']}',
-                      style: Theme.of(context).textTheme.titleMedium,
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            'Nombre del evento: ${data['name']}',
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                        ),
+                        if (data['id_organizer'] != null) ...[
+                          const SizedBox(width: 4),
+                          VerificationBadge(uid: data['id_organizer'], size: 20),
+                        ]
+                      ],
                     ),
                     const SizedBox(height: 6),
                     Text('Dirección: ${data['address']}'),
