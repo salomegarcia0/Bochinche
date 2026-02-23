@@ -143,20 +143,6 @@ Future<void> updateReportStatus(String reportId) async {
             .join('&');
       }
 
-      final Uri emailLaunchUri = Uri(
-        scheme: 'mailto',
-        path: reportadormail,
-        query: encodeQueryParameters(<String, String>{
-          'subject': 'Resultado de tu reporte en Bochinche',
-          'body': 'Cuerpo del mensaje ${feedbackController.text}',
-        }),
-      );
-
-      if (await canLaunchUrl(emailLaunchUri)) {
-        await launchUrl(emailLaunchUri);
-      } else {
-        print('No se pudo abrir el cliente de correo');
-      }
       feedbackController.text = '';
     } else {
       print("No report found");
@@ -259,10 +245,10 @@ Future<String> getEventName(String reportId) async {
       if (eventDoc.exists) {
         return eventDoc['name'] ?? 'Evento sin nombre';
       } else {
-        return 'Evento no encontrado';
+        return 'Evento eliminado';
       }
     } else {
-      return 'Evento no encontrado';
+      return 'Evento eliminado';
     }
   } catch (e) {
     print('Error al obtener el nombre del evento: $e');

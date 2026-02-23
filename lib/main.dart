@@ -4,7 +4,7 @@ import 'package:bochinche_app/data/firebase_options.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'features/map/Mapa.dart';
+import 'features/map/mapa.dart';
 import 'features/map/Paginna_Inicio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
