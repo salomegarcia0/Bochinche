@@ -1337,3 +1337,226 @@ class _DetalleEventoState extends State<DetalleEvento> {
     );
   }
 }
+
+//ESTOS SON LOS CAMBIOS DE JAVIER
+
+class PublicEventsScreen extends StatefulWidget {
+  const PublicEventsScreen({super.key});
+  @override
+  State<PublicEventsScreen> createState() => _PublicEventsScreenState();
+}
+
+class _PublicEventsScreenState extends State<PublicEventsScreen> {
+  late String selectedCategory;
+  DateTime? selectedDate;
+  late List<String> selectedPreferences;
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    selectedCategory = userPreferredFilters['category'];
+    selectedPreferences = List<String>.from(userPreferredFilters['tags']);
+  }
+
+  Future<void> _fakeLoading() async {
+    setState(() => _isLoading = true);
+    await Future.delayed(const Duration(milliseconds: 1000));
+    if (mounted) setState(() => _isLoading = false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8F9FA),
+      appBar: BochincheAppBar(),
+      drawer: const Navbar(),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 20, 16, 10),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Explorar',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.w900,
+                    color: PrimaryPurple,
+                  ),
+                ),
+                IconButton(
+                  onPressed: () {
+                    setState(() {
+                      selectedCategory = 'Todos';
+                      selectedDate = null;
+                      selectedPreferences.clear();
+                    });
+                    _fakeLoading();
+                  },
+                  icon: const Icon(
+                    Icons.filter_alt_off,
+                    color: Colors.redAccent,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(15),
+              border: Border.all(color: Colors.black12),
+            ),
+            child: Column(
+              children: [
+                DropdownButtonFormField<String>(
+                  value: selectedCategory,
+                  decoration: const InputDecoration(
+                    labelText: 'Categoría',
+                    border: InputBorder.none,
+                  ),
+                  items:
+                      [
+                            'Todos',
+                            'Concierto',
+                            'Teatro',
+                            'Fiestas',
+                            'Stand Up',
+                            'Cine',
+                            'Otros',
+                          ]
+                          .map(
+                            (e) => DropdownMenuItem(value: e, child: Text(e)),
+                          )
+                          .toList(),
+                  onChanged: (val) {
+                    setState(() => selectedCategory = val!);
+                    _fakeLoading();
+                  },
+                ),
+                SizedBox(
+                  height: 40,
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    children:
+                        [
+                          'Gratis',
+                          'Música en vivo',
+                          'Aire Libre',
+                          'Familiar',
+                          'VIP',
+                        ].map((pref) {
+                          final isSelected = selectedPreferences.contains(pref);
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: FilterChip(
+                              label: Text(
+                                pref,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: isSelected
+                                      ? Colors.white
+                                      : Colors.black87,
+                                ),
+                              ),
+                              selected: isSelected,
+                              selectedColor: PrimaryPurple,
+                              onSelected: (s) {
+                                setState(
+                                  () => s
+                                      ? selectedPreferences.add(pref)
+                                      : selectedPreferences.remove(pref),
+                                );
+                                _fakeLoading();
+                              },
+                            ),
+                          );
+                        }).toList(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: _isLoading
+                ? const BochincheFilterLoader()
+                : StreamBuilder<List<Map<String, dynamic>>>(
+                    stream: chargeFilteredEvents(
+                      category: selectedCategory,
+                      date: selectedDate,
+                      preferences: selectedPreferences,
+                    ),
+                    builder: (context, snapshot) {
+                      if (!snapshot.hasData)
+                        return const BochincheFilterLoader();
+                      final eventos = snapshot.data ?? [];
+                      if (eventos.isEmpty)
+                        return const Center(
+                          child: Text("Sin resultados coincidentes"),
+                        );
+                      return ListView.builder(
+                        padding: const EdgeInsets.all(10),
+                        itemCount: eventos.length,
+                        itemBuilder: (context, index) {
+                          final e = eventos[index];
+                          return Card(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(15),
+                              side: const BorderSide(color: Colors.black12),
+                            ),
+                            elevation: 0,
+                            margin: const EdgeInsets.symmetric(vertical: 6),
+                            child: ListTile(
+                              leading: CircleAvatar(
+                                backgroundColor: PrimaryPurple.withOpacity(0.1),
+                                child: const Icon(
+                                  Icons.celebration,
+                                  color: PrimaryPurple,
+                                ),
+                              ),
+                              title: Text(
+                                e['name'],
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              subtitle: Text(
+                                "${e['type']} • ${e['startDate'].toString().split("T")[0]}",
+                              ),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class BochincheFilterLoader extends StatelessWidget {
+  const BochincheFilterLoader({super.key});
+  @override
+  Widget build(BuildContext context) => Center(
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const CircularProgressIndicator(color: PrimaryPurple),
+        const SizedBox(height: 15),
+        Text(
+          getBochincheLoadingMessage(),
+          style: const TextStyle(
+            fontStyle: FontStyle.italic,
+            color: Colors.grey,
+          ),
+        ),
+      ],
+    ),
+  );
+}

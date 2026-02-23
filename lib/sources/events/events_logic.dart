@@ -468,3 +468,75 @@ Future<void> agregarValoracion({
     tx.update(eventRef, {'stars': newStars, 'total_review': newTotal});
   });
 }
+
+//ESTOS SON LOS CAMBIOS DE JAVIER
+
+Map<String, dynamic> userPreferredFilters = {
+  'category': 'Todos',
+  'tags': <String>[],
+};
+
+void saveFiltersLocally(String category, List<String> tags) {
+  userPreferredFilters['category'] = category;
+  userPreferredFilters['tags'] = List<String>.from(tags);
+}
+
+String formatTimeFromMap(dynamic timeData) {
+  if (timeData == null || timeData is! Map) return "N/A";
+  final hour = timeData['hour']?.toString().padLeft(2, '0') ?? "00";
+  final minute = timeData['minute']?.toString().padLeft(2, '0') ?? "00";
+  return "$hour:$minute";
+}
+
+String getBochincheLoadingMessage() {
+  final messages = [
+    "Afinando instrumentos...",
+    "Enfriando bebidas...",
+    "Preparando el VIP...",
+    "Ubicando la tarima...",
+  ];
+  return messages[Random().nextInt(messages.length)];
+}
+
+Stream<List<Map<String, dynamic>>> chargeFilteredEvents({
+  String? category,
+  DateTime? date,
+  List<String>? preferences,
+}) {
+  Query query = FirebaseFirestore.instance.collection('events');
+  if (category != null && category != 'Todos') {
+    query = query.where('type', isEqualTo: category);
+  }
+  return query.snapshots().map((snapshot) {
+    List<Map<String, dynamic>> results = snapshot.docs.map((doc) {
+      Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+      data['id'] = doc.id;
+      data['name'] = data['name'] ?? 'Evento sin nombre';
+      data['type'] = data['type'] ?? 'Otros';
+      data['startDate'] = data['startDate'] ?? DateTime.now().toIso8601String();
+      data['description'] = data['description'] ?? 'Sin descripción';
+      data['capacity'] = data['capacity'] ?? '0';
+      return data;
+    }).toList();
+
+    if (date != null) {
+      results = results.where((event) {
+        try {
+          DateTime eventDate = DateTime.parse(event['startDate']);
+          return eventDate.year == date.year &&
+              eventDate.month == date.month &&
+              eventDate.day == date.day;
+        } catch (e) {
+          return false;
+        }
+      }).toList();
+    }
+    if (preferences != null && preferences.isNotEmpty) {
+      results = results.where((event) {
+        List<dynamic> eventTags = event['tags'] ?? [];
+        return preferences.any((pref) => eventTags.contains(pref));
+      }).toList();
+    }
+    return results;
+  });
+}
