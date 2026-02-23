@@ -55,7 +55,9 @@ class _ReportEventsFormState extends State<ReportEventsForm> {
           Divider(),
           CheckboxListTile(
             title: Text('Localización Incorrecta'),
-            subtitle: Text('.'),
+            subtitle: Text(
+              'El evento se muestra en un lugar diferente al real.',
+            ),
             value: locationError,
             onChanged: (value) {
               setState(() {
@@ -128,6 +130,7 @@ class _ReportEventsFormState extends State<ReportEventsForm> {
               ),
             ),
           ],
+          SizedBox(height: 5),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
@@ -243,7 +246,7 @@ class _ReportUserViewState extends State<ReportUserView> {
             },
             controlAffinity: ListTileControlAffinity.leading,
           ),
-
+          SizedBox(height: 5),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
@@ -424,7 +427,7 @@ class _AdminReportsViewState extends State<AdminReportsView> {
         children: [
           SizedBox(height: 20),
           Text(
-            'Mis Reportes',
+            'Administrar reportes a usuarios y eventos',
             style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
           Divider(),
@@ -511,7 +514,7 @@ class _AdminReportsViewState extends State<AdminReportsView> {
                                       title: Text('Resolver reporte'),
                                       content: TextField(
                                         controller: feedbackController,
-                                        maxLines: 3,
+                                        maxLines: 4,
                                         decoration: const InputDecoration(
                                           hintText:
                                               'Escribe aquí tu feedback para el usuario...',
@@ -521,38 +524,44 @@ class _AdminReportsViewState extends State<AdminReportsView> {
                                         ),
                                       ),
                                       actions: [
-                                        TextButton(
-                                          onPressed: () {
-                                            Navigator.of(context).pop();
-                                          },
-                                          child: Text('Cancelar'),
-                                        ),
-                                        TextButton(
-                                          onPressed: () {
-                                            setState(() {
-                                              reportId = j['reportId'];
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceEvenly,
+                                          children: [
+                                            TextButton(
+                                              onPressed: () {
+                                                Navigator.of(context).pop();
+                                              },
+                                              child: Text('Cancelar'),
+                                            ),
+                                            TextButton(
+                                              onPressed: () {
+                                                setState(() {
+                                                  reportId = j['reportId'];
 
-                                              if (j['evento'] == true) {
-                                                updateReportStatus(
-                                                  j['reportId'],
-                                                );
-                                              } else {
-                                                updateReportStatusUser(
-                                                  j['reportId'],
-                                                );
-                                              }
-                                            });
-                                            Navigator.of(context).pop();
-                                          },
-                                          child: Text(
-                                            'Eliminar evento/usuario',
-                                          ),
-                                        ),
-                                        TextButton(
-                                          onPressed: () {
-                                            ignoreReport(j['reportId']);
-                                          },
-                                          child: Text('Ignorar reporte'),
+                                                  if (j['evento'] == true) {
+                                                    updateReportStatus(
+                                                      j['reportId'],
+                                                    );
+                                                  } else {
+                                                    updateReportStatusUser(
+                                                      j['reportId'],
+                                                    );
+                                                  }
+                                                });
+                                                Navigator.of(context).pop();
+                                              },
+                                              child: Text(
+                                                'Eliminar evento/usuario',
+                                              ),
+                                            ),
+                                            TextButton(
+                                              onPressed: () {
+                                                ignoreReport(j['reportId']);
+                                              },
+                                              child: Text('Ignorar reporte'),
+                                            ),
+                                          ],
                                         ),
                                       ],
                                     );

@@ -230,126 +230,130 @@ class MapaState extends State<Mapa> {
                     ),
                     Text(
                       'Nombre del evento: ${data['name']}',
-                      style: Theme.of(context).textTheme.titleMedium,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 4.5),
                     Text('Dirección: ${data['address']}'),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 1),
                     Text('Contacto o Pagina Web: ${data['contact']}'),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 1),
                     Text('Descripción: ${data['description']}'),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 1),
                     Text('Aforo: ${data['capacity']}'),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 1),
                     Text(
-                      'Fecha de inicio: ${DateTime.parse(data['startDate']).day}/${DateTime.parse(data['startDate']).month}/${DateTime.parse(data['startDate']).year}',
+                      'Fecha de inicio: ${DateTime.parse(data['startDate']).day}/${DateTime.parse(data['startDate']).month}/${DateTime.parse(data['startDate']).year} a las ${data['startTime']['hour'].toString().padLeft(2, '0')}:${data['startTime']['minute'].toString().padLeft(2, '0')}',
                     ),
+                    const SizedBox(height: 1),
                     Text(
-                      'Fecha de finalización: ${DateTime.parse(data['endDate']).day}/${DateTime.parse(data['endDate']).month}/${DateTime.parse(data['endDate']).year}',
+                      'Fecha de finalización: ${DateTime.parse(data['endDate']).day}/${DateTime.parse(data['endDate']).month}/${DateTime.parse(data['endDate']).year} a las ${data['endTime']['hour'].toString().padLeft(2, '0')}:${data['endTime']['minute'].toString().padLeft(2, '0')}',
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Hora de inicio: ${data['startTime']['hour'].toString().padLeft(2, '0')}:${data['startTime']['minute'].toString().padLeft(2, '0')}',
-                    ),
-                    Text(
-                      'Hora de finalización: ${data['endTime']['hour'].toString().padLeft(2, '0')}:${data['endTime']['minute'].toString().padLeft(2, '0')}',
-                    ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 1),
                     Text('Estado: ${data['state']}'),
-                    const SizedBox(height: 12),
-                    Builder(
-                      builder: (context) {
-                        final int sold = data['ticketsSold'] ?? 0;
-                        final int cap = data['capacity'] is int
-                            ? data['capacity'] as int
-                            : int.tryParse(
-                                    data['capacity']?.toString() ?? '0',
-                                  ) ??
-                                  0;
-                        final bool isAgotado = sold >= cap;
+                    const SizedBox(height: 2),
 
-                        return ElevatedButton(
-                          onPressed: isAgotado
-                              ? null
-                              : () {
-                                  if (FirebaseAuth.instance.currentUser ==
-                                      null) {
-                                    Navigator.pop(context);
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) =>
-                                            const LoginScreen(),
-                                      ),
-                                    );
-                                    return;
-                                  }
-                                  // Abrir flujo de pago unificado con datos del evento
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => PaymentPage(
-                                        eventData: data,
-                                        eventId: eventoId,
-                                      ),
-                                    ),
-                                  );
-                                },
-                          child: Text(
-                            isAgotado ? 'Agotado' : 'Comprar entradas',
-                          ),
-                        );
-                      },
-                    ),
-                    ElevatedButton(
-                      onPressed: () {
-                        if (FirebaseAuth.instance.currentUser == null) {
-                          Navigator.pop(context);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const LoginScreen(),
-                            ),
-                          );
-                          return;
-                        } else {
-                          Navigator.pop(context);
-                          showDialog(
-                            context: context,
-                            builder: (context) {
-                              return AlertDialog(
-                                title: const Text('Reportar evento'),
-                                content: const Text(
-                                  '¿Deseas reportar este evento por incumplimiento de las normas?',
-                                ),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () => Navigator.pop(context),
-                                    child: const Text('Cancelar'),
-                                  ),
-                                  TextButton(
-                                    onPressed: () {
-                                      Navigator.pop(context);
-                                      eventToReport = eventoId;
-                                      print(eventToReport);
+                    Row(
+                      children: [
+                        Builder(
+                          builder: (context) {
+                            final int sold = data['ticketsSold'] ?? 0;
+                            final int cap = data['capacity'] is int
+                                ? data['capacity'] as int
+                                : int.tryParse(
+                                        data['capacity']?.toString() ?? '0',
+                                      ) ??
+                                      0;
+                            final bool isAgotado = sold >= cap;
+
+                            return ElevatedButton(
+                              onPressed: isAgotado
+                                  ? null
+                                  : () {
+                                      if (FirebaseAuth.instance.currentUser ==
+                                          null) {
+                                        Navigator.pop(context);
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                const LoginScreen(),
+                                          ),
+                                        );
+                                        return;
+                                      }
+                                      // Abrir flujo de pago unificado con datos del evento
                                       Navigator.push(
                                         context,
                                         MaterialPageRoute(
-                                          builder: (context) =>
-                                              const ReportEvents(),
+                                          builder: (context) => PaymentPage(
+                                            eventData: data,
+                                            eventId: eventoId,
+                                          ),
                                         ),
                                       );
                                     },
-                                    child: const Text('Reportar'),
-                                  ),
-                                ],
+                              child: Text(
+                                isAgotado ? 'Agotado' : 'Comprar entradas',
+                              ),
+                            );
+                          },
+                        ),
+                        SizedBox(width: 8),
+                        ElevatedButton(
+                          onPressed: () {
+                            if (FirebaseAuth.instance.currentUser == null) {
+                              Navigator.pop(context);
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const LoginScreen(),
+                                ),
                               );
-                            },
-                          );
-                        }
-                      },
-                      child: const Text('Reportar evento'),
+                              return;
+                            } else {
+                              Navigator.pop(context);
+                              showDialog(
+                                context: context,
+                                builder: (context) {
+                                  return AlertDialog(
+                                    title: const Text('Reportar evento'),
+                                    content: const Text(
+                                      '¿Deseas reportar este evento por incumplimiento de las normas?',
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () => Navigator.pop(context),
+                                        child: const Text('Cancelar'),
+                                      ),
+                                      TextButton(
+                                        onPressed: () {
+                                          Navigator.pop(context);
+                                          eventToReport = eventoId;
+                                          print(eventToReport);
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) =>
+                                                  const ReportEvents(),
+                                            ),
+                                          );
+                                        },
+                                        child: const Text('Reportar'),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              );
+                            }
+                          },
+                          child: const Text('Reportar evento'),
+                        ),
+                      ],
                     ),
+                    SizedBox(height: 2),
                     const Divider(),
                     CommentsSection(eventoId: eventoId),
                     const SizedBox(height: 8),

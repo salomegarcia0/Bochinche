@@ -141,33 +141,57 @@ class _FormCreateEventState extends State<FormCreateEvent> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildLabel('Nombre del evento'),
           TextFormField(
             controller: nombreEventoController,
             validator: validateName,
+            decoration: const InputDecoration(
+              labelText: 'Nombre del evento',
+              prefixIcon: Icon(Icons.event),
+              border: OutlineInputBorder(),
+              counterText: '',
+            ),
           ),
-
-          const SizedBox(height: 15),
-          _buildLabel('Dirección Física'),
+          const SizedBox(height: 12),
           TextFormField(
             controller: direccionController,
             validator: validateName,
+            decoration: const InputDecoration(
+              labelText: 'Dirección Física',
+              prefixIcon: Icon(Icons.pin_drop),
+              border: OutlineInputBorder(),
+              counterText: '',
+            ),
           ),
-
-          const SizedBox(height: 15),
-          _buildLabel('Contacto o Pagina Web'),
+          const SizedBox(height: 12),
           TextFormField(
             controller: contactoController,
             validator: validateName,
+            decoration: const InputDecoration(
+              labelText: 'Contacto o Pagina Web',
+              prefixIcon: Icon(Icons.contact_page),
+              border: OutlineInputBorder(),
+              counterText: '',
+            ),
           ),
-
-          _buildLabel('Aforo'),
-          TextFormField(controller: aforoController, validator: validateAforo),
-
-          const SizedBox(height: 15),
-          _buildLabel('Tipo de evento'),
-          DropdownButton<String>(
-            value: selectedValue,
+          const SizedBox(height: 12),
+          TextFormField(
+            controller: aforoController,
+            validator: validateAforo,
+            decoration: const InputDecoration(
+              labelText: 'Aforo',
+              prefixIcon: Icon(Icons.people),
+              border: OutlineInputBorder(),
+              counterText: '',
+            ),
+          ),
+          const SizedBox(height: 12),
+          DropdownButtonFormField<String>(
+            decoration: InputDecoration(
+              labelText: 'Tipo de evento',
+              prefixIcon: Icon(Icons.type_specimen),
+              border: OutlineInputBorder(),
+            ),
+            initialValue: selectedValue,
             isExpanded: true,
             hint: const Text("Selecciona el tipo"),
             items: options
@@ -180,18 +204,18 @@ class _FormCreateEventState extends State<FormCreateEvent> {
               });
             },
           ),
-          _buildLabel('Fecha Inicio'),
+          SizedBox(height: 12),
           TextField(
             controller: fecha1C,
             decoration: const InputDecoration(
-              hintText: 'Fecha de inicio del evento',
+              labelText: 'Fecha de inicio del evento',
               filled: true,
               prefixIcon: Icon(Icons.calendar_view_day_rounded),
               enabledBorder: OutlineInputBorder(
                 borderSide: BorderSide(color: Colors.black),
               ),
               focusedBorder: OutlineInputBorder(
-                borderSide: BorderSide(color: Colors.green),
+                borderSide: BorderSide(color: Color.fromARGB(255, 3, 3, 3)),
               ),
             ),
             readOnly: true,
@@ -200,11 +224,11 @@ class _FormCreateEventState extends State<FormCreateEvent> {
               print(fecha1C);
             },
           ),
-          _buildLabel('Fecha Fin'),
+          SizedBox(height: 12),
           TextField(
             controller: fecha2C,
             decoration: const InputDecoration(
-              hintText: 'Fecha de fin del evento',
+              labelText: 'Fecha de fin del evento',
               filled: true,
               prefixIcon: Icon(Icons.calendar_view_day_rounded),
               enabledBorder: OutlineInputBorder(
@@ -253,97 +277,118 @@ class _FormCreateEventState extends State<FormCreateEvent> {
             },
           ),
 
-          const SizedBox(height: 20),
+          const SizedBox(height: 12),
 
-          _buildLabel("Hora de inicio"),
           Row(
             children: [
-              Padding(
-                padding: EdgeInsetsGeometry.all(2),
-                child: Container(
-                  padding: const EdgeInsets.only(
-                    left: 10,
-                    right: 10,
-                    top: 5,
-                    bottom: 5,
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildLabel("Hora de inicio"),
+                  Row(
+                    children: [
+                      Padding(
+                        padding: EdgeInsetsGeometry.all(2),
+                        child: Container(
+                          padding: const EdgeInsets.only(
+                            left: 10,
+                            right: 10,
+                            top: 5,
+                            bottom: 5,
+                          ),
+                          decoration: BoxDecoration(
+                            border: BoxBorder.all(color: Colors.black),
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                          child: Text(
+                            '${hora1select.hour}:${hora1select.minute.toString().padLeft(2, '0')}',
+                            style: TextStyle(color: Colors.black, fontSize: 15),
+                          ),
+                        ),
+                      ),
+                      ElevatedButton(
+                        child: Icon(Icons.punch_clock),
+                        onPressed: () async {
+                          final TimeOfDay? horaFirst = await showTimePicker(
+                            context: context,
+                            initialTime: hora1select,
+                            initialEntryMode: TimePickerEntryMode.dial,
+                          );
+                          if (horaFirst != null) {
+                            setState(() {
+                              hora1select = horaFirst;
+                              firtTimeHour = hora1select;
+                              print(hora1select.hour);
+                              print(hora1select.minute);
+                            });
+                          }
+                        },
+                      ),
+                    ],
                   ),
-                  decoration: BoxDecoration(
-                    border: BoxBorder.all(color: Colors.black),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                  child: Text(
-                    '${hora1select.hour}:${hora1select.minute.toString().padLeft(2, '0')}',
-                    style: TextStyle(color: Colors.black, fontSize: 15),
-                  ),
-                ),
+                ],
               ),
-              ElevatedButton(
-                child: Icon(Icons.punch_clock),
-                onPressed: () async {
-                  final TimeOfDay? horaFirst = await showTimePicker(
-                    context: context,
-                    initialTime: hora1select,
-                    initialEntryMode: TimePickerEntryMode.dial,
-                  );
-                  if (horaFirst != null) {
-                    setState(() {
-                      hora1select = horaFirst;
-                      firtTimeHour = hora1select;
-                      print(hora1select.hour);
-                      print(hora1select.minute);
-                    });
-                  }
-                },
+              SizedBox(width: 40),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildLabel("Hora de cierre"),
+                  Row(
+                    children: [
+                      Padding(
+                        padding: EdgeInsetsGeometry.all(2),
+                        child: Container(
+                          padding: const EdgeInsets.only(
+                            left: 10,
+                            right: 10,
+                            top: 5,
+                            bottom: 5,
+                          ),
+                          decoration: BoxDecoration(
+                            border: BoxBorder.all(color: Colors.black),
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                          child: Text(
+                            '${hora2select.hour}:${hora2select.minute.toString().padLeft(2, '0')} ',
+                            style: TextStyle(color: Colors.black, fontSize: 15),
+                          ),
+                        ),
+                      ),
+                      ElevatedButton(
+                        child: Icon(Icons.punch_clock),
+                        onPressed: () async {
+                          final TimeOfDay? horaLast = await showTimePicker(
+                            context: context,
+                            initialTime: hora2select,
+                            initialEntryMode: TimePickerEntryMode.dial,
+                          );
+                          if (horaLast != null) {
+                            setState(() {
+                              hora2select = horaLast;
+                              lastTimeHour = hora2select;
+                              print(hora2select.hour);
+                              print(hora2select.minute);
+                            });
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ],
           ),
-
-          _buildLabel("Hora de cierre"),
-          Row(
-            children: [
-              Padding(
-                padding: EdgeInsetsGeometry.all(2),
-                child: Container(
-                  padding: const EdgeInsets.only(
-                    left: 10,
-                    right: 10,
-                    top: 5,
-                    bottom: 5,
-                  ),
-                  decoration: BoxDecoration(
-                    border: BoxBorder.all(color: Colors.black),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                  child: Text(
-                    '${hora2select.hour}:${hora2select.minute.toString().padLeft(2, '0')} ',
-                    style: TextStyle(color: Colors.black, fontSize: 15),
-                  ),
-                ),
-              ),
-              ElevatedButton(
-                child: Icon(Icons.punch_clock),
-                onPressed: () async {
-                  final TimeOfDay? horaLast = await showTimePicker(
-                    context: context,
-                    initialTime: hora2select,
-                    initialEntryMode: TimePickerEntryMode.dial,
-                  );
-                  if (horaLast != null) {
-                    setState(() {
-                      hora2select = horaLast;
-                      lastTimeHour = hora2select;
-                      print(hora2select.hour);
-                      print(hora2select.minute);
-                    });
-                  }
-                },
-              ),
-            ],
+          const SizedBox(height: 12),
+          TextFormField(
+            controller: descripcionController,
+            maxLines: 3,
+            decoration: const InputDecoration(
+              labelText: 'Descripción del evento',
+              alignLabelWithHint: true,
+              border: OutlineInputBorder(),
+              counterText: '',
+            ),
           ),
-
-          const SizedBox(height: 20),
-          _buildLabel('Descripción'),
-          TextFormField(controller: descripcionController, maxLines: 3),
 
           const SizedBox(height: 20),
           const Divider(),
@@ -606,9 +651,9 @@ class _MyEventsState extends State<MyEvents> {
                 children: eventos
                     .map(
                       (i) => Padding(
-                        padding: const EdgeInsets.all(10),
+                        padding: const EdgeInsets.all(5),
                         child: Container(
-                          padding: const EdgeInsets.all(10),
+                          padding: const EdgeInsets.all(20),
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(4),
                             border: Border.all(color: Colors.black),
@@ -624,14 +669,7 @@ class _MyEventsState extends State<MyEvents> {
                                   fontSize: 20,
                                 ),
                               ),
-                              const Text(
-                                'Organizador',
-                                style: TextStyle(
-                                  color: Colors.black,
-                                  fontWeight: FontWeight.w800,
-                                  fontSize: 15,
-                                ),
-                              ),
+                              SizedBox(height: 5),
                               Text(
                                 'Aforo: ${i['capacity']}',
                                 style: const TextStyle(
@@ -689,27 +727,7 @@ class _MyEventsState extends State<MyEvents> {
                                 ),
                               ),
                               const SizedBox(height: 10),
-                              ElevatedButton(
-                                onPressed: () {
-                                  idmod = i['id'];
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          const ModifyEvents(),
-                                    ),
-                                  );
-                                  cargarDatosEvento(idmod);
-                                },
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: const [
-                                    Icon(Icons.change_circle),
-                                    SizedBox(width: 5),
-                                    Text('Modificar evento'),
-                                  ],
-                                ),
-                              ),
+
                               const SizedBox(height: 10),
                               if (i['isPrivate'] == true) ...[
                                 Container(
@@ -766,56 +784,86 @@ class _MyEventsState extends State<MyEvents> {
                                 ),
                                 const SizedBox(height: 10),
                               ],
-                              ElevatedButton.icon(
-                                onPressed:
-                                    (int.tryParse(
-                                              i['capacity']?.toString() ?? '0',
-                                            ) ??
-                                            0) <=
-                                        (i['ticketsSold'] ?? 0)
-                                    ? null
-                                    : () {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) => PaymentPage(
-                                              eventData: i,
-                                              eventId: i['id'],
-                                            ),
-                                          ),
-                                        );
-                                      },
-                                icon: const Icon(Icons.payment),
-                                label: Text(
-                                  (int.tryParse(
-                                                i['capacity']?.toString() ??
-                                                    '0',
-                                              ) ??
-                                              0) <=
-                                          (i['ticketsSold'] ?? 0)
-                                      ? 'Agotado'
-                                      : 'Pagar',
-                                ),
-                              ),
+
                               const SizedBox(height: 10),
-                              ElevatedButton(
-                                onPressed: () {
-                                  try {
-                                    setState(() {
-                                      deleteEvent(obtainIDFromEvent(i['id']));
-                                    });
-                                  } catch (e) {
-                                    print(e);
-                                  }
-                                },
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: const [
-                                    Icon(Icons.delete),
-                                    SizedBox(width: 5),
-                                    Text('Eliminar evento'),
-                                  ],
-                                ),
+                              Wrap(
+                                children: [
+                                  ElevatedButton(
+                                    onPressed: () {
+                                      idmod = i['id'];
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              const ModifyEvents(),
+                                        ),
+                                      );
+                                      cargarDatosEvento(idmod);
+                                    },
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: const [
+                                        Icon(Icons.change_circle),
+                                        SizedBox(width: 5),
+                                        Text('Modificar evento'),
+                                      ],
+                                    ),
+                                  ),
+                                  ElevatedButton.icon(
+                                    onPressed:
+                                        (int.tryParse(
+                                                  i['capacity']?.toString() ??
+                                                      '0',
+                                                ) ??
+                                                0) <=
+                                            (i['ticketsSold'] ?? 0)
+                                        ? null
+                                        : () {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (context) =>
+                                                    PaymentPage(
+                                                      eventData: i,
+                                                      eventId: i['id'],
+                                                    ),
+                                              ),
+                                            );
+                                          },
+                                    icon: const Icon(Icons.payment),
+                                    label: Text(
+                                      (int.tryParse(
+                                                    i['capacity']?.toString() ??
+                                                        '0',
+                                                  ) ??
+                                                  0) <=
+                                              (i['ticketsSold'] ?? 0)
+                                          ? 'Agotado'
+                                          : 'Pagar',
+                                    ),
+                                  ),
+                                  ElevatedButton(
+                                    onPressed: () {
+                                      try {
+                                        setState(() {
+                                          deleteEvent(
+                                            obtainIDFromEvent(i['id']),
+                                          );
+                                        });
+                                      } catch (e) {
+                                        print(e);
+                                      }
+                                    },
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: const [
+                                        Icon(Icons.delete),
+                                        SizedBox(width: 5),
+                                        Text('Eliminar evento'),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
@@ -851,27 +899,10 @@ class ModifyEvents extends StatelessWidget {
               child: Padding(
                 padding: EdgeInsets.all(15.0),
                 child: Text(
-                  'Crea tus eventos y promociónalos al mundo',
+                  'Modifica tus eventos',
                   style: TextStyle(fontWeight: FontWeight.w800, fontSize: 25),
                 ),
               ),
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const ControlPanelEvent(),
-                      ),
-                    );
-                  },
-                  icon: const Icon(Icons.settings),
-                  label: const Text('Panel de control'),
-                ),
-              ],
             ),
             const Divider(),
             const FormCreateEvent2(),
@@ -954,34 +985,57 @@ class _FormCreateEvent2State extends State<FormCreateEvent2> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildLabel('Nombre del evento'),
           TextFormField(
             controller: nombreEventoController,
             validator: validateName,
+            decoration: const InputDecoration(
+              labelText: 'Nombre del evento',
+              prefixIcon: Icon(Icons.event),
+              border: OutlineInputBorder(),
+              counterText: '',
+            ),
           ),
-
-          const SizedBox(height: 15),
-          _buildLabel('Dirección Física'),
+          const SizedBox(height: 12),
           TextFormField(
             controller: direccionController,
             validator: validateName,
+            decoration: const InputDecoration(
+              labelText: 'Dirección Física',
+              prefixIcon: Icon(Icons.pin_drop),
+              border: OutlineInputBorder(),
+              counterText: '',
+            ),
           ),
-
-          const SizedBox(height: 15),
-          _buildLabel('Contacto'),
+          const SizedBox(height: 12),
           TextFormField(
             controller: contactoController,
             validator: validateName,
+            decoration: const InputDecoration(
+              labelText: 'Contacto o Pagina Web',
+              prefixIcon: Icon(Icons.contact_page),
+              border: OutlineInputBorder(),
+              counterText: '',
+            ),
           ),
-
-          const SizedBox(height: 15),
-          _buildLabel('Aforo'),
-          TextFormField(controller: aforoController, validator: validateAforo),
-
-          const SizedBox(height: 15),
-          _buildLabel('Estado del evento'),
-          DropdownButton<String>(
-            value: selectedValue,
+          const SizedBox(height: 12),
+          TextFormField(
+            controller: aforoController,
+            validator: validateAforo,
+            decoration: const InputDecoration(
+              labelText: 'Aforo',
+              prefixIcon: Icon(Icons.people),
+              border: OutlineInputBorder(),
+              counterText: '',
+            ),
+          ),
+          const SizedBox(height: 12),
+          DropdownButtonFormField<String>(
+            decoration: const InputDecoration(
+              labelText: 'Estado del evento',
+              prefixIcon: Icon(Icons.event_available),
+              border: OutlineInputBorder(),
+            ),
+            initialValue: selectedValue,
             isExpanded: true,
             hint: const Text("Selecciona el estado"),
             items: options2
@@ -994,9 +1048,17 @@ class _FormCreateEvent2State extends State<FormCreateEvent2> {
               });
             },
           ),
-
-          _buildLabel('Descripción'),
-          TextFormField(controller: descripcionController, maxLines: 3),
+          SizedBox(height: 12),
+          TextFormField(
+            controller: descripcionController,
+            maxLines: 3,
+            decoration: const InputDecoration(
+              labelText: 'Descripción del evento',
+              alignLabelWithHint: true,
+              border: OutlineInputBorder(),
+              counterText: '',
+            ),
+          ),
           const SizedBox(height: 20),
           const Divider(),
 
