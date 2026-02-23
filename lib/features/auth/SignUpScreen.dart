@@ -98,7 +98,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       );
 
       if (user != null && user.emailVerified == false && mounted) {
-        ScaffoldMessenger.of(
+        Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const Authetication_steps()),
         );
