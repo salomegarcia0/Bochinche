@@ -1,13 +1,8 @@
 import 'package:bochinche_app/data/firebase_options.dart';
-import 'package:bochinche_app/features/authentication/authentication_steps.dart';
-// import 'package:bochinche_app/features/auth/SignUpScreen.dart';
-// import 'package:bochinche_app/features/auth/loginScreen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'features/map/mapa.dart';
 import 'features/map/Paginna_Inicio.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -37,7 +32,7 @@ class MyApp extends StatelessWidget {
       title: 'Flutter Demo',
       theme: ThemeData(colorScheme: .fromSeed(seedColor: Colors.deepPurple)),
       debugShowCheckedModeBanner: false,
-      home: const Authetication_steps(),
+      home: const Pagina_Principal(),
     );
   }
 }

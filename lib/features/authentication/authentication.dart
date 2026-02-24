@@ -1,11 +1,11 @@
 import 'dart:io';
-import 'package:bochinche_app/features/map/Paginna_Inicio.dart';
+import 'package:bochinche_app/features/auth/LoginScreen.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:bochinche_app/styles/Color.dart';
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart'; 
-import 'package:cloud_firestore/cloud_firestore.dart'; 
-import 'package:supabase_flutter/supabase_flutter.dart' hide User; 
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide User;
 
 class Authetication extends StatefulWidget {
   const Authetication({super.key});
@@ -65,12 +65,12 @@ class _AutheticationState extends State<Authetication> {
                       const SizedBox(height: 10),
                       Image(
                         width: double.infinity,
-                        height: 200,
-                        fit: BoxFit.cover,
+                        height: 180,
+                        fit: BoxFit.contain,
+                        alignment: Alignment.center,
                         image: (idFile != null)
                             ? FileImage(idFile!)
-                            : AssetImage('assets/id_default.png')
-                                  as ImageProvider,
+                            : AssetImage('lib/styles/id.png') as ImageProvider,
                       ),
                       ElevatedButton.icon(
                         onPressed: () => _pickImage(ImageSource.camera, false),
@@ -88,11 +88,12 @@ class _AutheticationState extends State<Authetication> {
                       ),
                       Image(
                         width: double.infinity,
-                        height: 200,
-                        fit: BoxFit.cover,
+                        height: 180,
+                        fit: BoxFit.contain,
+                        alignment: Alignment.center,
                         image: (selfie != null)
                             ? FileImage(selfie!)
-                            : AssetImage('assets/selfie_default.png')
+                            : AssetImage('lib/styles/selfie.png')
                                   as ImageProvider,
                       ),
                       const SizedBox(height: 10),
@@ -160,9 +161,7 @@ class _AutheticationState extends State<Authetication> {
               onPressed: () {
                 Navigator.pushReplacement(
                   context,
-                  MaterialPageRoute(
-                    builder: (context) => const Pagina_Principal(),
-                  ),
+                  MaterialPageRoute(builder: (context) => const LoginScreen()),
                 );
               },
               style: ElevatedButton.styleFrom(
@@ -195,13 +194,11 @@ class _AutheticationState extends State<Authetication> {
   }
 
   Future<void> _subirVerificacion() async {
-
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => const Center(
-        child: CircularProgressIndicator(color: PrimaryPurple),
-      ),
+      builder: (context) =>
+          const Center(child: CircularProgressIndicator(color: PrimaryPurple)),
     );
 
     try {
@@ -221,8 +218,12 @@ class _AutheticationState extends State<Authetication> {
       await supabase.storage.from('verificaciones').upload(idPath, idFile!);
 
       //  Supabase devuelve los links de las imágenes
-      final selfieUrl = supabase.storage.from('verificaciones').getPublicUrl(selfiePath);
-      final idUrl = supabase.storage.from('verificaciones').getPublicUrl(idPath);
+      final selfieUrl = supabase.storage
+          .from('verificaciones')
+          .getPublicUrl(selfiePath);
+      final idUrl = supabase.storage
+          .from('verificaciones')
+          .getPublicUrl(idPath);
 
       // Guardamos links en Firestore
       await FirebaseFirestore.instance.collection('users').doc(uid).update({
@@ -231,15 +232,11 @@ class _AutheticationState extends State<Authetication> {
         'estado_verificacion': 'En revisión',
       });
 
-      
       if (!mounted) return;
       Navigator.pop(context);
 
-      
       alerta(context);
-
     } catch (e) {
-      
       if (!mounted) return;
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(

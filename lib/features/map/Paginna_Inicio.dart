@@ -1,4 +1,3 @@
-import 'package:bochinche_app/sources/events/events_ui.dart';
 import 'package:bochinche_app/styles/BochincheAppBar.dart';
 import 'package:bochinche_app/features/map/Mapa.dart';
 import 'package:flutter/material.dart';
