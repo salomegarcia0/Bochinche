@@ -34,8 +34,8 @@ class Navbar extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           }
 
-          final String role = snapshot.data ?? 'usuario';
-          final bool isOrganizador = role == 'organizador';
+          final String role = snapshot.data ?? 'organizador';
+          final bool isOrganizador = role == 'admin';
 
           return ListView(
             children: [

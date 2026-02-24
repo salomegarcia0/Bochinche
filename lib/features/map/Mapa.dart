@@ -9,6 +9,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:bochinche_app/features/auth/LoginScreen.dart';
 import 'package:bochinche_app/sources/reports/reports_logic.dart';
 import 'package:bochinche_app/sources/reports/reports_ui.dart';
+import 'package:bochinche_app/widgets/verification_badge.dart';
 
 class Mapa extends StatefulWidget implements PreferredSizeWidget {
   const Mapa({super.key});
@@ -88,7 +89,7 @@ class MapaState extends State<Mapa> {
               initialCenter: LatLng(0, 0),
               initialZoom: 16,
               minZoom: 0,
-              maxZoom: 100,
+              maxZoom: 18,
             ),
             children: [
               TileLayer(
@@ -235,6 +236,24 @@ class MapaState extends State<Mapa> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            'Nombre del evento: ${data['name']}',
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                        ),
+                        if (data['id_organizer'] != null) ...[
+                          const SizedBox(width: 4),
+                          VerificationBadge(
+                            uid: data['id_organizer'],
+                            size: 20,
+                          ),
+                        ],
+                      ],
+                    ),
                     const SizedBox(height: 4.5),
                     Text('Dirección: ${data['address']}'),
                     const SizedBox(height: 1),
@@ -284,7 +303,7 @@ class MapaState extends State<Mapa> {
                                         );
                                         return;
                                       }
-                                      // Abrir flujo de pago unificado con datos del evento
+
                                       Navigator.push(
                                         context,
                                         MaterialPageRoute(
