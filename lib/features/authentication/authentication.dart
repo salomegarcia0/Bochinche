@@ -3,6 +3,9 @@ import 'package:bochinche_app/features/map/Paginna_Inicio.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:bochinche_app/styles/Color.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart'; 
+import 'package:cloud_firestore/cloud_firestore.dart'; 
+import 'package:supabase_flutter/supabase_flutter.dart' hide User; 
 
 class Authetication extends StatefulWidget {
   const Authetication({super.key});
@@ -114,7 +117,7 @@ class _AutheticationState extends State<Authetication> {
                             );
                             return;
                           }
-                          alerta(context);
+                          _subirVerificacion();
                         },
                         style: ElevatedButton.styleFrom(
                           minimumSize: const Size(double.infinity, 55),
@@ -188,6 +191,63 @@ class _AutheticationState extends State<Authetication> {
           idFile = File(selectedImage.path);
         }
       });
+    }
+  }
+
+  Future<void> _subirVerificacion() async {
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(color: PrimaryPurple),
+      ),
+    );
+
+    try {
+      // ID del usuario en Firebase Auth
+      final User? user = FirebaseAuth.instance.currentUser;
+      if (user == null) throw Exception("No hay usuario logueado");
+      final String uid = user.uid;
+
+      final supabase = Supabase.instance.client;
+      final time = DateTime.now().millisecondsSinceEpoch;
+
+      final selfiePath = '$uid/selfie_$time.jpg';
+      final idPath = '$uid/documento_$time.jpg';
+
+      //  Subimos a Supabase
+      await supabase.storage.from('verificaciones').upload(selfiePath, selfie!);
+      await supabase.storage.from('verificaciones').upload(idPath, idFile!);
+
+      //  Supabase devuelve los links de las imágenes
+      final selfieUrl = supabase.storage.from('verificaciones').getPublicUrl(selfiePath);
+      final idUrl = supabase.storage.from('verificaciones').getPublicUrl(idPath);
+
+      // Guardamos links en Firestore
+      await FirebaseFirestore.instance.collection('users').doc(uid).update({
+        'url_selfie': selfieUrl,
+        'url_documento': idUrl,
+        'estado_verificacion': 'En revisión',
+      });
+
+      
+      if (!mounted) return;
+      Navigator.pop(context);
+
+      
+      alerta(context);
+
+    } catch (e) {
+      
+      if (!mounted) return;
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al subir los archivos: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 }
