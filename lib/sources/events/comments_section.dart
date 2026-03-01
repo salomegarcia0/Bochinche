@@ -63,6 +63,23 @@ class _CommentsSectionState extends State<CommentsSection> {
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        Row(
+                          children: List.generate(5, (index) {
+                            final colored = index < rating;
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 4.0),
+                              child: SvgPicture.asset(
+                                'assets/svgs/2451996.svg',
+                                width: 16,
+                                height: 16,
+                                color: colored
+                                    ? Colors.orange
+                                    : Colors.grey.shade400,
+                              ),
+                            );
+                          }),
+                        ),
+                        SizedBox(height: 5),
                         Text(c['texto'] ?? ''),
                         const SizedBox(height: 6),
                         ElevatedButton(
@@ -81,22 +98,6 @@ class _CommentsSectionState extends State<CommentsSection> {
                           child: Text('Reportar usuario'),
                         ),
                         const SizedBox(height: 6),
-                        Row(
-                          children: List.generate(5, (index) {
-                            final colored = index < rating;
-                            return Padding(
-                              padding: const EdgeInsets.only(right: 4.0),
-                              child: SvgPicture.asset(
-                                'assets/svgs/2451996.svg',
-                                width: 16,
-                                height: 16,
-                                color: colored
-                                    ? Colors.orange
-                                    : Colors.grey.shade400,
-                              ),
-                            );
-                          }),
-                        ),
                       ],
                     ),
                     trailing: ts is Timestamp

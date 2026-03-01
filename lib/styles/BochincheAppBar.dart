@@ -19,7 +19,7 @@ class BochincheAppBar extends StatelessWidget implements PreferredSizeWidget {
         style: TextStyle(color: SecondaryPurple, fontWeight: FontWeight.bold),
       ),
       centerTitle: true,
-      actions: <Widget>[iconpersona(context)],
+      actions: <Widget>[iconpersona(context), iconbell(context)],
       actionsPadding: EdgeInsets.symmetric(horizontal: 16.0),
 
       backgroundColor: PrimaryPurple,

@@ -809,39 +809,6 @@ class _MyEventsState extends State<MyEvents> {
                                       ],
                                     ),
                                   ),
-                                  ElevatedButton.icon(
-                                    onPressed:
-                                        (int.tryParse(
-                                                  i['capacity']?.toString() ??
-                                                      '0',
-                                                ) ??
-                                                0) <=
-                                            (i['ticketsSold'] ?? 0)
-                                        ? null
-                                        : () {
-                                            Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder: (context) =>
-                                                    PaymentPage(
-                                                      eventData: i,
-                                                      eventId: i['id'],
-                                                    ),
-                                              ),
-                                            );
-                                          },
-                                    icon: const Icon(Icons.payment),
-                                    label: Text(
-                                      (int.tryParse(
-                                                    i['capacity']?.toString() ??
-                                                        '0',
-                                                  ) ??
-                                                  0) <=
-                                              (i['ticketsSold'] ?? 0)
-                                          ? 'Agotado'
-                                          : 'Pagar',
-                                    ),
-                                  ),
                                   ElevatedButton(
                                     onPressed: () {
                                       try {

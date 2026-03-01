@@ -229,20 +229,102 @@ class MapaState extends State<Mapa> {
                         ),
                       ),
                     ),
-                    Text(
-                      'Nombre del evento: ${data['name']}',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
+
+                    // Fila superior con el Título y los Tres Puntos
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Nombre del evento: ${data['name']}',
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        PopupMenuButton<String>(
+                          icon: const Icon(Icons.more_vert, color: Colors.grey),
+                          onSelected: (value) {
+                            if (value == 'reportar') {
+                              if (FirebaseAuth.instance.currentUser == null) {
+                                Navigator.pop(context);
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const LoginScreen(),
+                                  ),
+                                );
+                                return;
+                              } else {
+                                Navigator.pop(context);
+                                showDialog(
+                                  context: context,
+                                  builder: (context) {
+                                    return AlertDialog(
+                                      title: const Text('Reportar evento'),
+                                      content: const Text(
+                                        '¿Deseas reportar este evento por incumplimiento de las normas?',
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () =>
+                                              Navigator.pop(context),
+                                          child: const Text('Cancelar'),
+                                        ),
+                                        TextButton(
+                                          onPressed: () {
+                                            Navigator.pop(context);
+                                            eventToReport = eventoId;
+                                            print(eventToReport);
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (context) =>
+                                                    const ReportEvents(),
+                                              ),
+                                            );
+                                          },
+                                          child: const Text('Reportar'),
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                );
+                              }
+                            }
+                          },
+                          itemBuilder: (context) => [
+                            const PopupMenuItem(
+                              value: 'reportar',
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.flag_outlined,
+                                    color: Colors.red,
+                                    size: 20,
+                                  ),
+                                  SizedBox(width: 8),
+                                  Text('Reportar evento'),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Flexible(
-                          child: Text(
-                            'Nombre del evento: ${data['name']}',
-                            style: Theme.of(context).textTheme.titleMedium,
+                          child: TextButton(
+                            onPressed: () {
+                              AlertDialog(actions: [Text('hola')]);
+                            },
+                            child: Text(
+                              'Organizador: ${data['name']}',
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
                           ),
                         ),
                         if (data['id_organizer'] != null) ...[
@@ -319,56 +401,6 @@ class MapaState extends State<Mapa> {
                               ),
                             );
                           },
-                        ),
-                        SizedBox(width: 8),
-                        ElevatedButton(
-                          onPressed: () {
-                            if (FirebaseAuth.instance.currentUser == null) {
-                              Navigator.pop(context);
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const LoginScreen(),
-                                ),
-                              );
-                              return;
-                            } else {
-                              Navigator.pop(context);
-                              showDialog(
-                                context: context,
-                                builder: (context) {
-                                  return AlertDialog(
-                                    title: const Text('Reportar evento'),
-                                    content: const Text(
-                                      '¿Deseas reportar este evento por incumplimiento de las normas?',
-                                    ),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () => Navigator.pop(context),
-                                        child: const Text('Cancelar'),
-                                      ),
-                                      TextButton(
-                                        onPressed: () {
-                                          Navigator.pop(context);
-                                          eventToReport = eventoId;
-                                          print(eventToReport);
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) =>
-                                                  const ReportEvents(),
-                                            ),
-                                          );
-                                        },
-                                        child: const Text('Reportar'),
-                                      ),
-                                    ],
-                                  );
-                                },
-                              );
-                            }
-                          },
-                          child: const Text('Reportar evento'),
                         ),
                       ],
                     ),
