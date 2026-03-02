@@ -6,19 +6,19 @@ import 'package:bochinche_app/styles/Color.dart';
 void showNotifications(BuildContext context) {
   showModalBottomSheet(
     context: context,
-    isScrollControlled: true, // Permite que el modal crezca si es necesario
-    backgroundColor: Colors.transparent, // Para usar nuestro propio estilo
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
     builder: (context) {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-        height: MediaQuery.of(context).size.height * 0.7, // Un poco más alto
+        height: MediaQuery.of(context).size.height * 0.7,
         decoration: const BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
         ),
         child: Column(
           children: [
-            // Barra gris de agarre (estética de modal moderna)
+            // Barra gris de agarre
             Container(
               width: 40,
               height: 5,
@@ -39,7 +39,6 @@ void showNotifications(BuildContext context) {
                     color: PrimaryPurple,
                   ),
                 ),
-                // Botón para marcar como leídas o limpiar (opcional)
                 TextButton(
                   onPressed: () => print("Limpiar todo"),
                   child: const Text(
@@ -61,13 +60,22 @@ void showNotifications(BuildContext context) {
                     .orderBy('timestamp', descending: true)
                     .snapshots(),
                 builder: (context, snapshot) {
+                  // 1. Manejo de Errores (Si falta el índice, aquí verás el mensaje)
+                  if (snapshot.hasError) {
+                    print("ERROR FIRESTORE: ${snapshot.error}");
+                    return Center(child: Text("Error: ${snapshot.error}"));
+                  }
+
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(
                       child: CircularProgressIndicator(color: PrimaryPurple),
                     );
                   }
 
-                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                  // 2. Extracción segura de documentos
+                  final docs = snapshot.data?.docs ?? [];
+
+                  if (docs.isEmpty) {
                     return Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -86,13 +94,21 @@ void showNotifications(BuildContext context) {
                   }
 
                   return ListView.separated(
-                    itemCount: snapshot.data!.docs.length,
+                    itemCount: docs.length,
                     separatorBuilder: (context, index) =>
                         const SizedBox(height: 12),
                     itemBuilder: (context, index) {
-                      var doc = snapshot.data!.docs[index];
-                      // Detectamos si es un tipo "nuevo_evento" para cambiar el icono
-                      bool isNewEvent = doc['type'] == 'nuevo_evento';
+                      // 3. Conversión segura a Map (Crucial para Web)
+                      final doc = docs[index];
+                      final data = doc.data() as Map<String, dynamic>? ?? {};
+
+                      // 4. Acceso seguro a campos con valores por defecto
+                      final String type = data['type']?.toString() ?? 'general';
+                      final String title =
+                          data['title']?.toString() ?? 'Sin título';
+                      final String message = data['message']?.toString() ?? '';
+
+                      bool isNewEvent = type == 'nuevo_evento';
 
                       return Container(
                         decoration: BoxDecoration(
@@ -116,7 +132,7 @@ void showNotifications(BuildContext context) {
                             ),
                           ),
                           title: Text(
-                            doc['title'] ?? 'Sin título',
+                            title,
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 15,
@@ -126,12 +142,12 @@ void showNotifications(BuildContext context) {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                doc['message'] ?? '',
+                                message,
                                 style: const TextStyle(fontSize: 13),
                               ),
                               const SizedBox(height: 5),
                               Text(
-                                "Hace un momento", // Aquí podrías formatear el timestamp
+                                "Recibido ahora",
                                 style: TextStyle(
                                   fontSize: 11,
                                   color: Colors.grey[500],
@@ -140,7 +156,7 @@ void showNotifications(BuildContext context) {
                             ],
                           ),
                           onTap: () {
-                            // Lógica para ir al evento o perfil
+                            // Tu lógica de navegación
                           },
                         ),
                       );

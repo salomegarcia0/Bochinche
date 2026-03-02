@@ -4,6 +4,7 @@ import 'package:bochinche_app/sources/events/events_ui.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:bochinche_app/sources/notifications/notifications_logic.dart';
 
 // --- CONTROLADORES DE TEXTO GLOBALES ---
 final nombreEventoController = TextEditingController();
@@ -172,7 +173,7 @@ Future<void> createEvent(BuildContext context) async {
   } else {
     try {
       final newEventRef = FirebaseFirestore.instance.collection('events').doc();
-
+      NotificationsLogic noti = NotificationsLogic();
       await newEventRef.set({
         'id': newEventRef.id,
         'name': nombreEventoController.text,
@@ -215,7 +216,11 @@ Future<void> createEvent(BuildContext context) async {
           },
         });
       }
-
+      noti.notifyFollowers(
+        organizerId: FirebaseAuth.instance.currentUser!.uid,
+        eventName: nombreEventoController.text,
+        eventType: typeC!,
+      );
       // Mostrar mensaje de éxito
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(

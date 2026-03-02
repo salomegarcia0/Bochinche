@@ -32,27 +32,29 @@ class NotificationsLogic {
 
   Future<void> notifyFollowers({
     required String organizerId,
-    required String organizerName,
     required String eventName,
     required String eventType,
   }) async {
-    DocumentSnapshot organizerDoc = await FirebaseFirestore.instance
+    // 1. Buscamos a todos los usuarios que SIGUEN a este organizador
+    // Consultamos en la colección 'users' donde el array 'following' contenga el organizerId
+    QuerySnapshot followersSnapshot = await FirebaseFirestore.instance
         .collection('users')
-        .doc(organizerId)
+        .where('following', arrayContains: organizerId)
         .get();
-    Map<String, dynamic>? data = organizerDoc.data() as Map<String, dynamic>?;
-    List<dynamic> followers = data?['followers'] ?? [];
+
+    if (followersSnapshot.docs.isEmpty)
+      return; // Nadie lo sigue, no hacemos nada
 
     WriteBatch batch = FirebaseFirestore.instance.batch();
 
-    for (String followerId in followers) {
+    for (var doc in followersSnapshot.docs) {
       DocumentReference notifRef = FirebaseFirestore.instance
           .collection('notifications')
-          .doc(); // Genera ID automático
+          .doc();
 
       batch.set(notifRef, {
-        'receiverId': followerId,
-        'title': '¡Nuevo evento de $organizerName!',
+        'receiverId': doc.id, // El ID del usuario que lo sigue
+        'title': '¡Nuevo evento de !',
         'message': 'Se ha publicado: $eventName. ¡No te lo pierdas!',
         'timestamp': FieldValue.serverTimestamp(),
         'type': eventType,
@@ -60,6 +62,7 @@ class NotificationsLogic {
       });
     }
 
+    // 2. Enviamos todas las notificaciones en un solo bloque
     await batch.commit();
   }
 }
