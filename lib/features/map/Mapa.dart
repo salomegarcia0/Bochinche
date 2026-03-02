@@ -1,4 +1,5 @@
 import 'package:bochinche_app/features/payment/payment_page.dart';
+import 'package:bochinche_app/sources/user_profile/user_profile_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:latlong2/latlong.dart';
@@ -319,10 +320,16 @@ class MapaState extends State<Mapa> {
                         Flexible(
                           child: TextButton(
                             onPressed: () {
-                              AlertDialog(actions: [Text('hola')]);
+                              userToReport = data['id_organizer'];
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => OrgProfile(),
+                                ),
+                              );
                             },
                             child: Text(
-                              'Organizador: ${data['name']}',
+                              'Organizador: ${data['id_organizer']}',
                               style: Theme.of(context).textTheme.titleMedium,
                             ),
                           ),
@@ -356,54 +363,56 @@ class MapaState extends State<Mapa> {
                     Text('Estado: ${data['state']}'),
                     const SizedBox(height: 2),
 
-                    Row(
-                      children: [
-                        Builder(
-                          builder: (context) {
-                            final int sold = data['ticketsSold'] ?? 0;
-                            final int cap = data['capacity'] is int
-                                ? data['capacity'] as int
-                                : int.tryParse(
-                                        data['capacity']?.toString() ?? '0',
-                                      ) ??
-                                      0;
-                            final bool isAgotado = sold >= cap;
+                    if (data['isPayed']) ...[
+                      Row(
+                        children: [
+                          Builder(
+                            builder: (context) {
+                              final int sold = data['ticketsSold'] ?? 0;
+                              final int cap = data['capacity'] is int
+                                  ? data['capacity'] as int
+                                  : int.tryParse(
+                                          data['capacity']?.toString() ?? '0',
+                                        ) ??
+                                        0;
+                              final bool isAgotado = sold >= cap;
 
-                            return ElevatedButton(
-                              onPressed: isAgotado
-                                  ? null
-                                  : () {
-                                      if (FirebaseAuth.instance.currentUser ==
-                                          null) {
-                                        Navigator.pop(context);
+                              return ElevatedButton(
+                                onPressed: isAgotado
+                                    ? null
+                                    : () {
+                                        if (FirebaseAuth.instance.currentUser ==
+                                            null) {
+                                          Navigator.pop(context);
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) =>
+                                                  const LoginScreen(),
+                                            ),
+                                          );
+                                          return;
+                                        }
+
                                         Navigator.push(
                                           context,
                                           MaterialPageRoute(
-                                            builder: (context) =>
-                                                const LoginScreen(),
+                                            builder: (context) => PaymentPage(
+                                              eventData: data,
+                                              eventId: eventoId,
+                                            ),
                                           ),
                                         );
-                                        return;
-                                      }
-
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => PaymentPage(
-                                            eventData: data,
-                                            eventId: eventoId,
-                                          ),
-                                        ),
-                                      );
-                                    },
-                              child: Text(
-                                isAgotado ? 'Agotado' : 'Comprar entradas',
-                              ),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
+                                      },
+                                child: Text(
+                                  isAgotado ? 'Agotado' : 'Comprar entradas',
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ],
                     SizedBox(height: 2),
                     const Divider(),
                     CommentsSection(eventoId: eventoId),

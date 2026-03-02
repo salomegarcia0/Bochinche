@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:bochinche_app/sources/events/events_ui.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -81,6 +82,7 @@ TimeOfDay firtTimeHour = TimeOfDay(hour: 0, minute: 0);
 TimeOfDay lastTimeHour = TimeOfDay(hour: 23, minute: 59);
 var idmod;
 bool isPrivateC = false;
+bool isPayedC = false;
 
 double latitudC = 0.0;
 double longitudC = 0.0;
@@ -193,21 +195,26 @@ Future<void> createEvent(BuildContext context) async {
         'stars': 0,
         'total_review': 0,
         'isPrivate': isPrivateC,
-        'paymentInfo': {
-          'bank': selectedBank ?? '',
-          'phone':
-              selectedPhonePrefix != null &&
-                  paymentPhoneNumberController.text.isNotEmpty
-              ? '$selectedPhonePrefix-${paymentPhoneNumberController.text}'
-              : '',
-          'ci':
-              selectedCIType != null &&
-                  paymentCINumberController.text.isNotEmpty
-              ? '$selectedCIType-${paymentCINumberController.text}'
-              : '',
-          'price': double.tryParse(priceController.text) ?? 0.0,
-        },
+        'isPayed': isPayedC,
       });
+      if (isPayedC) {
+        await newEventRef.update({
+          'paymentInfo': {
+            'bank': selectedBank ?? '',
+            'phone':
+                selectedPhonePrefix != null &&
+                    paymentPhoneNumberController.text.isNotEmpty
+                ? '$selectedPhonePrefix-${paymentPhoneNumberController.text}'
+                : '',
+            'ci':
+                selectedCIType != null &&
+                    paymentCINumberController.text.isNotEmpty
+                ? '$selectedCIType-${paymentCINumberController.text}'
+                : '',
+            'price': double.tryParse(priceController.text) ?? 0.0,
+          },
+        });
+      }
 
       // Mostrar mensaje de éxito
       ScaffoldMessenger.of(context).showSnackBar(
@@ -498,44 +505,50 @@ String getBochincheLoadingMessage() {
 }
 
 Stream<List<Map<String, dynamic>>> chargeFilteredEvents({
-  String? category,
+  required SearchMode mode, // El enum que creamos
+  required String category,
+  required String? search,
   DateTime? date,
-  List<String>? preferences,
 }) {
+  // --- AÑADE ESTO ---
+  final safeSearch = search ?? '';
+  // ----
+  // CASO 1: Búsqueda de Usuarios (Bochincheros)
+  if (mode == SearchMode.bochincheros) {
+    return FirebaseFirestore.instance
+        .collection('users') // O como se llame tu tabla de personas
+        .where('nombre', isGreaterThanOrEqualTo: safeSearch)
+        .where('nombre', isLessThanOrEqualTo: '$safeSearch\uf8ff')
+        .snapshots()
+        .map((snap) => snap.docs.map((doc) => doc.data()).toList());
+  }
+
   Query query = FirebaseFirestore.instance.collection('events');
-  if (category != null && category != 'Todos') {
+
+  if (mode == SearchMode.privados) {
+    // REGLA DE ORO: Si es privado y no hay código, devolvemos una lista vacía
+    if (safeSearch.isEmpty) {
+      return Stream.value([]);
+    }
+
+    query = query.where('id', isEqualTo: search);
+  } else {
+    query = query.where('isPrivate', isEqualTo: false);
+
+    if (search != null && search.isNotEmpty) {
+      query = query
+          .where('name', isGreaterThanOrEqualTo: safeSearch)
+          .where('name', isLessThanOrEqualTo: '$safeSearch\uf8ff');
+    }
+  }
+
+  if (category != 'Todos') {
     query = query.where('type', isEqualTo: category);
   }
-  return query.snapshots().map((snapshot) {
-    List<Map<String, dynamic>> results = snapshot.docs.map((doc) {
-      Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-      data['id'] = doc.id;
-      data['name'] = data['name'] ?? 'Evento sin nombre';
-      data['type'] = data['type'] ?? 'Otros';
-      data['startDate'] = data['startDate'] ?? DateTime.now().toIso8601String();
-      data['description'] = data['description'] ?? 'Sin descripción';
-      data['capacity'] = data['capacity'] ?? '0';
-      return data;
-    }).toList();
 
-    if (date != null) {
-      results = results.where((event) {
-        try {
-          DateTime eventDate = DateTime.parse(event['startDate']);
-          return eventDate.year == date.year &&
-              eventDate.month == date.month &&
-              eventDate.day == date.day;
-        } catch (e) {
-          return false;
-        }
-      }).toList();
-    }
-    if (preferences != null && preferences.isNotEmpty) {
-      results = results.where((event) {
-        List<dynamic> eventTags = event['tags'] ?? [];
-        return preferences.any((pref) => eventTags.contains(pref));
-      }).toList();
-    }
-    return results;
+  return query.snapshots().map((snapshot) {
+    return snapshot.docs
+        .map((doc) => doc.data() as Map<String, dynamic>)
+        .toList();
   });
 }

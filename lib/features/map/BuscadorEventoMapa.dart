@@ -2,6 +2,7 @@ import 'package:bochinche_app/styles/Color.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:bochinche_app/sources/events/events_ui.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class BuscadorEventoMapa extends StatefulWidget implements PreferredSizeWidget {
   final ValueChanged<String>? onSubmitted;
@@ -105,25 +106,29 @@ class _BuscadorEventoMapaState extends State<BuscadorEventoMapa> {
             border: Border.all(color: PrimaryPurple, width: 1.0),
           ),
           child: TextField(
-            controller: _controller,
-            onSubmitted: (value) => _handleSearch(),
-            scrollPadding: const EdgeInsets.all(8.0),
+            readOnly: true,
+            onTap: () {
+              Navigator.push(
+                context,
+                PageRouteBuilder(
+                  pageBuilder: (context, animation, secondaryAnimation) =>
+                      const PublicEventsScreen(),
+                  transitionDuration: const Duration(milliseconds: 800),
+                  transitionsBuilder:
+                      (context, animation, secondaryAnimation, child) {
+                        return FadeTransition(opacity: animation, child: child);
+                      },
+                ),
+              );
+            },
+            // --------------------------
             decoration: InputDecoration(
-              prefixIcon: IconButton(
-                icon: const Icon(Icons.search, color: PrimaryPurple),
-                onPressed: _handleSearch,
-                tooltip: 'Buscar',
+              prefixIcon: const Icon(Icons.search, color: PrimaryPurple),
+              suffixIcon: IconButton(
+                icon: const Icon(Icons.content_paste, color: PrimaryPurple),
+                onPressed: _pasteFromClipboard,
+                tooltip: 'Pegar código',
               ),
-              suffixIcon: _showPasteButton
-                  ? IconButton(
-                      icon: const Icon(
-                        Icons.content_paste,
-                        color: PrimaryPurple,
-                      ),
-                      onPressed: _pasteFromClipboard,
-                      tooltip: 'Pegar desde el portapapeles',
-                    )
-                  : null,
               hintText: 'Buscar evento o código privado',
               border: InputBorder.none,
               contentPadding: const EdgeInsets.symmetric(

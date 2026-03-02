@@ -1,6 +1,8 @@
 import 'package:bochinche_app/features/auth/LoginScreen.dart';
 import 'package:bochinche_app/features/map/Paginna_Inicio.dart';
+import 'package:bochinche_app/sources/reports/reports_logic.dart';
 import 'package:bochinche_app/sources/reports/reports_ui.dart';
+import 'package:bochinche_app/sources/user_profile/user_profile_ui.dart';
 import 'package:bochinche_app/styles/BochincheAppBar.dart';
 import 'package:bochinche_app/styles/Color.dart';
 
@@ -19,6 +21,8 @@ import 'package:bochinche_app/sources/events/comments_section.dart';
 import 'package:bochinche_app/features/payment/payment_page.dart';
 
 bool botonVerEventos = true;
+
+enum SearchMode { eventos, privados, bochincheros }
 
 class EventosCreate extends StatelessWidget {
   const EventosCreate({super.key});
@@ -414,137 +418,157 @@ class _FormCreateEventState extends State<FormCreateEvent> {
           const SizedBox(height: 20),
           const Divider(),
 
-          // --- DATOS DE PAGO ---
-          _buildLabel('Datos de Pago (Pago Móvil)'),
-          const SizedBox(height: 4),
-          const Text(
-            'Ingresa los datos donde los compradores realizarán el pago.',
-            style: TextStyle(color: Colors.grey, fontSize: 13),
+          SwitchListTile(
+            title: Text(isPayedC ? 'Evento Pago' : 'Evento Gratuito'),
+            value: isPayedC,
+            // ... resto de tu configuración actual
+            onChanged: (val) => setState(() => isPayedC = val),
           ),
-          const SizedBox(height: 12),
-          // --- Banco (Dropdown) ---
-          DropdownButtonFormField<String>(
-            initialValue: selectedBank,
-            isExpanded: true,
-            decoration: const InputDecoration(
-              labelText: 'Banco',
-              prefixIcon: Icon(Icons.account_balance),
-              border: OutlineInputBorder(),
+
+          // --- AQUÍ LA MAGIA ---
+          if (isPayedC) ...[
+            _buildLabel('Datos de Pago (Pago Móvil)'),
+            const SizedBox(height: 4),
+            const Text(
+              'Ingresa los datos donde los compradores realizarán el pago.',
+              style: TextStyle(color: Colors.grey, fontSize: 13),
             ),
-            items: bankList
-                .map(
-                  (b) => DropdownMenuItem(
-                    value: b,
-                    child: Text(b, overflow: TextOverflow.ellipsis),
-                  ),
-                )
-                .toList(),
-            onChanged: (val) => setState(() => selectedBank = val),
-          ),
-          const SizedBox(height: 12),
-
-          // --- Teléfono (Prefijo dropdown + número) ---
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(
-                width: 110,
-                child: DropdownButtonFormField<String>(
-                  initialValue: selectedPhonePrefix,
-                  isExpanded: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Prefijo',
-                    border: OutlineInputBorder(),
-                    contentPadding: EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 15,
-                    ),
-                  ),
-                  items: phonePrefixList
-                      .map(
-                        (p) => DropdownMenuItem(
-                          value: p,
-                          child: Text(p, overflow: TextOverflow.ellipsis),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: (val) => setState(() => selectedPhonePrefix = val),
-                ),
+            const SizedBox(height: 12),
+            // --- Banco (Dropdown) ---
+            DropdownButtonFormField<String>(
+              initialValue: selectedBank,
+              isExpanded: true,
+              decoration: const InputDecoration(
+                labelText: 'Banco',
+                prefixIcon: Icon(Icons.account_balance),
+                border: OutlineInputBorder(),
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: TextFormField(
-                  controller: paymentPhoneNumberController,
-                  keyboardType: TextInputType.number,
-                  maxLength: 7,
-                  decoration: const InputDecoration(
-                    labelText: 'Número',
-                    prefixIcon: Icon(Icons.phone),
-                    border: OutlineInputBorder(),
-                    counterText: '',
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-
-          // --- Cédula / Identificación (Tipo dropdown + número) ---
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(
-                width: 120,
-                child: DropdownButtonFormField<String>(
-                  initialValue: selectedCIType,
-                  isExpanded: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Tipo',
-                    border: OutlineInputBorder(),
-                    contentPadding: EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 15,
+              items: bankList
+                  .map(
+                    (b) => DropdownMenuItem(
+                      value: b,
+                      child: Text(b, overflow: TextOverflow.ellipsis),
                     ),
-                  ),
-                  items: ciTypeList
-                      .map(
-                        (t) => DropdownMenuItem(
-                          value: t,
-                          child: Text(
-                            '$t - ${ciTypeLabels[t]}',
-                            overflow: TextOverflow.ellipsis,
+                  )
+                  .toList(),
+              onChanged: (val) => setState(() => selectedBank = val),
+            ),
+            const SizedBox(height: 12),
+
+            // --- Teléfono (Prefijo dropdown + número) ---
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  width: 110,
+                  child: DropdownButtonFormField<String>(
+                    initialValue: selectedPhonePrefix,
+                    isExpanded: true,
+                    decoration: const InputDecoration(
+                      labelText: 'Prefijo',
+                      border: OutlineInputBorder(),
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 15,
+                      ),
+                    ),
+                    items: phonePrefixList
+                        .map(
+                          (p) => DropdownMenuItem(
+                            value: p,
+                            child: Text(p, overflow: TextOverflow.ellipsis),
                           ),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: (val) => setState(() => selectedCIType = val),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: TextFormField(
-                  controller: paymentCINumberController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'Número de Identificación',
-                    prefixIcon: Icon(Icons.badge),
-                    border: OutlineInputBorder(),
+                        )
+                        .toList(),
+                    onChanged: (val) =>
+                        setState(() => selectedPhonePrefix = val),
                   ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          TextFormField(
-            controller: priceController,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            decoration: const InputDecoration(
-              labelText: 'Precio por Entrada (Bs)',
-              prefixIcon: Icon(Icons.attach_money),
-              border: OutlineInputBorder(),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: TextFormField(
+                    controller: paymentPhoneNumberController,
+                    keyboardType: TextInputType.number,
+                    maxLength: 7,
+                    decoration: const InputDecoration(
+                      labelText: 'Número',
+                      prefixIcon: Icon(Icons.phone),
+                      border: OutlineInputBorder(),
+                      counterText: '',
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ),
+            const SizedBox(height: 12),
 
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  width: 120,
+                  child: DropdownButtonFormField<String>(
+                    initialValue: selectedCIType,
+                    isExpanded: true,
+                    decoration: const InputDecoration(
+                      labelText: 'Tipo',
+                      border: OutlineInputBorder(),
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 15,
+                      ),
+                    ),
+                    items: ciTypeList
+                        .map(
+                          (t) => DropdownMenuItem(
+                            value: t,
+                            child: Text(
+                              '$t - ${ciTypeLabels[t]}',
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (val) => setState(() => selectedCIType = val),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: TextFormField(
+                    controller: paymentCINumberController,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'Número de Identificación',
+                      prefixIcon: Icon(Icons.badge),
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: priceController,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              decoration: const InputDecoration(
+                labelText: 'Precio por Entrada (Bs)',
+                prefixIcon: Icon(Icons.attach_money),
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ] else ...[
+            // Opcional: widgets que solo se ven si es GRATUITO
+            const Padding(
+              padding: EdgeInsets.all(8.0),
+              child: Text(
+                "Este evento será visible para todos de forma gratuita.",
+              ),
+            ),
+          ],
+
+          // --- DATOS DE PAGO ---
           const SizedBox(height: 30),
           Center(
             child: SizedBox(
@@ -1380,6 +1404,8 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
   DateTime? selectedDate;
   late List<String> selectedPreferences;
   bool _isLoading = false;
+  String searchQuery = '';
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
@@ -1396,12 +1422,20 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Determinamos si estamos buscando usuarios basándonos en los chips;
+    SearchMode currentMode = SearchMode.eventos; // Por defecto
+    if (selectedPreferences.contains('Eventos privados')) {
+      currentMode = SearchMode.privados;
+    } else if (selectedPreferences.contains('Bochincheros')) {
+      currentMode = SearchMode.bochincheros;
+    }
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       appBar: BochincheAppBar(),
       drawer: const Navbar(),
       body: Column(
         children: [
+          // --- TÍTULO Y BOTÓN RESET ---
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 20, 16, 10),
             child: Row(
@@ -1420,7 +1454,8 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
                     setState(() {
                       selectedCategory = 'Todos';
                       selectedDate = null;
-                      selectedPreferences.clear();
+                      _searchController?.clear();
+                      searchQuery = '';
                     });
                     _fakeLoading();
                   },
@@ -1432,6 +1467,53 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
               ],
             ),
           ),
+
+          // --- BUSCADOR DINÁMICO ---
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+            child: TextField(
+              controller: _searchController,
+              onChanged: (val) => searchQuery = val,
+              decoration: InputDecoration(
+                hintText: currentMode == SearchMode.bochincheros
+                    ? 'Buscar bochincheros...'
+                    : (currentMode == SearchMode.privados
+                          ? 'Ingresa código de acceso...'
+                          : 'Buscar eventos públicos...'),
+                prefixIcon: const Icon(Icons.search, color: PrimaryPurple),
+                suffixIcon: Container(
+                  margin: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: PrimaryPurple,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: IconButton(
+                    icon: const Icon(
+                      Icons.arrow_forward,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                    onPressed: () {
+                      // Al presionar, activamos la carga con el searchQuery actual
+                      setState(() {});
+                      _fakeLoading();
+                    },
+                  ),
+                ),
+                filled: true,
+                fillColor: Colors.white,
+                contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(15),
+                  borderSide: const BorderSide(color: Colors.black12),
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(15),
+                ),
+              ),
+            ),
+          ),
+
           Container(
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
             padding: const EdgeInsets.all(12),
@@ -1471,91 +1553,112 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
                   height: 40,
                   child: ListView(
                     scrollDirection: Axis.horizontal,
-                    children:
-                        [
-                          'Gratis',
-                          'Música en vivo',
-                          'Aire Libre',
-                          'Familiar',
-                          'VIP',
-                        ].map((pref) {
-                          final isSelected = selectedPreferences.contains(pref);
-                          return Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: FilterChip(
-                              label: Text(
-                                pref,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: isSelected
-                                      ? Colors.white
-                                      : Colors.black87,
-                                ),
-                              ),
-                              selected: isSelected,
-                              selectedColor: PrimaryPurple,
-                              onSelected: (s) {
-                                setState(
-                                  () => s
-                                      ? selectedPreferences.add(pref)
-                                      : selectedPreferences.remove(pref),
-                                );
-                                _fakeLoading();
-                              },
+                    children: ['Eventos', 'Eventos privados', 'Bochincheros'].map((
+                      pref,
+                    ) {
+                      final isSelected = selectedPreferences.contains(pref);
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: FilterChip(
+                          label: Text(
+                            pref,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: isSelected ? Colors.white : Colors.black87,
                             ),
-                          );
-                        }).toList(),
+                          ),
+                          selected: isSelected,
+                          selectedColor: PrimaryPurple,
+                          checkmarkColor: Colors
+                              .white, // Para que el check sea blanco al seleccionar
+                          onSelected: (bool s) {
+                            setState(() {
+                              // LIMPIAMOS la lista y añadimos solo el nuevo valor
+                              selectedPreferences.clear();
+
+                              if (s) {
+                                selectedPreferences.add(pref);
+                              } else {
+                                // Si deselecciona el que ya estaba, volvemos a 'Todos' por defecto
+                                selectedPreferences.add('Todos');
+                              }
+                            });
+
+                            // Esto hará que el StreamBuilder detecte el cambio y busque en Firebase
+                            _fakeLoading();
+                          },
+                        ),
+                      );
+                    }).toList(),
                   ),
                 ),
               ],
             ),
           ),
+
           Expanded(
             child: _isLoading
                 ? const BochincheFilterLoader()
                 : StreamBuilder<List<Map<String, dynamic>>>(
                     stream: chargeFilteredEvents(
+                      mode: currentMode, // El modo que calculamos con los chips
                       category: selectedCategory,
+                      search: searchQuery,
                       date: selectedDate,
-                      preferences: selectedPreferences,
                     ),
                     builder: (context, snapshot) {
                       if (!snapshot.hasData)
                         return const BochincheFilterLoader();
-                      final eventos = snapshot.data ?? [];
-                      if (eventos.isEmpty)
+                      final data = snapshot.data ?? [];
+                      if (data.isEmpty) {
                         return const Center(
                           child: Text("Sin resultados coincidentes"),
                         );
+                      }
                       return ListView.builder(
-                        padding: const EdgeInsets.all(10),
-                        itemCount: eventos.length,
+                        itemCount: data.length,
                         itemBuilder: (context, index) {
-                          final e = eventos[index];
+                          final item = data[index];
+
+                          // Escenario 1: Bochincheros (Usuarios)
+                          if (currentMode == SearchMode.bochincheros) {
+                            return Card(
+                              child: ListTile(
+                                leading: const CircleAvatar(
+                                  child: Icon(Icons.person),
+                                ),
+                                title: Text(item['nombre'] ?? 'Sin nombre'),
+                                subtitle: Text(
+                                  "ID: ${item['cedula'] ?? 'N/A'}",
+                                ),
+                                onTap: () {
+                                  userToReport = item['uid'];
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => OrgProfile(),
+                                    ),
+                                  );
+                                },
+                              ),
+                            );
+                          }
+
+                          // Escenario 2 y 3: Eventos (Públicos o Privados)
                           return Card(
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(15),
-                              side: const BorderSide(color: Colors.black12),
-                            ),
-                            elevation: 0,
-                            margin: const EdgeInsets.symmetric(vertical: 6),
                             child: ListTile(
                               leading: CircleAvatar(
-                                backgroundColor: PrimaryPurple.withOpacity(0.1),
-                                child: const Icon(
-                                  Icons.celebration,
-                                  color: PrimaryPurple,
+                                child: Icon(
+                                  currentMode == SearchMode.privados
+                                      ? Icons.lock_outline
+                                      : Icons.celebration,
                                 ),
                               ),
-                              title: Text(
-                                e['name'],
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
+                              title: Text(item['name'] ?? 'Evento sin nombre'),
                               subtitle: Text(
-                                "${e['type']} • ${e['startDate'].toString().split("T")[0]}",
+                                "${item['type']} • ${item['startDate']}",
                               ),
+                              onTap: () {},
                             ),
                           );
                         },

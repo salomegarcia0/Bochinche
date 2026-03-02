@@ -1,4 +1,5 @@
 import 'package:bochinche_app/features/profile/profile_screen.dart';
+import 'package:bochinche_app/sources/notifications/notifications_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:bochinche_app/styles/Color.dart';
@@ -19,9 +20,11 @@ class BochincheAppBar extends StatelessWidget implements PreferredSizeWidget {
         style: TextStyle(color: SecondaryPurple, fontWeight: FontWeight.bold),
       ),
       centerTitle: true,
-      actions: <Widget>[iconpersona(context), iconbell(context)],
+      actions: <Widget>[
+        iconpersona(context),
+        if (FirebaseAuth.instance.currentUser != null) iconbell(context),
+      ],
       actionsPadding: EdgeInsets.symmetric(horizontal: 16.0),
-
       backgroundColor: PrimaryPurple,
       elevation: 0,
     );
@@ -38,9 +41,7 @@ class BochincheAppBar extends StatelessWidget implements PreferredSizeWidget {
             MaterialPageRoute(builder: (context) => const LoginScreen()),
           );
         } else {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text("Tienes 2 reportes")));
+          showNotifications(context);
         }
       },
     );

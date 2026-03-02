@@ -230,14 +230,14 @@ class _ProfileScreenState extends State<ProfileScreen>
     final _justificacionCtrl = TextEditingController();
     final _cantidadEventosCtrl = TextEditingController();
     final _tiempoEventosCtrl = TextEditingController();
-    
+
     String _sexoSeleccionado = 'Prefiero no decirlo';
     bool _enviando = false;
     bool _cedulaVerificada = false; // <--- NUEVA VARIABLE PARA EL CHECKBOX
 
     showModalBottomSheet(
       context: context,
-      isScrollControlled: true, 
+      isScrollControlled: true,
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(25.0)),
@@ -247,7 +247,7 @@ class _ProfileScreenState extends State<ProfileScreen>
           builder: (BuildContext context, StateSetter setModalState) {
             return Padding(
               padding: EdgeInsets.only(
-                bottom: MediaQuery.of(context).viewInsets.bottom, 
+                bottom: MediaQuery.of(context).viewInsets.bottom,
                 left: 20,
                 right: 20,
                 top: 20,
@@ -261,14 +261,22 @@ class _ProfileScreenState extends State<ProfileScreen>
                     children: [
                       Center(
                         child: Container(
-                          width: 50, height: 5,
-                          decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(10)),
+                          width: 50,
+                          height: 5,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[300],
+                            borderRadius: BorderRadius.circular(10),
+                          ),
                         ),
                       ),
                       const SizedBox(height: 20),
                       const Text(
                         "Solicitud de Verificación",
-                        style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: PrimaryPurple),
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: PrimaryPurple,
+                        ),
                       ),
                       const Text(
                         "Completa estos datos para evaluar tu perfil como organizador de eventos.",
@@ -303,7 +311,10 @@ class _ProfileScreenState extends State<ProfileScreen>
                       // 2. Domicilio Fiscal
                       TextFormField(
                         controller: _domicilioCtrl,
-                        decoration: const InputDecoration(labelText: 'Domicilio Fiscal', border: OutlineInputBorder()),
+                        decoration: const InputDecoration(
+                          labelText: 'Domicilio Fiscal',
+                          border: OutlineInputBorder(),
+                        ),
                         validator: (v) => v!.isEmpty ? 'Requerido' : null,
                       ),
                       const SizedBox(height: 12),
@@ -316,7 +327,10 @@ class _ProfileScreenState extends State<ProfileScreen>
                             child: TextFormField(
                               controller: _edadCtrl,
                               keyboardType: TextInputType.number,
-                              decoration: const InputDecoration(labelText: 'Edad', border: OutlineInputBorder()),
+                              decoration: const InputDecoration(
+                                labelText: 'Edad',
+                                border: OutlineInputBorder(),
+                              ),
                               validator: (v) => v!.isEmpty ? 'Requerido' : null,
                             ),
                           ),
@@ -325,10 +339,26 @@ class _ProfileScreenState extends State<ProfileScreen>
                             flex: 2,
                             child: DropdownButtonFormField<String>(
                               value: _sexoSeleccionado,
-                              decoration: const InputDecoration(labelText: 'Sexo', border: OutlineInputBorder()),
-                              items: ['Masculino', 'Femenino', 'Otro', 'Prefiero no decirlo']
-                                  .map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
-                              onChanged: (val) => setModalState(() => _sexoSeleccionado = val!),
+                              decoration: const InputDecoration(
+                                labelText: 'Sexo',
+                                border: OutlineInputBorder(),
+                              ),
+                              items:
+                                  [
+                                        'Masculino',
+                                        'Femenino',
+                                        'Otro',
+                                        'Prefiero no decirlo',
+                                      ]
+                                      .map(
+                                        (s) => DropdownMenuItem(
+                                          value: s,
+                                          child: Text(s),
+                                        ),
+                                      )
+                                      .toList(),
+                              onChanged: (val) =>
+                                  setModalState(() => _sexoSeleccionado = val!),
                             ),
                           ),
                         ],
@@ -336,7 +366,10 @@ class _ProfileScreenState extends State<ProfileScreen>
                       const SizedBox(height: 12),
 
                       // 4. Experiencia
-                      const Text("Experiencia haciendo eventos", style: TextStyle(fontWeight: FontWeight.bold)),
+                      const Text(
+                        "Experiencia haciendo eventos",
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
                       const SizedBox(height: 8),
                       Row(
                         children: [
@@ -344,7 +377,10 @@ class _ProfileScreenState extends State<ProfileScreen>
                             child: TextFormField(
                               controller: _cantidadEventosCtrl,
                               keyboardType: TextInputType.number,
-                              decoration: const InputDecoration(labelText: 'Cantidad aprox.', border: OutlineInputBorder()),
+                              decoration: const InputDecoration(
+                                labelText: 'Cantidad aprox.',
+                                border: OutlineInputBorder(),
+                              ),
                               validator: (v) => v!.isEmpty ? 'Requerido' : null,
                             ),
                           ),
@@ -352,7 +388,10 @@ class _ProfileScreenState extends State<ProfileScreen>
                           Expanded(
                             child: TextFormField(
                               controller: _tiempoEventosCtrl,
-                              decoration: const InputDecoration(labelText: 'Tiempo (ej. 2 años)', border: OutlineInputBorder()),
+                              decoration: const InputDecoration(
+                                labelText: 'Tiempo (ej. 2 años)',
+                                border: OutlineInputBorder(),
+                              ),
                               validator: (v) => v!.isEmpty ? 'Requerido' : null,
                             ),
                           ),
@@ -365,7 +404,8 @@ class _ProfileScreenState extends State<ProfileScreen>
                         controller: _justificacionCtrl,
                         maxLines: 3,
                         decoration: const InputDecoration(
-                          labelText: '¿Por qué deberíamos darte la verificación?',
+                          labelText:
+                              '¿Por qué deberíamos darte la verificación?',
                           border: OutlineInputBorder(),
                         ),
                         validator: (v) => v!.isEmpty ? 'Requerido' : null,
@@ -377,52 +417,95 @@ class _ProfileScreenState extends State<ProfileScreen>
                         width: double.infinity,
                         height: 50,
                         child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(backgroundColor: SecondaryPurple),
-                          onPressed: _enviando ? null : () async {
-                            // Validamos que haya marcado el checkbox de la cédula
-                            if (!_cedulaVerificada) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text("Debes confirmar tu verificación de identidad"), 
-                                  backgroundColor: Colors.red
-                                ),
-                              );
-                              return;
-                            }
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: SecondaryPurple,
+                          ),
+                          onPressed: _enviando
+                              ? null
+                              : () async {
+                                  // Validamos que haya marcado el checkbox de la cédula
+                                  if (!_cedulaVerificada) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          "Debes confirmar tu verificación de identidad",
+                                        ),
+                                        backgroundColor: Colors.red,
+                                      ),
+                                    );
+                                    return;
+                                  }
 
-                            if (_formKey.currentState!.validate()) {
-                              setModalState(() => _enviando = true);
-                              try {
-                                Map<String, dynamic> formData = {
-                                  'cedula_verificada': _cedulaVerificada, // <--- GUARDAMOS EL BOOLEANO
-                                  'domicilio_fiscal': _domicilioCtrl.text.trim(),
-                                  'edad': int.tryParse(_edadCtrl.text.trim()) ?? 0,
-                                  'sexo': _sexoSeleccionado,
-                                  'experiencia_cantidad': int.tryParse(_cantidadEventosCtrl.text.trim()) ?? 0,
-                                  'experiencia_tiempo': _tiempoEventosCtrl.text.trim(),
-                                  'justificacion': _justificacionCtrl.text.trim(),
-                                  'fecha_solicitud': FieldValue.serverTimestamp(),
-                                };
+                                  if (_formKey.currentState!.validate()) {
+                                    setModalState(() => _enviando = true);
+                                    try {
+                                      Map<String, dynamic> formData = {
+                                        'cedula_verificada':
+                                            _cedulaVerificada, // <--- GUARDAMOS EL BOOLEANO
+                                        'domicilio_fiscal': _domicilioCtrl.text
+                                            .trim(),
+                                        'edad':
+                                            int.tryParse(
+                                              _edadCtrl.text.trim(),
+                                            ) ??
+                                            0,
+                                        'sexo': _sexoSeleccionado,
+                                        'experiencia_cantidad':
+                                            int.tryParse(
+                                              _cantidadEventosCtrl.text.trim(),
+                                            ) ??
+                                            0,
+                                        'experiencia_tiempo': _tiempoEventosCtrl
+                                            .text
+                                            .trim(),
+                                        'justificacion': _justificacionCtrl.text
+                                            .trim(),
+                                        'fecha_solicitud':
+                                            FieldValue.serverTimestamp(),
+                                      };
 
-                                await AuthService().solicitarVerificacion(uid, formData);
-                                
-                                if (context.mounted) {
-                                  Navigator.pop(context);
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text("Solicitud enviada para revisión"), backgroundColor: Colors.green),
-                                  );
-                                }
-                              } catch (e) {
-                                setModalState(() => _enviando = false);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
-                                );
-                              }
-                            }
-                          },
+                                      await AuthService().solicitarVerificacion(
+                                        uid,
+                                        formData,
+                                      );
+
+                                      if (context.mounted) {
+                                        Navigator.pop(context);
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                              "Solicitud enviada para revisión",
+                                            ),
+                                            backgroundColor: Colors.green,
+                                          ),
+                                        );
+                                      }
+                                    } catch (e) {
+                                      setModalState(() => _enviando = false);
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(
+                                          content: Text(e.toString()),
+                                          backgroundColor: Colors.red,
+                                        ),
+                                      );
+                                    }
+                                  }
+                                },
                           child: _enviando
-                              ? const CircularProgressIndicator(color: Colors.white)
-                              : const Text("Enviar Solicitud", style: TextStyle(color: Colors.white, fontSize: 16)),
+                              ? const CircularProgressIndicator(
+                                  color: Colors.white,
+                                )
+                              : const Text(
+                                  "Enviar Solicitud",
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                  ),
+                                ),
                         ),
                       ),
                       const SizedBox(height: 20),

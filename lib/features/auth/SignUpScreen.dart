@@ -98,6 +98,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
       );
 
       if (user != null && user.emailVerified == false && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              "Registro exitoso. Por favor, ingrese sus datos para verificar el correo.",
+            ),
+          ),
+        );
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const Authetication_steps()),

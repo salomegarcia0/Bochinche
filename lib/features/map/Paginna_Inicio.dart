@@ -20,7 +20,7 @@ class _Pagina_PrincipalState extends State<Pagina_Principal> {
       onTap: () => FocusScope.of(context).unfocus(),
       behavior: HitTestBehavior.opaque,
       child: Scaffold(
-        drawer: Navbar(),
+        drawer: FirebaseAuth.instance.currentUser != null ? Navbar() : null,
         appBar: const BochincheAppBar(),
         body: Stack(
           children: [
