@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:bochinche_app/features/map/BuscadorEventoMapa.dart';
 import 'package:bochinche_app/styles/NavBar.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:bochinche_app/sources/events/events_logic.dart';
 
 class Pagina_Principal extends StatefulWidget {
   const Pagina_Principal({super.key});
@@ -16,6 +17,14 @@ class _Pagina_PrincipalState extends State<Pagina_Principal> {
 
   @override
   Widget build(BuildContext context) {
+    void initState() {
+      super.initState();
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        updateEventStatusOnLogin();
+      });
+    }
+
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
       behavior: HitTestBehavior.opaque,

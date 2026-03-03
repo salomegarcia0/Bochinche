@@ -66,4 +66,46 @@ class UserProfileLogic {
       return false;
     }
   }
+
+  Future<double> getStarsUser(String uid1) async {
+    if (uid1 == null || uid1.isEmpty) return 0.0;
+
+    try {
+      // 1. Referencia a la colección de eventos
+      // Nota: Asegúrate de tener un campo 'userId' o similar en el documento para filtrar
+      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+          .collection('events')
+          .where(
+            'id_organizer',
+            isEqualTo: uid1,
+          ) // Filtramos por el ID del usuario
+          .get();
+
+      if (querySnapshot.docs.isEmpty) return 0.0;
+
+      double totalStars = 0;
+      double count = 0;
+
+      // 2. Iterar y sumar las estrellas
+      for (var doc in querySnapshot.docs) {
+        // Usamos 'as dynamic' o mapeamos para evitar errores de tipo
+        Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+
+        // Sumamos el valor de 'stars' (asegurándonos de que sea numérico)
+        totalStars += (data['stars'] ?? 0).toDouble();
+        count += (data['total_review'] ?? 0).toDouble();
+      }
+
+      if (count != 0.0) {
+        print(totalStars);
+        print(count);
+        return totalStars / count;
+      } else {
+        return 0.0;
+      }
+    } catch (e) {
+      print("Error al obtener estrellas: $e");
+      return 0.0;
+    }
+  }
 }

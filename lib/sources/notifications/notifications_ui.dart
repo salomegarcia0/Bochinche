@@ -155,9 +155,17 @@ void showNotifications(BuildContext context) {
                               ),
                             ],
                           ),
-                          onTap: () {
-                            // Tu lógica de navegación
-                          },
+                          trailing: IconButton(
+                            icon: const Icon(
+                              Icons.check_circle_outline,
+                              color: Colors.green,
+                            ),
+                            tooltip: 'Marcar como visto',
+                            onPressed: () {
+                              data['viewed'] = true;
+                            },
+                          ),
+                          onTap: () {},
                         ),
                       );
                     },

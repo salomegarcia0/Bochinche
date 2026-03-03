@@ -180,6 +180,10 @@ class _FormCreateEventState extends State<FormCreateEvent> {
           const SizedBox(height: 12),
           TextFormField(
             controller: aforoController,
+            keyboardType: TextInputType.numberWithOptions(decimal: false),
+            inputFormatters: <TextInputFormatter>[
+              FilteringTextInputFormatter.digitsOnly,
+            ],
             validator: validateAforo,
             decoration: const InputDecoration(
               labelText: 'Aforo',
@@ -488,7 +492,12 @@ class _FormCreateEventState extends State<FormCreateEvent> {
                 Expanded(
                   child: TextFormField(
                     controller: paymentPhoneNumberController,
-                    keyboardType: TextInputType.number,
+                    keyboardType: TextInputType.numberWithOptions(
+                      decimal: false,
+                    ),
+                    inputFormatters: <TextInputFormatter>[
+                      FilteringTextInputFormatter.digitsOnly,
+                    ],
                     maxLength: 7,
                     decoration: const InputDecoration(
                       labelText: 'Número',
@@ -536,7 +545,12 @@ class _FormCreateEventState extends State<FormCreateEvent> {
                 Expanded(
                   child: TextFormField(
                     controller: paymentCINumberController,
-                    keyboardType: TextInputType.number,
+                    keyboardType: TextInputType.numberWithOptions(
+                      decimal: false,
+                    ),
+                    inputFormatters: <TextInputFormatter>[
+                      FilteringTextInputFormatter.digitsOnly,
+                    ],
                     decoration: const InputDecoration(
                       labelText: 'Número de Identificación',
                       prefixIcon: Icon(Icons.badge),
@@ -549,9 +563,10 @@ class _FormCreateEventState extends State<FormCreateEvent> {
             const SizedBox(height: 12),
             TextFormField(
               controller: priceController,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
+              keyboardType: TextInputType.numberWithOptions(decimal: true),
+              inputFormatters: <TextInputFormatter>[
+                FilteringTextInputFormatter.digitsOnly,
+              ],
               decoration: const InputDecoration(
                 labelText: 'Precio por Entrada (Bs)',
                 prefixIcon: Icon(Icons.attach_money),
@@ -1399,6 +1414,19 @@ class PublicEventsScreen extends StatefulWidget {
   State<PublicEventsScreen> createState() => _PublicEventsScreenState();
 }
 
+final List<String> categoriasEventos = [
+  'Todos',
+  'Seguidos',
+  'Concierto',
+  'Teatro',
+  'Fiestas',
+  'Stand Up',
+  'Cine',
+  'Otros',
+];
+
+final List<String> categoriasUsuarios = ['Todos', 'Seguidos'];
+
 class _PublicEventsScreenState extends State<PublicEventsScreen> {
   late String selectedCategory;
   DateTime? selectedDate;
@@ -1531,19 +1559,14 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
                     border: InputBorder.none,
                   ),
                   items:
-                      [
-                            'Todos',
-                            'Concierto',
-                            'Teatro',
-                            'Fiestas',
-                            'Stand Up',
-                            'Cine',
-                            'Otros',
-                          ]
+                      (selectedPreferences.contains('Bochincheros')
+                              ? categoriasUsuarios
+                              : categoriasEventos)
                           .map(
                             (e) => DropdownMenuItem(value: e, child: Text(e)),
                           )
                           .toList(),
+
                   onChanged: (val) {
                     setState(() => selectedCategory = val!);
                     _fakeLoading();

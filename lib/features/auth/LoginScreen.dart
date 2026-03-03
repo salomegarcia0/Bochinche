@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:bochinche_app/data/auth_service.dart';
 import 'package:bochinche_app/styles/Color.dart';
+import 'package:bochinche_app/sources/events/events_logic.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -82,6 +83,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 duration: Duration(seconds: 4),
               ),
             );
+            updateEventStatusOnLogin();
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(builder: (context) => const Pagina_Principal()),

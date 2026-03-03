@@ -53,6 +53,7 @@ class NotificationsLogic {
           .doc();
 
       batch.set(notifRef, {
+        'id_not': notifRef.id,
         'receiverId': doc.id, // El ID del usuario que lo sigue
         'title': '¡Nuevo evento de !',
         'message': 'Se ha publicado: $eventName. ¡No te lo pierdas!',

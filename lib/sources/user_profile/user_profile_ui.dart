@@ -114,6 +114,27 @@ class _OrgProfileViewState extends State<OrgProfileView> {
                   label: Text(isFollowing! ? "Seguido" : "Seguir"),
                 ),
               ),
+              SizedBox(height: 3),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.star, color: Colors.amber),
+                  FutureBuilder<double>(
+                    future: _profileLogic.getStarsUser(userToReport!),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return Text(" ...");
+                      }
+                      if (snapshot.hasError) {
+                        return Text(" Error");
+                      }
+
+                      double estrellas = snapshot.data ?? 0.0;
+                      return Text(" ${estrellas.toStringAsFixed(2)}");
+                    },
+                  ),
+                ],
+              ),
 
               const Divider(),
               const Padding(

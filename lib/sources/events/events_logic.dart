@@ -396,6 +396,48 @@ Future<void> modifyEvent(BuildContext context, String id) async {
   }
 }
 
+Future<void> updateEventStatusOnLogin() async {
+  final now = DateTime.now();
+  final eventsRef = FirebaseFirestore.instance.collection('events');
+
+  try {
+    final snapshot = await eventsRef
+        .where('state', whereIn: ['Ocurriendo', 'Proximo'])
+        .get();
+
+    if (snapshot.docs.isEmpty) return;
+
+    WriteBatch batch = FirebaseFirestore.instance.batch();
+    bool hasChanges = false;
+
+    for (var doc in snapshot.docs) {
+      final data = doc.data() as Map<String, dynamic>;
+      if (data['startDate'] == null) continue;
+
+      // Conversión de fecha (ajusta si usas Timestamp o String)
+      DateTime startDate = DateTime.parse(data['startDate']);
+      final difference = startDate.difference(now).inDays;
+      String currentState = data['state'];
+      String? newState;
+      if (difference < 0 && currentState != 'Ocurriendo') {
+        newState = 'Ocurriendo';
+      }
+
+      if (newState != null) {
+        batch.update(doc.reference, {'state': newState});
+        hasChanges = true;
+      }
+    }
+
+    if (hasChanges) {
+      await batch.commit();
+      print("Sincronización de estados completada tras login.");
+    }
+  } catch (e) {
+    print("Error sincronizando estados: $e");
+  }
+}
+
 // --- COMENTARIOS Y VALORACIONES ---
 Future<void> agregarComentario({
   required String eventoId,
@@ -510,50 +552,138 @@ String getBochincheLoadingMessage() {
 }
 
 Stream<List<Map<String, dynamic>>> chargeFilteredEvents({
-  required SearchMode mode, // El enum que creamos
+  required SearchMode mode,
   required String category,
   required String? search,
   DateTime? date,
 }) {
-  // --- AÑADE ESTO ---
   final safeSearch = search ?? '';
-  // ----
-  // CASO 1: Búsqueda de Usuarios (Bochincheros)
+  final String currentUserUid = FirebaseAuth.instance.currentUser!.uid;
+
+  // --- CASO 1: BÚSQUEDA DE BOCHINCHEROS (USUARIOS) ---
   if (mode == SearchMode.bochincheros) {
+    if (category == 'Seguidos') {
+      return FirebaseFirestore.instance
+          .collection('users')
+          .doc(currentUserUid)
+          .snapshots()
+          .asyncMap((userDoc) async {
+            List<dynamic> followingIds = userDoc.data()?['following'] ?? [];
+            if (followingIds.isEmpty) return [];
+
+            // Traemos todos para filtrar localmente y saltar el límite de 10 de Firestore
+            QuerySnapshot allUsersSnap = await FirebaseFirestore.instance
+                .collection('users')
+                .get();
+
+            return allUsersSnap.docs
+                .map((doc) => doc.data() as Map<String, dynamic>)
+                .where((userData) {
+                  final String id = userData['uid'] ?? '';
+                  final String nombre = (userData['nombre'] ?? '')
+                      .toString()
+                      .toLowerCase();
+                  return followingIds.contains(id) &&
+                      nombre.contains(safeSearch.toLowerCase());
+                })
+                .toList();
+          });
+    }
+
+    // Búsqueda normal de usuarios
     return FirebaseFirestore.instance
-        .collection('users') // O como se llame tu tabla de personas
+        .collection('users')
         .where('nombre', isGreaterThanOrEqualTo: safeSearch)
         .where('nombre', isLessThanOrEqualTo: '$safeSearch\uf8ff')
         .snapshots()
-        .map((snap) => snap.docs.map((doc) => doc.data()).toList());
+        .map(
+          (snap) => snap.docs
+              .map((doc) => doc.data() as Map<String, dynamic>)
+              .toList(),
+        );
   }
 
+  // --- CASO 2: BÚSQUEDA DE EVENTOS ---
+
+  // A. Lógica especial para Categoría "Seguidos"
+  if (category == 'Seguidos') {
+    return FirebaseFirestore.instance
+        .collection('users')
+        .doc(currentUserUid)
+        .snapshots()
+        .asyncMap((userDoc) async {
+          List<dynamic> followingIds = userDoc.data()?['following'] ?? [];
+          if (followingIds.isEmpty) return [];
+
+          QuerySnapshot eventSnapshot = await FirebaseFirestore.instance
+              .collection('events')
+              .where('isPrivate', isEqualTo: false)
+              .get();
+
+          return eventSnapshot.docs
+              .map((doc) {
+                Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+                data['id'] = doc.id;
+                return data;
+              })
+              .where((event) {
+                final String organizerId = event['id_organizer'] ?? '';
+                final String eventName = (event['name'] ?? '')
+                    .toString()
+                    .toLowerCase();
+                return followingIds.contains(organizerId) &&
+                    eventName.contains(safeSearch.toLowerCase());
+              })
+              .toList();
+        });
+  }
   Query query = FirebaseFirestore.instance.collection('events');
-
+  // B. Lógica para Eventos Públicos, Privados y otras Categorías
   if (mode == SearchMode.privados) {
-    // REGLA DE ORO: Si es privado y no hay código, devolvemos una lista vacía
-    if (safeSearch.isEmpty) {
-      return Stream.value([]);
-    }
+    if (safeSearch.isEmpty) return Stream.value([]);
 
-    query = query.where('id', isEqualTo: search);
+    // 1. MODO PRIVADO: Buscamos por el ID del documento usando FieldPath.documentId
+    // Hacemos el return directamente aquí para evitar el filtro por nombre de abajo
+    return FirebaseFirestore.instance
+        .collection('events')
+        .where(
+          FieldPath.documentId,
+          isEqualTo: safeSearch,
+        ) // Busca por el ID del doc
+        .where('isPrivate', isEqualTo: true)
+        .snapshots()
+        .map((snapshot) {
+          return snapshot.docs.map((doc) {
+            Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+            data['id'] = doc.id;
+            return data;
+          }).toList();
+        });
   } else {
+    // 2. MODO PÚBLICO: Construimos la query
     query = query.where('isPrivate', isEqualTo: false);
 
-    if (search != null && search.isNotEmpty) {
-      query = query
-          .where('name', isGreaterThanOrEqualTo: safeSearch)
-          .where('name', isLessThanOrEqualTo: '$safeSearch\uf8ff');
+    if (category != 'Todos') {
+      query = query.where('type', isEqualTo: category);
     }
-  }
 
-  if (category != 'Todos') {
-    query = query.where('type', isEqualTo: category);
-  }
+    // Retornamos el stream de públicos con tu filtro local por nombre
+    return query.snapshots().map((snapshot) {
+      return snapshot.docs
+          .map((doc) {
+            Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+            data['id'] = doc.id;
+            return data;
+          })
+          .where((event) {
+            // Si no hay búsqueda, pasan todos
+            if (safeSearch.isEmpty) return true;
 
-  return query.snapshots().map((snapshot) {
-    return snapshot.docs
-        .map((doc) => doc.data() as Map<String, dynamic>)
-        .toList();
-  });
+            // Filtro local insensible a mayúsculas/minúsculas
+            String name = (event['name'] ?? '').toString().toLowerCase();
+            return name.contains(safeSearch.toLowerCase());
+          })
+          .toList();
+    });
+  }
 }

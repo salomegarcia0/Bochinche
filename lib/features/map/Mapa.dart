@@ -318,20 +318,44 @@ class MapaState extends State<Mapa> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Flexible(
-                          child: TextButton(
-                            onPressed: () {
-                              userToReport = data['id_organizer'];
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => OrgProfile(),
+                          child: FutureBuilder<DocumentSnapshot>(
+                            // Buscamos el documento del organizador usando su ID
+                            future: FirebaseFirestore.instance
+                                .collection('users')
+                                .doc(data['id_organizer'])
+                                .get(),
+                            builder: (context, snapshot) {
+                              // Si hay error o no existe, ponemos un valor por defecto
+                              if (!snapshot.hasData || !snapshot.data!.exists) {
+                                return Text("Organizador: Desconocido");
+                              }
+
+                              // Extraemos el nombre del documento del usuario
+                              final userData =
+                                  snapshot.data!.data() as Map<String, dynamic>;
+                              final String nombreOrg =
+                                  userData['nombre'] ?? 'Sin nombre';
+
+                              return TextButton(
+                                onPressed: () {
+                                  userToReport = data['id_organizer'];
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => OrgProfile(),
+                                    ),
+                                  );
+                                },
+                                child: Text(
+                                  'Organizador: $nombreOrg', // <--- ¡Aquí ya tienes el nombre!
+                                  style: Theme.of(
+                                    context,
+                                  ).textTheme.titleMedium,
+                                  overflow: TextOverflow
+                                      .ellipsis, // Por si el nombre es muy largo
                                 ),
                               );
                             },
-                            child: Text(
-                              'Organizador: ${data['id_organizer']}',
-                              style: Theme.of(context).textTheme.titleMedium,
-                            ),
                           ),
                         ),
                         if (data['id_organizer'] != null) ...[
