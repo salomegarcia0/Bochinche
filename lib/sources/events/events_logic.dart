@@ -304,6 +304,7 @@ Future<void> cargarDatosEvento(String idDocumento) async {
       descripcionController.text = data['description'] ?? '';
       aforoController.text = data['capacity'] ?? '';
       isPrivateC = data['isPrivate'] ?? false;
+      stateC = data['state'] ?? 'Proximo';
       final pi = data['paymentInfo'] as Map<String, dynamic>?;
       if (pi != null) {
         // Bank dropdown
@@ -342,49 +343,69 @@ Future<void> modifyEvent(BuildContext context, String id) async {
       validateName(contactoController.text) == null ||
       validateName(direccionController.text) == null ||
       validateState(stateC) == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Por favor, ingresa la información completa.'),
-        backgroundColor: Colors.red,
-      ),
-    );
-  } else {
-    try {
-      final newEventRef = FirebaseFirestore.instance
-          .collection('events')
-          .doc(id);
-
-      await newEventRef.update({
-        'name': nombreEventoController.text,
-        'address': direccionController.text,
-        'contact': contactoController.text,
-        'state': stateC ?? 'Próximo',
-        'description': descripcionController.text,
-        'capacity': aforoController.text,
-        'isPrivate': isPrivateC,
-        'paymentInfo': {
-          'bank': selectedBank ?? '',
-          'phone':
-              selectedPhonePrefix != null &&
-                  paymentPhoneNumberController.text.isNotEmpty
-              ? '$selectedPhonePrefix-${paymentPhoneNumberController.text}'
-              : '',
-          'ci':
-              selectedCIType != null &&
-                  paymentCINumberController.text.isNotEmpty
-              ? '$selectedCIType-${paymentCINumberController.text}'
-              : '',
-          'price': double.tryParse(priceController.text) ?? 0.0,
-        },
-      });
-
-      // Mostrar mensaje de éxito
+    if (nombreEventoController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('¡Evento modificado con éxito!'),
-          backgroundColor: Colors.green,
+          content: Text('Por favor, ingresa el nombre del evento.'),
+          backgroundColor: Colors.red,
         ),
       );
+    } else if (validateName(contactoController.text) == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Por favor, ingresa un contacto válido.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  } else {
+    try {
+      var newEventRef = FirebaseFirestore.instance.collection('events').doc(id);
+      var docSnapshot = await newEventRef.get();
+
+      if (docSnapshot.exists) {
+        Map<String, dynamic> eventData = docSnapshot.data()!;
+
+        var pagado = docSnapshot['isPayed'] ?? false;
+
+        await newEventRef.update({
+          'name': nombreEventoController.text,
+          'address': direccionController.text,
+          'contact': contactoController.text,
+          'state': stateC ?? 'Próximo',
+          'description': descripcionController.text,
+          'capacity': aforoController.text,
+          'isPrivate': isPrivateC,
+        });
+        if (pagado) {
+          await newEventRef.update({
+            'paymentInfo': {
+              'bank': selectedBank ?? '',
+              'phone':
+                  selectedPhonePrefix != null &&
+                      paymentPhoneNumberController.text.isNotEmpty
+                  ? '$selectedPhonePrefix-${paymentPhoneNumberController.text}'
+                  : '',
+              'ci':
+                  selectedCIType != null &&
+                      paymentCINumberController.text.isNotEmpty
+                  ? '$selectedCIType-${paymentCINumberController.text}'
+                  : '',
+              'price': double.tryParse(priceController.text) ?? 0.0,
+            },
+          });
+        }
+
+        // Mostrar mensaje de éxito
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('¡Evento modificado con éxito!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        print("El documento con id $id no existe");
+      }
 
       // LIMPIAR TODOS LOS CAMPOS
       clearAllFields();
@@ -558,11 +579,12 @@ Stream<List<Map<String, dynamic>>> chargeFilteredEvents({
   DateTime? date,
 }) {
   final safeSearch = search ?? '';
-  final String currentUserUid = FirebaseAuth.instance.currentUser!.uid;
+  final String? currentUserUid = FirebaseAuth.instance.currentUser?.uid;
 
   // --- CASO 1: BÚSQUEDA DE BOCHINCHEROS (USUARIOS) ---
   if (mode == SearchMode.bochincheros) {
     if (category == 'Seguidos') {
+      if (currentUserUid == null) return Stream.value([]);
       return FirebaseFirestore.instance
           .collection('users')
           .doc(currentUserUid)
@@ -607,6 +629,7 @@ Stream<List<Map<String, dynamic>>> chargeFilteredEvents({
 
   // A. Lógica especial para Categoría "Seguidos"
   if (category == 'Seguidos') {
+    if (currentUserUid == null) return Stream.value([]);
     return FirebaseFirestore.instance
         .collection('users')
         .doc(currentUserUid)
@@ -686,4 +709,30 @@ Stream<List<Map<String, dynamic>>> chargeFilteredEvents({
           .toList();
     });
   }
+}
+
+Future<List<Map<String, dynamic>>> getUserPredictions(String input) async {
+  if (input.isEmpty) return [];
+  final snap = await FirebaseFirestore.instance
+      .collection('users')
+      .where('nombre', isGreaterThanOrEqualTo: input)
+      .where('nombre', isLessThanOrEqualTo: '$input\uf8ff')
+      .limit(5)
+      .get();
+
+  return snap.docs.map((doc) => {...doc.data(), 'id': doc.id}).toList();
+}
+
+// Función para sugerir Eventos
+Future<List<Map<String, dynamic>>> getEventPredictions(String input) async {
+  if (input.isEmpty) return [];
+  final snap = await FirebaseFirestore.instance
+      .collection('events')
+      .where('isPrivate', isEqualTo: false)
+      .where('name', isGreaterThanOrEqualTo: input)
+      .where('name', isLessThanOrEqualTo: '$input\uf8ff')
+      .limit(5)
+      .get();
+
+  return snap.docs.map((doc) => {...doc.data(), 'id': doc.id}).toList();
 }

@@ -55,9 +55,10 @@ class _ProfileScreenState extends State<ProfileScreen>
   void _cerrarSesion() async {
     await FirebaseAuth.instance.signOut();
     if (mounted) {
-      Navigator.pushReplacement(
+      Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (context) => const LoginScreen()),
+        (route) => false,
       );
     }
   }

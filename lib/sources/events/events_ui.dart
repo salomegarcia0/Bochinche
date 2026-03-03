@@ -5,7 +5,8 @@ import 'package:bochinche_app/sources/reports/reports_ui.dart';
 import 'package:bochinche_app/sources/user_profile/user_profile_ui.dart';
 import 'package:bochinche_app/styles/BochincheAppBar.dart';
 import 'package:bochinche_app/styles/Color.dart';
-
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -21,6 +22,7 @@ import 'package:bochinche_app/sources/events/comments_section.dart';
 import 'package:bochinche_app/features/payment/payment_page.dart';
 
 bool botonVerEventos = true;
+bool modPayed = false;
 
 enum SearchMode { eventos, privados, bochincheros }
 
@@ -933,6 +935,7 @@ class _FormCreateEvent2State extends State<FormCreateEvent2> {
   TimeOfDay hora1select = TimeOfDay.now();
   TimeOfDay hora2select = TimeOfDay.now();
   TimeOfDay hora1 = TimeOfDay.now();
+  MapController controladormapa = MapController();
 
   Future<void> fechaselect2(BuildContext context) async {
     DateTime? date = await showDatePicker(
@@ -1434,6 +1437,7 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
   bool _isLoading = false;
   String searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
+  MapController mapaController = MapController();
 
   @override
   void initState() {
@@ -1460,7 +1464,7 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       appBar: BochincheAppBar(),
-      drawer: const Navbar(),
+      drawer: FirebaseAuth.instance.currentUser != null ? const Navbar() : null,
       body: Column(
         children: [
           // --- TÍTULO Y BOTÓN RESET ---
@@ -1499,46 +1503,77 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
           // --- BUSCADOR DINÁMICO ---
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
-            child: TextField(
-              controller: _searchController,
-              onChanged: (val) => searchQuery = val,
-              decoration: InputDecoration(
-                hintText: currentMode == SearchMode.bochincheros
-                    ? 'Buscar bochincheros...'
-                    : (currentMode == SearchMode.privados
-                          ? 'Ingresa código de acceso...'
-                          : 'Buscar eventos públicos...'),
-                prefixIcon: const Icon(Icons.search, color: PrimaryPurple),
-                suffixIcon: Container(
-                  margin: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: PrimaryPurple,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: IconButton(
-                    icon: const Icon(
-                      Icons.arrow_forward,
-                      color: Colors.white,
-                      size: 20,
+            child: SearchAnchor(
+              builder: (BuildContext context, SearchController controller) {
+                return SearchBar(
+                  controller: controller,
+                  hintText: currentMode == SearchMode.bochincheros
+                      ? 'Buscar bochincheros...'
+                      : (currentMode == SearchMode.privados
+                            ? 'Ingresa código de acceso...'
+                            : 'Buscar eventos públicos...'),
+                  onTap: () => controller.openView(),
+                  onChanged: (_) => controller.openView(),
+                  leading: const Icon(Icons.search, color: PrimaryPurple),
+                  trailing: [
+                    IconButton(
+                      icon: const Icon(
+                        Icons.arrow_forward,
+                        color: PrimaryPurple,
+                      ),
+                      onPressed: () {
+                        setState(() => searchQuery = controller.text);
+                        _fakeLoading();
+                      },
                     ),
-                    onPressed: () {
-                      // Al presionar, activamos la carga con el searchQuery actual
-                      setState(() {});
-                      _fakeLoading();
-                    },
+                  ],
+                  backgroundColor: WidgetStateProperty.all(Colors.white),
+                  elevation: WidgetStateProperty.all(0),
+                  shape: WidgetStateProperty.all(
+                    RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
+                    ),
                   ),
-                ),
-                filled: true,
-                fillColor: Colors.white,
-                contentPadding: const EdgeInsets.symmetric(vertical: 0),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(15),
-                  borderSide: const BorderSide(color: Colors.black12),
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(15),
-                ),
-              ),
+                );
+              },
+              suggestionsBuilder: (context, controller) async {
+                final input = controller.text.trim();
+                if (input.isEmpty) return [];
+
+                // Decidimos qué lista cargar según el modo actual
+                List<Map<String, dynamic>> predictions;
+                if (currentMode == SearchMode.bochincheros) {
+                  predictions = await getUserPredictions(input);
+                } else {
+                  predictions = await getEventPredictions(input);
+                }
+
+                return predictions.map((item) {
+                  // Definimos los campos según el origen
+                  final String title =
+                      (currentMode == SearchMode.bochincheros
+                          ? item['nombre']
+                          : item['name']) ??
+                      '';
+
+                  final IconData icon = currentMode == SearchMode.bochincheros
+                      ? Icons.person_outline
+                      : Icons.calendar_today_outlined;
+
+                  return ListTile(
+                    leading: Icon(icon, color: PrimaryPurple),
+                    title: Text(title),
+                    onTap: () {
+                      controller.closeView(title);
+                      // Actualizamos el estado para filtrar la lista principal
+                      setState(() {
+                        searchQuery = title;
+                        _fakeLoading();
+                      });
+                    },
+                  );
+                }).toList();
+              },
             ),
           ),
 

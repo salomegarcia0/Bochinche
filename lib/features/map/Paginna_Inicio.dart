@@ -25,13 +25,16 @@ class _Pagina_PrincipalState extends State<Pagina_Principal> {
       });
     }
 
-    return GestureDetector(
-      onTap: () => FocusScope.of(context).unfocus(),
-      behavior: HitTestBehavior.opaque,
-      child: Scaffold(
-        drawer: FirebaseAuth.instance.currentUser != null ? Navbar() : null,
-        appBar: const BochincheAppBar(),
-        body: Stack(
+    return Scaffold(
+      // El Drawer y el AppBar quedan fuera del detector de gestos
+      drawer: FirebaseAuth.instance.currentUser != null ? const Navbar() : null,
+      appBar: const BochincheAppBar(),
+
+      body: GestureDetector(
+        // Al estar aquí, solo cerrará el teclado cuando toques el mapa o áreas vacías del body
+        onTap: () => FocusScope.of(context).unfocus(),
+        behavior: HitTestBehavior.opaque,
+        child: Stack(
           children: [
             Mapa(key: _mapaKey),
             Align(

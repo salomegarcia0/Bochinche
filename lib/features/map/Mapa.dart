@@ -74,7 +74,7 @@ class MapaState extends State<Mapa> {
               width: 40,
               height: 40,
               child: GestureDetector(
-                onTap: () => _mostrarDetalles(context, data, doc.id),
+                onTap: () => mostrarDetalles(context, data, doc.id),
                 child: Icon(
                   getIconoPin(data['type']),
                   color: Colors.red,
@@ -144,7 +144,7 @@ class MapaState extends State<Mapa> {
       // Centrar mapa en el evento
       controladormapa.move(LatLng(punto.latitude, punto.longitude), 16);
       // Mostrar detalles
-      if (mounted) _mostrarDetalles(context, data, doc.id);
+      if (mounted) mostrarDetalles(context, data, doc.id);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -189,7 +189,7 @@ class MapaState extends State<Mapa> {
     }
   }
 
-  void _mostrarDetalles(
+  void mostrarDetalles(
     BuildContext context,
     Map<String, dynamic> data,
     String eventoId,
