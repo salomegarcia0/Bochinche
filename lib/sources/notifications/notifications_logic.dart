@@ -35,8 +35,6 @@ class NotificationsLogic {
     required String eventName,
     required String eventType,
   }) async {
-    // 1. Buscamos a todos los usuarios que SIGUEN a este organizador
-    // Consultamos en la colección 'users' donde el array 'following' contenga el organizerId
     QuerySnapshot followersSnapshot = await FirebaseFirestore.instance
         .collection('users')
         .where('following', arrayContains: organizerId)
@@ -63,7 +61,6 @@ class NotificationsLogic {
       });
     }
 
-    // 2. Enviamos todas las notificaciones en un solo bloque
     await batch.commit();
   }
 }

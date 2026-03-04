@@ -24,7 +24,6 @@ class UserProfileLogic {
     final snapshot = await FirebaseFirestore.instance
         .collection('events')
         .where('id_organizer', isEqualTo: uid1)
-        .where('isPrivate', isEqualTo: false)
         .get();
 
     return snapshot.docs;

@@ -26,30 +26,30 @@ class _Pagina_PrincipalState extends State<Pagina_Principal> {
     }
 
     return Scaffold(
-      // El Drawer y el AppBar quedan fuera del detector de gestos
       drawer: FirebaseAuth.instance.currentUser != null ? const Navbar() : null,
       appBar: const BochincheAppBar(),
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: GestureDetector(
+              onTap: () => FocusScope.of(context).unfocus(),
+              behavior: HitTestBehavior.opaque,
+              child: Mapa(key: _mapaKey),
+            ),
+          ),
 
-      body: GestureDetector(
-        // Al estar aquí, solo cerrará el teclado cuando toques el mapa o áreas vacías del body
-        onTap: () => FocusScope.of(context).unfocus(),
-        behavior: HitTestBehavior.opaque,
-        child: Stack(
-          children: [
-            Mapa(key: _mapaKey),
-            Align(
-              alignment: Alignment.bottomCenter,
-              child: Padding(
-                padding: const EdgeInsets.all(5.0),
-                child: BuscadorEventoMapa(
-                  onSubmitted: (value) {
-                    _mapaKey.currentState?.buscarPorCodigo(value.trim());
-                  },
-                ),
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: Padding(
+              padding: const EdgeInsets.all(5.0),
+              child: BuscadorEventoMapa(
+                onSubmitted: (value) {
+                  _mapaKey.currentState?.buscarPorCodigo(value.trim());
+                },
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
