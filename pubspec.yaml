@@ -28,6 +28,8 @@ dependencies:
   latlong2: ^0.9.1
   flutter_map_location_marker: ^10.2.0
   cupertino_icons: ^1.0.8
+  shared_preferences: ^2.2.2
+
 
   firebase_core: ^3.0.0
   firebase_auth: ^5.0.0

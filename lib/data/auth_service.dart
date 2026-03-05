@@ -75,6 +75,7 @@ class AuthService {
 
       if (credential.user != null) {
         await credential.user!.updateDisplayName(name);
+        await credential.user!.sendEmailVerification();
         await credential.user!.reload();
       }
 
@@ -89,6 +90,7 @@ class AuthService {
         'fecha_creacion': FieldValue.serverTimestamp(),
         'cedula': cedula,
         'verification_status': 'unverified', 
+        'email_verified': false,
       };
 
       await _firestore.collection('users').doc(uid).set(userData);

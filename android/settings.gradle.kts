@@ -1,3 +1,4 @@
+rootProject.name = "Bochinche"
 pluginManagement {
     val flutterSdkPath =
         run {
