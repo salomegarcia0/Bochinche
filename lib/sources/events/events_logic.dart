@@ -173,7 +173,6 @@ Future<void> createEvent(BuildContext context) async {
   } else {
     try {
       final newEventRef = FirebaseFirestore.instance.collection('events').doc();
-      NotificationsLogic noti = NotificationsLogic();
       await newEventRef.set({
         'id': newEventRef.id,
         'name': nombreEventoController.text,
@@ -216,11 +215,6 @@ Future<void> createEvent(BuildContext context) async {
           },
         });
       }
-      noti.notifyFollowers(
-        organizerId: FirebaseAuth.instance.currentUser!.uid,
-        eventName: nombreEventoController.text,
-        eventType: typeC!,
-      );
       // Mostrar mensaje de éxito
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(

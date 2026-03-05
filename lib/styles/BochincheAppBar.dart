@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:bochinche_app/styles/Color.dart';
 import 'package:bochinche_app/features/auth/LoginScreen.dart';
+import 'package:bochinche_app/widgets/detalle_evento.dart';
 
 class BochincheAppBar extends StatelessWidget implements PreferredSizeWidget {
   const BochincheAppBar({super.key});
@@ -31,21 +32,26 @@ class BochincheAppBar extends StatelessWidget implements PreferredSizeWidget {
   }
 
   Widget iconbell(BuildContext context) {
-    return IconButton(
-      icon: const Icon(Icons.notifications, color: SecondaryPurple),
-      onPressed: () {
-        User? usuario = FirebaseAuth.instance.currentUser;
-        if (usuario == null) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const LoginScreen()),
-          );
-        } else {
-          showNotifications(context);
-        }
-      },
-    );
-  }
+  return IconButton(
+    icon: const Icon(Icons.notifications, color: SecondaryPurple),
+    onPressed: () {
+      User? usuario = FirebaseAuth.instance.currentUser;
+      if (usuario == null) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
+        );
+      } else {
+        showNotifications(
+          context,
+          onEventSelected: (eventData) {
+            mostrarDetalles(context, eventData, eventData['id']);
+          },
+        );
+      }
+    },
+  );
+}
 
   Widget iconpersona(BuildContext context) {
     return IconButton(

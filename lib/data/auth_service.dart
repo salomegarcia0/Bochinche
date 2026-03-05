@@ -1,9 +1,26 @@
 import "package:firebase_auth/firebase_auth.dart";
 import "package:cloud_firestore/cloud_firestore.dart";
+import "package:firebase_messaging/firebase_messaging.dart";
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  // Sincronizar Token FCM
+  Future<void> _actualizarFCMToken(String uid) async {
+    try {
+      String? token = await FirebaseMessaging.instance.getToken();
+      if (token != null) {
+        await _firestore.collection('users').doc(uid).set({
+          'fcmToken': token,
+          'lastTokenUpdate': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+        print("✅ Token FCM vinculado al usuario $uid");
+      }
+    } catch (e) {
+      print("❌ Error al vincular Token FCM: $e");
+    }
+  }
 
   //LOGIN //
   Future<User?> signInWithEmailAndPassword(
@@ -15,6 +32,9 @@ class AuthService {
         email: email,
         password: password,
       );
+      if (result.user != null) {
+        await _actualizarFCMToken(result.user!.uid);
+      }
       return result.user;
     } on FirebaseAuthException catch (e) {
       throw e.message ?? "Error en Firebase";
@@ -72,6 +92,7 @@ class AuthService {
       };
 
       await _firestore.collection('users').doc(uid).set(userData);
+      await _actualizarFCMToken(uid);
       return credential.user;
     } on FirebaseAuthException catch (e) {
       throw e.message ?? "Error al registrar usuario";
@@ -82,7 +103,17 @@ class AuthService {
 
   // --- CERRAR SESION ---
   Future<void> cerrarSesion() async {
-    await _auth.signOut();
+    try {
+      String? uid = _auth.currentUser?.uid;
+      if (uid != null) {
+        await _firestore.collection('users').doc(uid).update({
+          'fcmToken': FieldValue.delete(),
+        });
+      }
+      await _auth.signOut();
+    } catch (e) {
+      print("Error al cerrar sesión: $e");
+    }
   }
 
   // Función para pedir la verificación (Cambia estado a 'pending')

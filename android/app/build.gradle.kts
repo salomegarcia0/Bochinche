@@ -31,6 +31,17 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        multiDexEnabled = true
+    }
+
+    compileOptions {
+        isCoreLibraryDesugaringEnabled = true 
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+    }
+
+    kotlinOptions {
+        jvmTarget = "1.8" 
     }
 
     buildTypes {
@@ -44,4 +55,9 @@ android {
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    // Aquí es donde le decimos a Android: "Usa esta herramienta para traducir el código moderno"
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 }
