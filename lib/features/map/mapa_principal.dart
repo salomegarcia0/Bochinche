@@ -3,21 +3,19 @@ import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:bochinche_app/widgets/detalle_evento.dart';
-import 'package:bochinche_app/sources/notifications/notifications_logic.dart'; 
+import 'package:bochinche_app/widgets/detalle_evento.dart'; 
 
-class Mapa extends StatefulWidget implements PreferredSizeWidget {
-  const Mapa({super.key});
+class MapaPrincipal extends StatefulWidget implements PreferredSizeWidget {
+  const MapaPrincipal({super.key});
 
   @override
-  State<Mapa> createState() => MapaState();
+  State<MapaPrincipal> createState() => MapaPrincipalState();
 
   @override
   Size get preferredSize => const Size.fromHeight(300);
 }
 
-class MapaState extends State<Mapa> {
+class MapaPrincipalState extends State<MapaPrincipal> {
   final MapController controladormapa = MapController();
 
   // ========================================================

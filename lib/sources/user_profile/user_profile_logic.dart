@@ -1,6 +1,4 @@
-import 'package:bochinche_app/data/user_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/widgets.dart';
 
 class UserProfileLogic {
   Future<Map<String, dynamic>?> chargeProfileOrg(String uid1) async {
@@ -67,7 +65,7 @@ class UserProfileLogic {
   }
 
   Future<double> getStarsUser(String uid1) async {
-    if (uid1 == null || uid1.isEmpty) return 0.0;
+    if (uid1.isEmpty) return 0.0;
 
     try {
       // 1. Referencia a la colección de eventos

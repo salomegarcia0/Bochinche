@@ -2,7 +2,6 @@ import 'package:bochinche_app/styles/Color.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:bochinche_app/sources/events/events_ui.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 class BuscadorEventoMapa extends StatefulWidget implements PreferredSizeWidget {
   final ValueChanged<String>? onSubmitted;
@@ -26,6 +25,7 @@ class _BuscadorEventoMapaState extends State<BuscadorEventoMapa> {
     _checkClipboard();
   }
 
+  // Verifica si hay texto copiado al abrir la pantalla
   Future<void> _checkClipboard() async {
     final data = await Clipboard.getData(Clipboard.kTextPlain);
     if (data?.text != null && data!.text!.isNotEmpty) {
@@ -35,13 +35,7 @@ class _BuscadorEventoMapaState extends State<BuscadorEventoMapa> {
     }
   }
 
-  void _handleSearch() {
-    FocusScope.of(context).unfocus();
-    if (widget.onSubmitted != null) {
-      widget.onSubmitted!(_controller.text.trim());
-    }
-  }
-
+  // Pega el texto y oculta el botón automáticamente
   Future<void> _pasteFromClipboard() async {
     final data = await Clipboard.getData(Clipboard.kTextPlain);
     if (data?.text != null) {
@@ -116,19 +110,20 @@ class _BuscadorEventoMapaState extends State<BuscadorEventoMapa> {
                   transitionDuration: const Duration(milliseconds: 800),
                   transitionsBuilder:
                       (context, animation, secondaryAnimation, child) {
-                        return FadeTransition(opacity: animation, child: child);
-                      },
+                    return FadeTransition(opacity: animation, child: child);
+                  },
                 ),
               );
             },
-            // --------------------------
             decoration: InputDecoration(
               prefixIcon: const Icon(Icons.search, color: PrimaryPurple),
-              suffixIcon: IconButton(
-                icon: const Icon(Icons.content_paste, color: PrimaryPurple),
-                onPressed: _pasteFromClipboard,
-                tooltip: 'Pegar código',
-              ),
+              suffixIcon: _showPasteButton
+                  ? IconButton(
+                      icon: const Icon(Icons.content_paste, color: PrimaryPurple),
+                      onPressed: _pasteFromClipboard,
+                      tooltip: 'Pegar código',
+                    )
+                  : null,
               hintText: 'Buscar evento o código privado',
               border: InputBorder.none,
               contentPadding: const EdgeInsets.symmetric(

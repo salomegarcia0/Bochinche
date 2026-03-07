@@ -1,7 +1,4 @@
-import 'package:bochinche_app/features/auth/LoginScreen.dart';
-import 'package:bochinche_app/features/map/Paginna_Inicio.dart';
 import 'package:bochinche_app/sources/reports/reports_logic.dart';
-import 'package:bochinche_app/sources/reports/reports_ui.dart';
 import 'package:bochinche_app/sources/user_profile/user_profile_ui.dart';
 import 'package:bochinche_app/styles/BochincheAppBar.dart';
 import 'package:bochinche_app/styles/Color.dart';
@@ -11,15 +8,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:latlong2/latlong.dart';
-
 import 'package:bochinche_app/styles/NavBar.dart';
-
-// --- CORRECCIÓN DE RUTAS ---
-// Usamos 'package:' que es la forma más segura en Flutter para evitar errores de ruta
 import 'package:bochinche_app/sources/events/events_logic.dart';
-import 'package:bochinche_app/features/map/mapa_2.dart';
+import 'package:bochinche_app/features/map/selector_ubicacion.dart';
 import 'package:bochinche_app/sources/events/comments_section.dart';
-import 'package:bochinche_app/features/payment/payment_page.dart';
 
 bool botonVerEventos = true;
 bool modPayed = false;
@@ -116,29 +108,6 @@ class _FormCreateEventState extends State<FormCreateEvent> {
     'Restaurante',
     'Otros',
   ];
-
-  Future<void> _selectDate(
-    BuildContext context,
-    TextEditingController controller,
-    bool isStart,
-  ) async {
-    DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime.now(),
-      lastDate: DateTime(2027),
-    );
-    if (picked != null) {
-      setState(() {
-        controller.text = picked.toString().split(" ")[0];
-        if (isStart) {
-          fecha1 = picked;
-        } else {
-          fecha2 = picked;
-        }
-      });
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -271,7 +240,7 @@ class _FormCreateEventState extends State<FormCreateEvent> {
               final LatLng? resultado = await Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => Mapa(
+                  builder: (context) => SelectorUbicacion(
                     esSelector: true,
                     tipoEvento: selectedValue ?? 'Otros',
                   ),
@@ -1486,7 +1455,7 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
                     setState(() {
                       selectedCategory = 'Todos';
                       selectedDate = null;
-                      _searchController?.clear();
+                      _searchController.clear();
                       searchQuery = '';
                     });
                     _fakeLoading();

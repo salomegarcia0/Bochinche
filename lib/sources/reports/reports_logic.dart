@@ -1,8 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 String? reportId;
 String? eventToReport;
@@ -129,20 +127,6 @@ Future<void> updateReportStatus(String reportId) async {
           .collection('events')
           .doc(evento)
           .delete();
-      final usuarioreportador = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(data['reporterId'])
-          .get();
-      final reportadormail = usuarioreportador.data()?['email'];
-      String? encodeQueryParameters(Map<String, String> params) {
-        return params.entries
-            .map(
-              (MapEntry<String, String> e) =>
-                  '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}',
-            )
-            .join('&');
-      }
-
       feedbackController.text = '';
     } else {
       print("No report found");

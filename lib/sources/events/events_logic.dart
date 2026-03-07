@@ -1,10 +1,8 @@
 import 'dart:math';
-
 import 'package:bochinche_app/sources/events/events_ui.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:bochinche_app/sources/notifications/notifications_logic.dart';
 
 // --- CONTROLADORES DE TEXTO GLOBALES ---
 final nombreEventoController = TextEditingController();
@@ -174,29 +172,26 @@ Future<void> createEvent(BuildContext context) async {
     try {
       final newEventRef = FirebaseFirestore.instance.collection('events').doc();
       await newEventRef.set({
-        'id': newEventRef.id,
-        'name': nombreEventoController.text,
-        'address': direccionController.text,
-        'contact': contactoController.text,
-        'type': typeC,
-        'state': 'Proximo',
-        'id_organizer': FirebaseAuth.instance.currentUser!.uid,
-        'description': descripcionController.text != null
-            ? descripcionController.text
-            : '',
-        'capacity': aforoController.text,
-        'isPrivate': isPrivate,
-        'startDate': fecha1!.toIso8601String(),
-        'endDate': fecha2!.toIso8601String(),
-        'startTime': {'hour': firtTimeHour.hour, 'minute': firtTimeHour.minute},
-        'endTime': {'hour': lastTimeHour.hour, 'minute': lastTimeHour.minute},
-        'location': GeoPoint(latitudC, longitudC),
-        'createdAt': FieldValue.serverTimestamp(),
-        'stars': 0,
-        'total_review': 0,
-        'isPrivate': isPrivateC,
-        'isPayed': isPayedC,
-      });
+  'id': newEventRef.id,
+  'name': nombreEventoController.text,
+  'address': direccionController.text,
+  'contact': contactoController.text,
+  'type': typeC,
+  'state': 'Proximo',
+  'id_organizer': FirebaseAuth.instance.currentUser!.uid,
+  'description': descripcionController.text.trim(), // <--- Fix: Adiós código muerto
+  'capacity': aforoController.text,
+  'startDate': fecha1!.toIso8601String(),
+  'endDate': fecha2!.toIso8601String(),
+  'startTime': {'hour': firtTimeHour.hour, 'minute': firtTimeHour.minute},
+  'endTime': {'hour': lastTimeHour.hour, 'minute': lastTimeHour.minute},
+  'location': GeoPoint(latitudC, longitudC),
+  'createdAt': FieldValue.serverTimestamp(),
+  'stars': 0,
+  'total_review': 0,
+  'isPrivate': isPrivateC, 
+  'isPayed': isPayedC,
+});
       if (isPayedC) {
         await newEventRef.update({
           'paymentInfo': {
@@ -358,7 +353,6 @@ Future<void> modifyEvent(BuildContext context, String id) async {
       var docSnapshot = await newEventRef.get();
 
       if (docSnapshot.exists) {
-        Map<String, dynamic> eventData = docSnapshot.data()!;
 
         var pagado = docSnapshot['isPayed'] ?? false;
 
@@ -426,7 +420,7 @@ Future<void> updateEventStatusOnLogin() async {
     bool hasChanges = false;
 
     for (var doc in snapshot.docs) {
-      final data = doc.data() as Map<String, dynamic>;
+      final data = doc.data();
       if (data['startDate'] == null) continue;
 
       // Conversión de fecha (ajusta si usas Timestamp o String)
@@ -614,7 +608,7 @@ Stream<List<Map<String, dynamic>>> chargeFilteredEvents({
         .snapshots()
         .map(
           (snap) => snap.docs
-              .map((doc) => doc.data() as Map<String, dynamic>)
+              .map((doc) => doc.data())
               .toList(),
         );
   }
@@ -671,7 +665,7 @@ Stream<List<Map<String, dynamic>>> chargeFilteredEvents({
         .snapshots()
         .map((snapshot) {
           return snapshot.docs.map((doc) {
-            Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+            Map<String, dynamic> data = doc.data();
             data['id'] = doc.id;
             return data;
           }).toList();
