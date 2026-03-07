@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:bochinche_app/features/auth/SignUpScreen.dart';
 import 'package:bochinche_app/features/map/Paginna_Inicio.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -18,14 +19,66 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final AuthService _authService = AuthService();
+  
+  // --- VALIDACIÓN ---
+  Timer? _debounce;
+  String? _emailError;
+  String? _passwordError;
 
   bool cargando = false;
   bool showPassword = false;
 
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    emailController.dispose();
+    passwordController.dispose();
+    super.dispose();
+  }
+
+  // --- LÓGICA DE VALIDACIÓN ---
+  void _validateEmail(String email) {
+    final bool emailValid = RegExp(
+            r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+")
+        .hasMatch(email);
+
+    setState(() {
+      if (email.isEmpty) {
+        _emailError = "El correo es requerido";
+      } else if (!emailValid) {
+        _emailError = "El correo no es válido";
+      } else {
+        _emailError = null;
+      }
+    });
+  }
+
+  void _validatePassword(String password) {
+    setState(() {
+      if (password.isEmpty) {
+        _passwordError = "La contraseña es requerida";
+      } else if (password.length < 6) {
+        _passwordError = "Mínimo 6 caracteres";
+      } else {
+        _passwordError = null;
+      }
+    });
+  }
+
+  bool _validateAll() {
+    _validateEmail(emailController.text);
+    _validatePassword(passwordController.text);
+
+    return _emailError == null && _passwordError == null;
+  }
+
   void ejecutarLogin() async {
-    if (emailController.text.isEmpty || passwordController.text.isEmpty) {
+    if (!_validateAll()) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Por favor, ingresa tus credenciales")),
+        const SnackBar(
+          content: Text("Por favor, corrige los errores en el formulario"),
+          backgroundColor: Colors.red,
+        ),
       );
       return;
     }
@@ -217,12 +270,20 @@ class _LoginScreenState extends State<LoginScreen> {
               TextField(
                 controller: emailController,
                 keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(
+                onChanged: (value) {
+                  if (_debounce?.isActive ?? false) _debounce!.cancel();
+                  _debounce = Timer(const Duration(milliseconds: 500), () {
+                    _validateEmail(value);
+                  });
+                },
+                decoration: InputDecoration(
                   filled: true,
                   fillColor: SecondaryPurple,
                   labelText: "Correo Electrónico",
-                  prefixIcon: Icon(Icons.email_outlined),
-                  border: OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.email_outlined),
+                  border: const OutlineInputBorder(),
+                  errorText: _emailError,
+                  errorStyle: const TextStyle(color: Colors.red),
                 ),
               ),
               const SizedBox(height: 20),
@@ -231,6 +292,12 @@ class _LoginScreenState extends State<LoginScreen> {
               TextField(
                 controller: passwordController,
                 obscureText: !showPassword,
+                onChanged: (value) {
+                  if (_debounce?.isActive ?? false) _debounce!.cancel();
+                  _debounce = Timer(const Duration(milliseconds: 500), () {
+                    _validatePassword(value);
+                  });
+                },
                 decoration: InputDecoration(
                   filled: true,
                   fillColor: SecondaryPurple,
@@ -244,6 +311,8 @@ class _LoginScreenState extends State<LoginScreen> {
                         setState(() => showPassword = !showPassword),
                   ),
                   border: const OutlineInputBorder(),
+                  errorText: _passwordError,
+                  errorStyle: const TextStyle(color: Colors.red),
                 ),
               ),
               const SizedBox(height: 30),

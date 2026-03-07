@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:bochinche_app/data/auth_service.dart';
 import 'package:bochinche_app/features/auth/LoginScreen.dart';
 import 'package:bochinche_app/features/authentication/authentication_steps.dart';
@@ -23,6 +24,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   final AuthService _authService = AuthService();
   
+  // --- VALIDACIÓN ---
+  Timer? _debounce;
+  String? _emailError;
+  String? _phoneError;
+  String? _cedulaError;
+  String? _passwordError;
+  String? _nameError;
+  String? _docTypeError;
+  String? _phonePrefixError;
   // --- ESTADOS ---
   bool cargando = false;
   bool showPassword = false;
@@ -34,25 +44,140 @@ class _SignUpScreenState extends State<SignUpScreen> {
   
   final List<String> phonePrefixes = ['0412', '0414', '0416', '0424', '0426'];
 
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    nameController.dispose();
+    emailController.dispose();
+    passwordController.dispose();
+    cedulaController.dispose();
+    phoneController.dispose();
+    super.dispose();
+  }
+
+  // --- LÓGICA DE VALIDACIÓN ---
+  void _onEmailChanged(String value) {
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    _debounce = Timer(const Duration(milliseconds: 500), () {
+      _validateEmail(value);
+    });
+  }
+
+  void _validateEmail(String email) {
+    final bool emailValid = RegExp(
+            r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+")
+        .hasMatch(email);
+
+    setState(() {
+      if (email.isEmpty) {
+        _emailError = "El correo es requerido";
+      } else if (!emailValid) {
+        _emailError = "El correo no es válido";
+      } else {
+        _emailError = null;
+      }
+    });
+  }
+
+  void _onPhoneChanged(String value) {
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    _debounce = Timer(const Duration(milliseconds: 500), () {
+      _validatePhone(value);
+    });
+  }
+
+  void _validatePhone(String phone) {
+    setState(() {
+      if (phone.isEmpty) {
+        _phoneError = "Campo Requerido";
+      } else if (phone.length != 7) {
+        _phoneError = "Debe tener 7 dígitos";
+      } else {
+        _phoneError = null;
+      }
+    });
+  }
+
+  void _onCedulaChanged(String value) {
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    _debounce = Timer(const Duration(milliseconds: 500), () {
+      _validateCedula(value);
+    });
+  }
+
+  void _validateCedula(String cedula) {
+    setState(() {
+      if (cedula.isEmpty) {
+        _cedulaError = "Campo requerido";
+      } else if (cedula.length < 6) {
+        _cedulaError = "Demasiado corta";
+      } else {
+        _cedulaError = null;
+      }
+    });
+  }
+
+  void _onPasswordChanged(String value) {
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    _debounce = Timer(const Duration(milliseconds: 500), () {
+      _validatePassword(value);
+    });
+  }
+
+  void _validatePassword(String password) {
+    setState(() {
+      if (password.isEmpty) {
+        _passwordError = "La contraseña es requerida";
+      } else if (password.length < 6) {
+        _passwordError = "Mínimo 6 caracteres";
+      } else {
+        _passwordError = null;
+      }
+    });
+  }
+
+  void _onNameChanged(String value) {
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    _debounce = Timer(const Duration(milliseconds: 500), () {
+      _validateName(value);
+    });
+  }
+
+  void _validateName(String name) {
+    setState(() {
+      if (name.trim().isEmpty) {
+        _nameError = "El nombre es requerido";
+      } else {
+        _nameError = null;
+      }
+    });
+  }
+
+  bool _validateAll() {
+    _validateName(nameController.text);
+    _validateEmail(emailController.text);
+    _validateCedula(cedulaController.text);
+    _validatePhone(phoneController.text);
+    _validatePassword(passwordController.text);
+
+    setState(() {
+      _docTypeError = tipoDocumento == null ? "Requerido" : null;
+      _phonePrefixError = selectedPhonePrefix == null ? "Requerido" : null;
+    });
+
+    return _nameError == null &&
+        _emailError == null &&
+        _cedulaError == null &&
+        _phoneError == null &&
+        _passwordError == null &&
+        _docTypeError == null &&
+        _phonePrefixError == null;
+  }
+
   // --- LÓGICA DE REGISTRO ---
   void executeSignUp() async {
-    if (nameController.text.isEmpty ||
-        emailController.text.isEmpty ||
-        cedulaController.text.isEmpty ||
-        phoneController.text.isEmpty ||
-        tipoDocumento == null ||
-        selectedPhonePrefix == null) {
-      _showSnackBar("Por favor, rellena todos los campos y selecciones");
-      return;
-    }
-
-    if (passwordController.text.length < 6) {
-      _showSnackBar("La contraseña debe tener al menos 6 caracteres");
-      return;
-    }
-
-    if (phoneController.text.trim().length != 7) {
-      _showSnackBar("El número debe tener 7 dígitos después del prefijo");
+    if (!_validateAll()) {
+      _showSnackBar("Por favor, corrige los errores en el formulario", isError: true);
       return;
     }
 
@@ -136,24 +261,30 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
             TextField(
               controller: nameController,
-              decoration: const InputDecoration(
+              onChanged: _onNameChanged,
+              decoration: InputDecoration(
                 filled: true,
                 fillColor: SecondaryPurple,
-                labelText: "Nombre Completo / Razón Social",
-                prefixIcon: Icon(Icons.person_outline),
-                border: OutlineInputBorder(),
+                labelText: "Nombre Completo",
+                prefixIcon: const Icon(Icons.person_outline),
+                border: const OutlineInputBorder(),
+                errorText: _nameError,
+                errorStyle: const TextStyle(color: Colors.red),
               ),
             ),
             const SizedBox(height: 15),
 
             TextField(
               controller: emailController,
-              decoration: const InputDecoration(
+              onChanged: _onEmailChanged,
+              decoration: InputDecoration(
                 filled: true,
                 fillColor: SecondaryPurple,
                 labelText: "Correo Electrónico",
-                prefixIcon: Icon(Icons.email_outlined),
-                border: OutlineInputBorder(),
+                prefixIcon: const Icon(Icons.email_outlined),
+                border: const OutlineInputBorder(),
+                errorText: _emailError,
+                errorStyle: const TextStyle(color: Colors.red),
               ),
               keyboardType: TextInputType.emailAddress,
             ),
@@ -167,23 +298,29 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   flex: 2,
                   child: DropdownButtonFormField<String>(
                     value: tipoDocumento,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       filled: true,
                       fillColor: SecondaryPurple,
-                      labelText: "Tipo", // Ahora sí se verá igual a los demás
-                      border: OutlineInputBorder(),
+                      labelText: "Tipo",
+                      border: const OutlineInputBorder(),
+                      errorText: _docTypeError,
+                      errorStyle: const TextStyle(color: Colors.red),
                     ),
                     items: docTypes.map((val) => DropdownMenuItem(
                       value: val, 
                       child: Text(val, style: const TextStyle(fontWeight: FontWeight.bold))
                     )).toList(),
                     selectedItemBuilder: (BuildContext context) {
-  return docTypes.map<Widget>((String item) {
-    // Esto es lo que se verá en la cajita cuando esté CERRADA
-    return Text(item.split(':')[0], style: const TextStyle(fontWeight: FontWeight.bold));
-  }).toList();
-},
-                    onChanged: (val) => setState(() => tipoDocumento = val),
+                      return docTypes.map<Widget>((String item) {
+                        return Text(item.split(':')[0], style: const TextStyle(fontWeight: FontWeight.bold));
+                      }).toList();
+                    },
+                    onChanged: (val) {
+                      setState(() {
+                        tipoDocumento = val;
+                        _docTypeError = null;
+                      });
+                    },
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -191,13 +328,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   flex: 3,
                   child: TextField(
                     controller: cedulaController,
-                    decoration: const InputDecoration(
+                    onChanged: _onCedulaChanged,
+                    decoration: InputDecoration(
                       filled: true,
                       fillColor: SecondaryPurple,
-                      labelText: "Número de Identificación",
-                      prefixIcon: Icon(Icons.badge_outlined),
-                      border: OutlineInputBorder(),
+                      labelText: "Cédula",
+                      prefixIcon: const Icon(Icons.badge_outlined),
+                      border: const OutlineInputBorder(),
                       counterText: "",
+                      errorText: _cedulaError,
+                      errorStyle: const TextStyle(color: Colors.red),
                     ),
                     keyboardType: TextInputType.number,
                     maxLength: 10,
@@ -216,17 +356,24 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   flex: 2,
                   child: DropdownButtonFormField<String>(
                     value: selectedPhonePrefix,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       filled: true,
                       fillColor: SecondaryPurple,
                       labelText: "Prefijo",
-                      border: OutlineInputBorder(),
+                      border: const OutlineInputBorder(),
+                      errorText: _phonePrefixError,
+                      errorStyle: const TextStyle(color: Colors.red),
                     ),
                     items: phonePrefixes.map((val) => DropdownMenuItem(
                       value: val, 
                       child: Text(val, style: const TextStyle(fontWeight: FontWeight.bold))
                     )).toList(),
-                    onChanged: (val) => setState(() => selectedPhonePrefix = val),
+                    onChanged: (val) {
+                      setState(() {
+                        selectedPhonePrefix = val;
+                        _phonePrefixError = null;
+                      });
+                    },
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -234,13 +381,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   flex: 3,
                   child: TextField(
                     controller: phoneController,
-                    decoration: const InputDecoration(
+                    onChanged: _onPhoneChanged,
+                    decoration: InputDecoration(
                       filled: true,
                       fillColor: SecondaryPurple,
                       labelText: "Número",
-                      prefixIcon: Icon(Icons.phone_outlined),
-                      border: OutlineInputBorder(),
+                      prefixIcon: const Icon(Icons.phone_outlined),
+                      border: const OutlineInputBorder(),
                       counterText: "",
+                      errorText: _phoneError,
+                      errorStyle: const TextStyle(color: Colors.red),
                     ),
                     keyboardType: TextInputType.number,
                     maxLength: 7,
@@ -253,6 +403,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
             TextField(
               controller: passwordController,
+              onChanged: _onPasswordChanged,
               obscureText: !showPassword,
               decoration: InputDecoration(
                 filled: true,
@@ -264,6 +415,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   onPressed: () => setState(() => showPassword = !showPassword),
                 ),
                 border: const OutlineInputBorder(),
+                errorText: _passwordError,
+                errorStyle: const TextStyle(color: Colors.red),
               ),
             ),
             const SizedBox(height: 25),
