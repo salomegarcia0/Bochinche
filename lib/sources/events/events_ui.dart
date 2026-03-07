@@ -79,6 +79,14 @@ class _FormCreateEventState extends State<FormCreateEvent> {
   String? _hora1Error;
   String? _hora2Error;
 
+  // --- VALIDACIÓN PAGO ---
+  String? _bankError;
+  String? _phonePrefixError;
+  String? _paymentPhoneError;
+  String? _ciTypeError;
+  String? _paymentCIError;
+  String? _priceError;
+
   @override
   void dispose() {
     _debounce?.cancel();
@@ -165,6 +173,57 @@ class _FormCreateEventState extends State<FormCreateEvent> {
     });
   }
 
+  void _validateBank(String? value) {
+    setState(() {
+      _bankError = (value == null || value.isEmpty) ? "Selecciona un banco" : null;
+    });
+  }
+
+  void _validatePhonePrefix(String? value) {
+    setState(() {
+      _phonePrefixError = (value == null || value.isEmpty) ? "Requerido" : null;
+    });
+  }
+
+  void _validatePaymentPhone(String value) {
+    setState(() {
+      if (value.trim().isEmpty) {
+        _paymentPhoneError = "Requerido";
+      } else if (value.length < 7) {
+        _paymentPhoneError = "Mínimo 7 dígitos";
+      } else {
+        _paymentPhoneError = null;
+      }
+    });
+  }
+
+  void _validateCIType(String? value) {
+    setState(() {
+      _ciTypeError = (value == null || value.isEmpty) ? "Requerido" : null;
+    });
+  }
+
+  void _validatePaymentCI(String value) {
+    setState(() {
+      _paymentCIError = value.trim().isEmpty ? "Requerido" : null;
+    });
+  }
+
+  void _validatePrice(String value) {
+    setState(() {
+      if (value.trim().isEmpty) {
+        _priceError = "Requerido";
+      } else {
+        double? p = double.tryParse(value);
+        if (p == null || p <= 0) {
+          _priceError = "Precio inválido";
+        } else {
+          _priceError = null;
+        }
+      }
+    });
+  }
+
   bool _validateAll() {
     _validateNombre(nombreEventoController.text);
     _validateDireccion(direccionController.text);
@@ -174,7 +233,7 @@ class _FormCreateEventState extends State<FormCreateEvent> {
     _validateUbicacion();
     _validateHoras();
 
-    return _nombreError == null &&
+    bool isValid = _nombreError == null &&
         _direccionError == null &&
         _aforoError == null &&
         _tipoError == null &&
@@ -182,6 +241,25 @@ class _FormCreateEventState extends State<FormCreateEvent> {
         _fecha2Error == null &&
         _ubicacionError == null &&
         _hora2Error == null;
+
+    if (isPayedC) {
+      _validateBank(selectedBank);
+      _validatePhonePrefix(selectedPhonePrefix);
+      _validatePaymentPhone(paymentPhoneNumberController.text);
+      _validateCIType(selectedCIType);
+      _validatePaymentCI(paymentCINumberController.text);
+      _validatePrice(priceController.text);
+
+      isValid = isValid &&
+          _bankError == null &&
+          _phonePrefixError == null &&
+          _paymentPhoneError == null &&
+          _ciTypeError == null &&
+          _paymentCIError == null &&
+          _priceError == null;
+    }
+
+    return isValid;
   }
 
   Future<void> fechaselect2(BuildContext context) async {
@@ -581,10 +659,11 @@ class _FormCreateEventState extends State<FormCreateEvent> {
             DropdownButtonFormField<String>(
               initialValue: selectedBank,
               isExpanded: true,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Banco',
-                prefixIcon: Icon(Icons.account_balance),
-                border: OutlineInputBorder(),
+                prefixIcon: const Icon(Icons.account_balance),
+                border: const OutlineInputBorder(),
+                errorText: _bankError,
               ),
               items: bankList
                   .map(
@@ -594,7 +673,10 @@ class _FormCreateEventState extends State<FormCreateEvent> {
                     ),
                   )
                   .toList(),
-              onChanged: (val) => setState(() => selectedBank = val),
+              onChanged: (val) {
+                setState(() => selectedBank = val);
+                _validateBank(val);
+              },
             ),
             const SizedBox(height: 12),
 
@@ -607,13 +689,14 @@ class _FormCreateEventState extends State<FormCreateEvent> {
                   child: DropdownButtonFormField<String>(
                     initialValue: selectedPhonePrefix,
                     isExpanded: true,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: 'Prefijo',
-                      border: OutlineInputBorder(),
-                      contentPadding: EdgeInsets.symmetric(
+                      border: const OutlineInputBorder(),
+                      contentPadding: const EdgeInsets.symmetric(
                         horizontal: 10,
                         vertical: 15,
                       ),
+                      errorText: _phonePrefixError,
                     ),
                     items: phonePrefixList
                         .map(
@@ -623,26 +706,35 @@ class _FormCreateEventState extends State<FormCreateEvent> {
                           ),
                         )
                         .toList(),
-                    onChanged: (val) =>
-                        setState(() => selectedPhonePrefix = val),
+                    onChanged: (val) {
+                      setState(() => selectedPhonePrefix = val);
+                      _validatePhonePrefix(val);
+                    },
                   ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: TextFormField(
                     controller: paymentPhoneNumberController,
-                    keyboardType: TextInputType.numberWithOptions(
+                    keyboardType: const TextInputType.numberWithOptions(
                       decimal: false,
                     ),
                     inputFormatters: <TextInputFormatter>[
                       FilteringTextInputFormatter.digitsOnly,
                     ],
                     maxLength: 7,
-                    decoration: const InputDecoration(
+                    onChanged: (value) {
+                      if (_debounce?.isActive ?? false) _debounce!.cancel();
+                      _debounce = Timer(const Duration(milliseconds: 500), () {
+                        _validatePaymentPhone(value);
+                      });
+                    },
+                    decoration: InputDecoration(
                       labelText: 'Número',
-                      prefixIcon: Icon(Icons.phone),
-                      border: OutlineInputBorder(),
+                      prefixIcon: const Icon(Icons.phone),
+                      border: const OutlineInputBorder(),
                       counterText: '',
+                      errorText: _paymentPhoneError,
                     ),
                   ),
                 ),
@@ -658,13 +750,14 @@ class _FormCreateEventState extends State<FormCreateEvent> {
                   child: DropdownButtonFormField<String>(
                     initialValue: selectedCIType,
                     isExpanded: true,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: 'Tipo',
-                      border: OutlineInputBorder(),
-                      contentPadding: EdgeInsets.symmetric(
+                      border: const OutlineInputBorder(),
+                      contentPadding: const EdgeInsets.symmetric(
                         horizontal: 10,
                         vertical: 15,
                       ),
+                      errorText: _ciTypeError,
                     ),
                     items: ciTypeList
                         .map(
@@ -677,23 +770,33 @@ class _FormCreateEventState extends State<FormCreateEvent> {
                           ),
                         )
                         .toList(),
-                    onChanged: (val) => setState(() => selectedCIType = val),
+                    onChanged: (val) {
+                      setState(() => selectedCIType = val);
+                      _validateCIType(val);
+                    },
                   ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: TextFormField(
                     controller: paymentCINumberController,
-                    keyboardType: TextInputType.numberWithOptions(
+                    keyboardType: const TextInputType.numberWithOptions(
                       decimal: false,
                     ),
                     inputFormatters: <TextInputFormatter>[
                       FilteringTextInputFormatter.digitsOnly,
                     ],
-                    decoration: const InputDecoration(
+                    onChanged: (value) {
+                      if (_debounce?.isActive ?? false) _debounce!.cancel();
+                      _debounce = Timer(const Duration(milliseconds: 500), () {
+                        _validatePaymentCI(value);
+                      });
+                    },
+                    decoration: InputDecoration(
                       labelText: 'Número de Identificación',
-                      prefixIcon: Icon(Icons.badge),
-                      border: OutlineInputBorder(),
+                      prefixIcon: const Icon(Icons.badge),
+                      border: const OutlineInputBorder(),
+                      errorText: _paymentCIError,
                     ),
                   ),
                 ),
@@ -702,14 +805,21 @@ class _FormCreateEventState extends State<FormCreateEvent> {
             const SizedBox(height: 12),
             TextFormField(
               controller: priceController,
-              keyboardType: TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
               inputFormatters: <TextInputFormatter>[
                 FilteringTextInputFormatter.digitsOnly,
               ],
-              decoration: const InputDecoration(
+              onChanged: (value) {
+                if (_debounce?.isActive ?? false) _debounce!.cancel();
+                _debounce = Timer(const Duration(milliseconds: 500), () {
+                  _validatePrice(value);
+                });
+              },
+              decoration: InputDecoration(
                 labelText: 'Precio por Entrada (Bs)',
-                prefixIcon: Icon(Icons.attach_money),
-                border: OutlineInputBorder(),
+                prefixIcon: const Icon(Icons.attach_money),
+                border: const OutlineInputBorder(),
+                errorText: _priceError,
               ),
             ),
           ] else ...[
