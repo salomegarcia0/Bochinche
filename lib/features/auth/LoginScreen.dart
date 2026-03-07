@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:bochinche_app/features/auth/SignUpScreen.dart';
-import 'package:bochinche_app/features/map/Paginna_Inicio.dart';
+import 'package:bochinche_app/features/map/pagina_inicio.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -101,11 +101,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
         if (snapshot.docs.isNotEmpty) {
           var data = snapshot.docs.first.data() as Map<String, dynamic>;
-          if (snapshot.docs.isNotEmpty) {
-            var data = snapshot.docs.first.data() as Map<String, dynamic>;
-
-            estaBaneado = data['banned'] ?? false;
-          }
+          estaBaneado = data['banned'] ?? false;
 
           if (estaBaneado) {
             await FirebaseAuth.instance.signOut();
@@ -153,9 +149,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     duration: Duration(seconds: 4),
                   ),
                 );
-                if (user != null) {
-                  user.sendEmailVerification();
-                }
+                user.sendEmailVerification();
                 setState(() => cargando = false);
                 return;
               }

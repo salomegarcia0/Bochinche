@@ -1,5 +1,5 @@
 import 'package:bochinche_app/features/auth/LoginScreen.dart';
-import 'package:bochinche_app/features/map/Paginna_Inicio.dart';
+import 'package:bochinche_app/features/map/pagina_inicio.dart';
 import 'package:bochinche_app/sources/reports/reports_ui.dart';
 
 import 'package:firebase_auth/firebase_auth.dart';

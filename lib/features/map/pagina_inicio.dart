@@ -1,5 +1,5 @@
 import 'package:bochinche_app/styles/BochincheAppBar.dart';
-import 'package:bochinche_app/features/map/Mapa.dart';
+import 'package:bochinche_app/features/map/mapa_principal.dart';
 import 'package:flutter/material.dart';
 import 'package:bochinche_app/features/map/BuscadorEventoMapa.dart';
 import 'package:bochinche_app/styles/NavBar.dart';
@@ -13,18 +13,18 @@ class Pagina_Principal extends StatefulWidget {
 }
 
 class _Pagina_PrincipalState extends State<Pagina_Principal> {
-  final GlobalKey<MapaState> _mapaKey = GlobalKey<MapaState>();
+  final GlobalKey<MapaPrincipalState> _mapaKey = GlobalKey<MapaPrincipalState>();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      updateEventStatusOnLogin();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    void initState() {
-      super.initState();
-
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        updateEventStatusOnLogin();
-      });
-    }
-
     return Scaffold(
       drawer: FirebaseAuth.instance.currentUser != null ? const Navbar() : null,
       appBar: const BochincheAppBar(),
@@ -34,7 +34,7 @@ class _Pagina_PrincipalState extends State<Pagina_Principal> {
             child: GestureDetector(
               onTap: () => FocusScope.of(context).unfocus(),
               behavior: HitTestBehavior.opaque,
-              child: Mapa(key: _mapaKey),
+              child: MapaPrincipal(key: _mapaKey), // <--- Usando el nuevo nombre
             ),
           ),
 

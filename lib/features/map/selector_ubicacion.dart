@@ -3,17 +3,17 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:latlong2/latlong.dart';
 
-class Mapa extends StatefulWidget {
+class SelectorUbicacion extends StatefulWidget {
   final bool esSelector;
   final String tipoEvento;
 
-  const Mapa({super.key, this.esSelector = false, this.tipoEvento = 'Otros'});
+  const SelectorUbicacion({super.key, this.esSelector = false, this.tipoEvento = 'Otros'});
 
   @override
-  State<Mapa> createState() => _MapaState();
+  State<SelectorUbicacion> createState() => _SelectorUbicacionState();
 }
 
-class _MapaState extends State<Mapa> {
+class _SelectorUbicacionState extends State<SelectorUbicacion> {
   LatLng? puntoSeleccionado;
 
   IconData getIconoPin(String tipo) {
