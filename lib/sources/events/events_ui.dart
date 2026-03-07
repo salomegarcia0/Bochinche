@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:bochinche_app/sources/reports/reports_logic.dart';
 import 'package:bochinche_app/sources/user_profile/user_profile_ui.dart';
 import 'package:bochinche_app/styles/BochincheAppBar.dart';
@@ -66,6 +67,123 @@ class _FormCreateEventState extends State<FormCreateEvent> {
   TimeOfDay hora2select = lastTimeHour;
   TimeOfDay hora1 = TimeOfDay.now();
 
+  // --- VALIDACIÓN ---
+  Timer? _debounce;
+  String? _nombreError;
+  String? _direccionError;
+  String? _aforoError;
+  String? _tipoError;
+  String? _fecha1Error;
+  String? _fecha2Error;
+  String? _ubicacionError;
+  String? _hora1Error;
+  String? _hora2Error;
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    super.dispose();
+  }
+
+  // --- LÓGICA DE VALIDACIÓN ---
+  void _validateNombre(String value) {
+    setState(() {
+      _nombreError = value.trim().isEmpty ? "El nombre es requerido" : null;
+    });
+  }
+
+  void _validateDireccion(String value) {
+    setState(() {
+      _direccionError = value.trim().isEmpty ? "La dirección es requerida" : null;
+    });
+  }
+
+  void _validateAforo(String value) {
+    setState(() {
+      if (value.isEmpty) {
+        _aforoError = "El aforo es requerido";
+      } else {
+        int? a = int.tryParse(value);
+        if (a == null || a <= 0) {
+          _aforoError = "Número inválido";
+        } else {
+          _aforoError = null;
+        }
+      }
+    });
+  }
+
+  void _validateTipo(String? value) {
+    setState(() {
+      _tipoError = (value == null || value.isEmpty) ? "Selecciona un tipo" : null;
+    });
+  }
+
+  void _validateFechas() {
+    setState(() {
+      if (fecha1C.text.isEmpty) {
+        _fecha1Error = "Requerida";
+      } else {
+        _fecha1Error = null;
+      }
+
+      if (fecha2C.text.isEmpty) {
+        _fecha2Error = "Requerida";
+      } else if (fecha1 != null && fecha2 != null && fecha2!.isBefore(fecha1!)) {
+        _fecha2Error = "No puede ser anterior al inicio";
+      } else {
+        _fecha2Error = null;
+      }
+    });
+  }
+
+  void _validateUbicacion() {
+    setState(() {
+      _ubicacionError = ubicacionTemporal == null ? "Selecciona la ubicación" : null;
+    });
+  }
+
+  void _validateHoras() {
+    setState(() {
+      // Por ahora validación básica: que no sean iguales si es el mismo día
+      if (fecha1 != null && fecha2 != null && 
+          fecha1!.year == fecha2!.year && 
+          fecha1!.month == fecha2!.month && 
+          fecha1!.day == fecha2!.day) {
+        
+        double start = hora1select.hour + hora1select.minute / 60.0;
+        double end = hora2select.hour + hora2select.minute / 60.0;
+        
+        if (end <= start) {
+          _hora2Error = "Debe ser posterior al inicio";
+        } else {
+          _hora2Error = null;
+        }
+      } else {
+        _hora2Error = null;
+      }
+    });
+  }
+
+  bool _validateAll() {
+    _validateNombre(nombreEventoController.text);
+    _validateDireccion(direccionController.text);
+    _validateAforo(aforoController.text);
+    _validateTipo(selectedValue);
+    _validateFechas();
+    _validateUbicacion();
+    _validateHoras();
+
+    return _nombreError == null &&
+        _direccionError == null &&
+        _aforoError == null &&
+        _tipoError == null &&
+        _fecha1Error == null &&
+        _fecha2Error == null &&
+        _ubicacionError == null &&
+        _hora2Error == null;
+  }
+
   Future<void> fechaselect2(BuildContext context) async {
     DateTime? date = await showDatePicker(
       context: context,
@@ -79,6 +197,7 @@ class _FormCreateEventState extends State<FormCreateEvent> {
         fecha2C.text = date.toString().split(" ")[0];
         fecha2 = date;
       });
+      _validateFechas();
     }
   }
 
@@ -95,6 +214,7 @@ class _FormCreateEventState extends State<FormCreateEvent> {
         fecha1C.text = date.toString().split(" ")[0];
         fecha1 = date;
       });
+      _validateFechas();
     }
   }
 
@@ -118,23 +238,35 @@ class _FormCreateEventState extends State<FormCreateEvent> {
         children: [
           TextFormField(
             controller: nombreEventoController,
-            validator: validateName,
-            decoration: const InputDecoration(
+            onChanged: (value) {
+              if (_debounce?.isActive ?? false) _debounce!.cancel();
+              _debounce = Timer(const Duration(milliseconds: 500), () {
+                _validateNombre(value);
+              });
+            },
+            decoration: InputDecoration(
               labelText: 'Nombre del evento',
-              prefixIcon: Icon(Icons.event),
-              border: OutlineInputBorder(),
+              prefixIcon: const Icon(Icons.event),
+              border: const OutlineInputBorder(),
               counterText: '',
+              errorText: _nombreError,
             ),
           ),
           const SizedBox(height: 12),
           TextFormField(
             controller: direccionController,
-            validator: validateName,
-            decoration: const InputDecoration(
+            onChanged: (value) {
+              if (_debounce?.isActive ?? false) _debounce!.cancel();
+              _debounce = Timer(const Duration(milliseconds: 500), () {
+                _validateDireccion(value);
+              });
+            },
+            decoration: InputDecoration(
               labelText: 'Dirección Física',
-              prefixIcon: Icon(Icons.pin_drop),
-              border: OutlineInputBorder(),
+              prefixIcon: const Icon(Icons.pin_drop),
+              border: const OutlineInputBorder(),
               counterText: '',
+              errorText: _direccionError,
             ),
           ),
           const SizedBox(height: 12),
@@ -151,16 +283,22 @@ class _FormCreateEventState extends State<FormCreateEvent> {
           const SizedBox(height: 12),
           TextFormField(
             controller: aforoController,
-            keyboardType: TextInputType.numberWithOptions(decimal: false),
+            keyboardType: const TextInputType.numberWithOptions(decimal: false),
             inputFormatters: <TextInputFormatter>[
               FilteringTextInputFormatter.digitsOnly,
             ],
-            validator: validateAforo,
-            decoration: const InputDecoration(
+            onChanged: (value) {
+              if (_debounce?.isActive ?? false) _debounce!.cancel();
+              _debounce = Timer(const Duration(milliseconds: 500), () {
+                _validateAforo(value);
+              });
+            },
+            decoration: InputDecoration(
               labelText: 'Aforo',
-              prefixIcon: Icon(Icons.people),
-              border: OutlineInputBorder(),
+              prefixIcon: const Icon(Icons.people),
+              border: const OutlineInputBorder(),
               counterText: '',
+              errorText: _aforoError,
             ),
           ),
           const SizedBox(height: 12),
@@ -181,21 +319,31 @@ class _FormCreateEventState extends State<FormCreateEvent> {
                 selectedValue = val;
                 typeC = val;
               });
+              _validateTipo(val);
             },
           ),
+          if (_tipoError != null)
+            Padding(
+              padding: const EdgeInsets.only(left: 12, top: 4),
+              child: Text(
+                _tipoError!,
+                style: const TextStyle(color: Colors.red, fontSize: 12),
+              ),
+            ),
           SizedBox(height: 12),
           TextField(
             controller: fecha1C,
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               labelText: 'Fecha de inicio del evento',
               filled: true,
-              prefixIcon: Icon(Icons.calendar_view_day_rounded),
-              enabledBorder: OutlineInputBorder(
+              prefixIcon: const Icon(Icons.calendar_view_day_rounded),
+              enabledBorder: const OutlineInputBorder(
                 borderSide: BorderSide(color: Colors.black),
               ),
-              focusedBorder: OutlineInputBorder(
+              focusedBorder: const OutlineInputBorder(
                 borderSide: BorderSide(color: Color.fromARGB(255, 3, 3, 3)),
               ),
+              errorText: _fecha1Error,
             ),
             readOnly: true,
             onTap: () {
@@ -206,16 +354,17 @@ class _FormCreateEventState extends State<FormCreateEvent> {
           SizedBox(height: 12),
           TextField(
             controller: fecha2C,
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               labelText: 'Fecha de fin del evento',
               filled: true,
-              prefixIcon: Icon(Icons.calendar_view_day_rounded),
-              enabledBorder: OutlineInputBorder(
+              prefixIcon: const Icon(Icons.calendar_view_day_rounded),
+              enabledBorder: const OutlineInputBorder(
                 borderSide: BorderSide(color: Colors.black),
               ),
-              focusedBorder: OutlineInputBorder(
+              focusedBorder: const OutlineInputBorder(
                 borderSide: BorderSide(color: Colors.green),
               ),
+              errorText: _fecha2Error,
             ),
             readOnly: true,
             onTap: () {
@@ -252,9 +401,18 @@ class _FormCreateEventState extends State<FormCreateEvent> {
                   latitudC = resultado.latitude;
                   longitudC = resultado.longitude;
                 });
+                _validateUbicacion();
               }
             },
           ),
+          if (_ubicacionError != null)
+            Padding(
+              padding: const EdgeInsets.only(left: 12, top: 4),
+              child: Text(
+                _ubicacionError!,
+                style: const TextStyle(color: Colors.red, fontSize: 12),
+              ),
+            ),
 
           const SizedBox(height: 12),
 
@@ -300,6 +458,7 @@ class _FormCreateEventState extends State<FormCreateEvent> {
                               print(hora1select.hour);
                               print(hora1select.minute);
                             });
+                            _validateHoras();
                           }
                         },
                       ),
@@ -348,9 +507,18 @@ class _FormCreateEventState extends State<FormCreateEvent> {
                               print(hora2select.hour);
                               print(hora2select.minute);
                             });
+                            _validateHoras();
                           }
                         },
                       ),
+                      if (_hora2Error != null)
+                        Padding(
+                          padding: const EdgeInsets.only(left: 8),
+                          child: Text(
+                            _hora2Error!,
+                            style: const TextStyle(color: Colors.red, fontSize: 12),
+                          ),
+                        ),
                     ],
                   ),
                 ],
@@ -566,13 +734,22 @@ class _FormCreateEventState extends State<FormCreateEvent> {
                   foregroundColor: SecondaryPurple,
                 ),
                 onPressed: () {
-                  createEvent(context);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const ControlPanelEvent(),
-                    ),
-                  );
+                  if (_validateAll()) {
+                    createEvent(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ControlPanelEvent(),
+                      ),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("Por favor, corrige los errores en el formulario"),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
                 },
                 icon: const Icon(Icons.cloud_upload),
                 label: const Text('PUBLICAR EVENTO'),
