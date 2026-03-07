@@ -60,10 +60,30 @@ class FormCreateEvent extends StatefulWidget {
 }
 
 class _FormCreateEventState extends State<FormCreateEvent> {
+  @override
+  void initState() {
+    super.initState();
+    _initDraft();
+  }
+
+  Future<void> _initDraft() async {
+    await loadEventDraft();
+    if (mounted) {
+      setState(() {
+        selectedValue = typeC;
+        ubicacionTemporal = (latitudC != 0.0 && (latitudC != 10.0 || longitudC != -60.0)) 
+            ? LatLng(latitudC, longitudC) 
+            : null;
+        hora1select = firstTimeHour;
+        hora2select = lastTimeHour;
+      });
+    }
+  }
+
   String? selectedValue;
   LatLng? ubicacionTemporal;
   String? selectedValue2;
-  TimeOfDay hora1select = firtTimeHour;
+  TimeOfDay hora1select = firstTimeHour;
   TimeOfDay hora2select = lastTimeHour;
   TimeOfDay hora1 = TimeOfDay.now();
 
@@ -274,6 +294,7 @@ class _FormCreateEventState extends State<FormCreateEvent> {
       setState(() {
         fecha2C.text = date.toString().split(" ")[0];
         fecha2 = date;
+        saveEventDraft();
       });
       _validateFechas();
     }
@@ -291,6 +312,7 @@ class _FormCreateEventState extends State<FormCreateEvent> {
       setState(() {
         fecha1C.text = date.toString().split(" ")[0];
         fecha1 = date;
+        saveEventDraft();
       });
       _validateFechas();
     }
@@ -320,6 +342,7 @@ class _FormCreateEventState extends State<FormCreateEvent> {
               if (_debounce?.isActive ?? false) _debounce!.cancel();
               _debounce = Timer(const Duration(milliseconds: 500), () {
                 _validateNombre(value);
+                saveEventDraft();
               });
             },
             decoration: InputDecoration(
@@ -337,6 +360,7 @@ class _FormCreateEventState extends State<FormCreateEvent> {
               if (_debounce?.isActive ?? false) _debounce!.cancel();
               _debounce = Timer(const Duration(milliseconds: 500), () {
                 _validateDireccion(value);
+                saveEventDraft();
               });
             },
             decoration: InputDecoration(
@@ -350,7 +374,12 @@ class _FormCreateEventState extends State<FormCreateEvent> {
           const SizedBox(height: 12),
           TextFormField(
             controller: contactoController,
-            validator: validateName,
+            onChanged: (value) {
+              if (_debounce?.isActive ?? false) _debounce!.cancel();
+              _debounce = Timer(const Duration(milliseconds: 500), () {
+                saveEventDraft();
+              });
+            },
             decoration: const InputDecoration(
               labelText: 'Contacto o Pagina Web',
               prefixIcon: Icon(Icons.contact_page),
@@ -369,6 +398,7 @@ class _FormCreateEventState extends State<FormCreateEvent> {
               if (_debounce?.isActive ?? false) _debounce!.cancel();
               _debounce = Timer(const Duration(milliseconds: 500), () {
                 _validateAforo(value);
+                saveEventDraft();
               });
             },
             decoration: InputDecoration(
@@ -386,7 +416,7 @@ class _FormCreateEventState extends State<FormCreateEvent> {
               prefixIcon: Icon(Icons.type_specimen),
               border: OutlineInputBorder(),
             ),
-            initialValue: selectedValue,
+            value: selectedValue,
             isExpanded: true,
             hint: const Text("Selecciona el tipo"),
             items: options
@@ -396,6 +426,7 @@ class _FormCreateEventState extends State<FormCreateEvent> {
               setState(() {
                 selectedValue = val;
                 typeC = val;
+                saveEventDraft();
               });
               _validateTipo(val);
             },
@@ -478,6 +509,7 @@ class _FormCreateEventState extends State<FormCreateEvent> {
                   ubicacionTemporal = resultado;
                   latitudC = resultado.latitude;
                   longitudC = resultado.longitude;
+                  saveEventDraft();
                 });
                 _validateUbicacion();
               }
@@ -532,7 +564,8 @@ class _FormCreateEventState extends State<FormCreateEvent> {
                           if (horaFirst != null) {
                             setState(() {
                               hora1select = horaFirst;
-                              firtTimeHour = hora1select;
+                              firstTimeHour = hora1select;
+                              saveEventDraft();
                               print(hora1select.hour);
                               print(hora1select.minute);
                             });
@@ -582,6 +615,7 @@ class _FormCreateEventState extends State<FormCreateEvent> {
                             setState(() {
                               hora2select = horaLast;
                               lastTimeHour = hora2select;
+                              saveEventDraft();
                               print(hora2select.hour);
                               print(hora2select.minute);
                             });
@@ -607,6 +641,12 @@ class _FormCreateEventState extends State<FormCreateEvent> {
           TextFormField(
             controller: descripcionController,
             maxLines: 3,
+            onChanged: (value) {
+              if (_debounce?.isActive ?? false) _debounce!.cancel();
+              _debounce = Timer(const Duration(milliseconds: 500), () {
+                saveEventDraft();
+              });
+            },
             decoration: const InputDecoration(
               labelText: 'Descripción del evento',
               alignLabelWithHint: true,
@@ -633,7 +673,10 @@ class _FormCreateEventState extends State<FormCreateEvent> {
               isPrivateC ? Icons.lock : Icons.public,
               color: isPrivateC ? PrimaryPurple : Colors.grey,
             ),
-            onChanged: (val) => setState(() => isPrivateC = val),
+            onChanged: (val) {
+              setState(() => isPrivateC = val);
+              saveEventDraft();
+            },
           ),
 
           const SizedBox(height: 20),
@@ -643,7 +686,10 @@ class _FormCreateEventState extends State<FormCreateEvent> {
             title: Text(isPayedC ? 'Evento Pago' : 'Evento Gratuito'),
             value: isPayedC,
             // ... resto de tu configuración actual
-            onChanged: (val) => setState(() => isPayedC = val),
+            onChanged: (val) {
+              setState(() => isPayedC = val);
+              saveEventDraft();
+            },
           ),
 
           // --- AQUÍ LA MAGIA ---
@@ -657,7 +703,7 @@ class _FormCreateEventState extends State<FormCreateEvent> {
             const SizedBox(height: 12),
             // --- Banco (Dropdown) ---
             DropdownButtonFormField<String>(
-              initialValue: selectedBank,
+              value: selectedBank,
               isExpanded: true,
               decoration: InputDecoration(
                 labelText: 'Banco',
@@ -676,6 +722,7 @@ class _FormCreateEventState extends State<FormCreateEvent> {
               onChanged: (val) {
                 setState(() => selectedBank = val);
                 _validateBank(val);
+                saveEventDraft();
               },
             ),
             const SizedBox(height: 12),
@@ -687,7 +734,7 @@ class _FormCreateEventState extends State<FormCreateEvent> {
                 SizedBox(
                   width: 110,
                   child: DropdownButtonFormField<String>(
-                    initialValue: selectedPhonePrefix,
+                    value: selectedPhonePrefix,
                     isExpanded: true,
                     decoration: InputDecoration(
                       labelText: 'Prefijo',
@@ -709,6 +756,7 @@ class _FormCreateEventState extends State<FormCreateEvent> {
                     onChanged: (val) {
                       setState(() => selectedPhonePrefix = val);
                       _validatePhonePrefix(val);
+                      saveEventDraft();
                     },
                   ),
                 ),
@@ -727,6 +775,7 @@ class _FormCreateEventState extends State<FormCreateEvent> {
                       if (_debounce?.isActive ?? false) _debounce!.cancel();
                       _debounce = Timer(const Duration(milliseconds: 500), () {
                         _validatePaymentPhone(value);
+                        saveEventDraft();
                       });
                     },
                     decoration: InputDecoration(
@@ -748,7 +797,7 @@ class _FormCreateEventState extends State<FormCreateEvent> {
                 SizedBox(
                   width: 120,
                   child: DropdownButtonFormField<String>(
-                    initialValue: selectedCIType,
+                    value: selectedCIType,
                     isExpanded: true,
                     decoration: InputDecoration(
                       labelText: 'Tipo',
@@ -773,6 +822,7 @@ class _FormCreateEventState extends State<FormCreateEvent> {
                     onChanged: (val) {
                       setState(() => selectedCIType = val);
                       _validateCIType(val);
+                      saveEventDraft();
                     },
                   ),
                 ),
@@ -790,6 +840,7 @@ class _FormCreateEventState extends State<FormCreateEvent> {
                       if (_debounce?.isActive ?? false) _debounce!.cancel();
                       _debounce = Timer(const Duration(milliseconds: 500), () {
                         _validatePaymentCI(value);
+                        saveEventDraft();
                       });
                     },
                     decoration: InputDecoration(
@@ -813,6 +864,7 @@ class _FormCreateEventState extends State<FormCreateEvent> {
                 if (_debounce?.isActive ?? false) _debounce!.cancel();
                 _debounce = Timer(const Duration(milliseconds: 500), () {
                   _validatePrice(value);
+                  saveEventDraft();
                 });
               },
               decoration: InputDecoration(

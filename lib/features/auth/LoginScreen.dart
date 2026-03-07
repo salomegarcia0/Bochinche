@@ -7,6 +7,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:bochinche_app/data/auth_service.dart';
 import 'package:bochinche_app/styles/Color.dart';
 import 'package:bochinche_app/sources/events/events_logic.dart';
+import 'package:bochinche_app/core/utils/draft_manager.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -19,6 +20,22 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final AuthService _authService = AuthService();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDraft();
+  }
+
+  Future<void> _loadDraft() async {
+    final draft = await DraftManager.loadLoginDraft();
+    if (mounted && draft != null) {
+      setState(() {
+        emailController.text = draft['email'] ?? '';
+        passwordController.text = draft['password'] ?? '';
+      });
+    }
+  }
   
   // --- VALIDACIÓN ---
   Timer? _debounce;
@@ -133,6 +150,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             );
             updateEventStatusOnLogin();
+            DraftManager.clearLoginDraft();
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(builder: (context) => const Pagina_Principal()),
@@ -265,6 +283,10 @@ class _LoginScreenState extends State<LoginScreen> {
                 controller: emailController,
                 keyboardType: TextInputType.emailAddress,
                 onChanged: (value) {
+                  DraftManager.saveLoginDraft({
+                    'email': value,
+                    'password': passwordController.text,
+                  });
                   if (_debounce?.isActive ?? false) _debounce!.cancel();
                   _debounce = Timer(const Duration(milliseconds: 500), () {
                     _validateEmail(value);
@@ -287,6 +309,10 @@ class _LoginScreenState extends State<LoginScreen> {
                 controller: passwordController,
                 obscureText: !showPassword,
                 onChanged: (value) {
+                  DraftManager.saveLoginDraft({
+                    'email': emailController.text,
+                    'password': value,
+                  });
                   if (_debounce?.isActive ?? false) _debounce!.cancel();
                   _debounce = Timer(const Duration(milliseconds: 500), () {
                     _validatePassword(value);

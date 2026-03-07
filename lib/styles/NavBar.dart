@@ -119,7 +119,6 @@ class Navbar extends StatelessWidget {
       leading: Icon(icon),
       title: Text(title),
       onTap: () {
-        clearAllFields();
         Navigator.push(context, MaterialPageRoute(builder: (context) => page));
       },
     );

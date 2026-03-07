@@ -3,6 +3,100 @@ import 'package:bochinche_app/sources/events/events_ui.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:math';
+import 'package:bochinche_app/sources/events/events_ui.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:bochinche_app/core/utils/draft_manager.dart';
+
+Future<void> saveEventDraft() async {
+  final Map<String, dynamic> data = {
+    'name': nombreEventoController.text,
+    'address': direccionController.text,
+    'contact': contactoController.text,
+    'description': descripcionController.text,
+    'capacity': aforoController.text,
+    'type': typeC ?? '',
+    'isPrivate': isPrivateC,
+    'isPayed': isPayedC,
+    'lat': latitudC,
+    'lng': longitudC,
+    'date1': fecha1?.toIso8601String(),
+    'date2': fecha2?.toIso8601String(),
+    'hour1': firstTimeHour.hour,
+    'min1': firstTimeHour.minute,
+    'hour2': lastTimeHour.hour,
+    'min2': lastTimeHour.minute,
+    'bank': selectedBank ?? '',
+    'phonePrefix': selectedPhonePrefix ?? '',
+    'phoneNum': paymentPhoneNumberController.text,
+    'ciType': selectedCIType ?? '',
+    'ciNum': paymentCINumberController.text,
+    'price': priceController.text,
+  };
+  await DraftManager.saveEventDraft(data);
+  print("Draft saved to DraftManager");
+}
+
+Future<void> loadEventDraft() async {
+  final data = await DraftManager.loadEventDraft();
+  if (data == null) return;
+
+  nombreEventoController.text = data['name'] ?? '';
+  direccionController.text = data['address'] ?? '';
+  contactoController.text = data['contact'] ?? '';
+  descripcionController.text = data['description'] ?? '';
+  aforoController.text = data['capacity'] ?? '';
+  typeC = data['type'];
+  if (typeC != null && typeC!.isEmpty) typeC = null;
+  
+  isPrivateC = data['isPrivate'] ?? false;
+  isPayedC = data['isPayed'] ?? false;
+  latitudC = data['lat'] ?? 10.0;
+  longitudC = data['lng'] ?? -60.0;
+
+  final d1 = data['date1'];
+  if (d1 != null) {
+    fecha1 = DateTime.parse(d1);
+    fecha1C.text = d1.split('T')[0];
+  }
+  
+  final d2 = data['date2'];
+  if (d2 != null) {
+    fecha2 = DateTime.parse(d2);
+    fecha2C.text = d2.split('T')[0];
+  }
+
+  firstTimeHour = TimeOfDay(
+    hour: data['hour1'] ?? 0,
+    minute: data['min1'] ?? 0,
+  );
+  lastTimeHour = TimeOfDay(
+    hour: data['hour2'] ?? 23,
+    minute: data['min2'] ?? 59,
+  );
+
+  selectedBank = data['bank'];
+  if (selectedBank != null && selectedBank!.isEmpty) selectedBank = null;
+  
+  selectedPhonePrefix = data['phonePrefix'];
+  if (selectedPhonePrefix != null && selectedPhonePrefix!.isEmpty) selectedPhonePrefix = null;
+  
+  paymentPhoneNumberController.text = data['phoneNum'] ?? '';
+  
+  selectedCIType = data['ciType'];
+  if (selectedCIType != null && selectedCIType!.isEmpty) selectedCIType = null;
+  
+  paymentCINumberController.text = data['ciNum'] ?? '';
+  priceController.text = data['price'] ?? '';
+  
+  print("Draft loaded from DraftManager");
+}
+
+Future<void> clearEventDraft() async {
+  await DraftManager.clearEventDraft();
+}
 
 // --- CONTROLADORES DE TEXTO GLOBALES ---
 final nombreEventoController = TextEditingController();
@@ -77,7 +171,7 @@ String? typeC;
 String? stateC;
 DateTime? fecha1;
 DateTime? fecha2;
-TimeOfDay firtTimeHour = TimeOfDay(hour: 0, minute: 0);
+TimeOfDay firstTimeHour = TimeOfDay(hour: 0, minute: 0);
 TimeOfDay lastTimeHour = TimeOfDay(hour: 23, minute: 59);
 var idmod;
 bool isPrivateC = false;
@@ -125,9 +219,9 @@ DateTime? validateDate(DateTime date1, DateTime date2) {
     return null;
   } else {
     if (date1.isAtSameMomentAs(date2)) {
-      if (firtTimeHour.hour < lastTimeHour.hour) {
-        if (firtTimeHour.hour == lastTimeHour.hour &&
-            firtTimeHour.minute >= lastTimeHour.minute) {
+      if (firstTimeHour.hour < lastTimeHour.hour) {
+        if (firstTimeHour.hour == lastTimeHour.hour &&
+            firstTimeHour.minute >= lastTimeHour.minute) {
           return null;
         } else {
           return date2;
@@ -149,7 +243,7 @@ Future<void> createEvent(BuildContext context) async {
   print(direccionController.text);
   print(fecha1);
   print(fecha2);
-  print(firtTimeHour);
+  print(firstTimeHour);
   print(lastTimeHour);
   print(nombreEventoController.text);
   print(descripcionController.text);
@@ -183,7 +277,7 @@ Future<void> createEvent(BuildContext context) async {
   'capacity': aforoController.text,
   'startDate': fecha1!.toIso8601String(),
   'endDate': fecha2!.toIso8601String(),
-  'startTime': {'hour': firtTimeHour.hour, 'minute': firtTimeHour.minute},
+  'startTime': {'hour': firstTimeHour.hour, 'minute': firstTimeHour.minute},
   'endTime': {'hour': lastTimeHour.hour, 'minute': lastTimeHour.minute},
   'location': GeoPoint(latitudC, longitudC),
   'createdAt': FieldValue.serverTimestamp(),
@@ -247,8 +341,9 @@ void clearAllFields() {
   isPrivateC = false;
   latitudC = 10.0;
   longitudC = -60.0;
-  firtTimeHour = TimeOfDay(hour: 0, minute: 0);
+  firstTimeHour = TimeOfDay(hour: 0, minute: 0);
   lastTimeHour = TimeOfDay(hour: 23, minute: 59);
+  clearEventDraft();
 }
 
 // --- FUNCIÓN PARA CARGAR EVENTOS (Para el Panel de Control) ---

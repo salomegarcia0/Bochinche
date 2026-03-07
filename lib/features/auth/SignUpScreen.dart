@@ -6,6 +6,7 @@ import 'package:bochinche_app/styles/Color.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:bochinche_app/core/utils/draft_manager.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -23,6 +24,40 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController phoneController = TextEditingController();
 
   final AuthService _authService = AuthService();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDraft();
+  }
+
+  Future<void> _loadDraft() async {
+    final draft = await DraftManager.loadSignUpDraft();
+    if (mounted && draft != null) {
+      setState(() {
+        nameController.text = draft['name'] ?? '';
+        emailController.text = draft['email'] ?? '';
+        tipoDocumento = (draft['docType'] != null && draft['docType']!.isNotEmpty) ? draft['docType'] : null;
+        cedulaController.text = draft['cedula'] ?? '';
+        selectedPhonePrefix = (draft['phonePrefix'] != null && draft['phonePrefix']!.isNotEmpty) ? draft['phonePrefix'] : null;
+        phoneController.text = draft['phoneNum'] ?? '';
+        passwordController.text = draft['password'] ?? '';
+      });
+    }
+  }
+
+  // --- PERSISTENCE HELPER ---
+  void _saveLocalDraft() {
+    DraftManager.saveSignUpDraft({
+      'name': nameController.text,
+      'email': emailController.text,
+      'docType': tipoDocumento,
+      'cedula': cedulaController.text,
+      'phonePrefix': selectedPhonePrefix,
+      'phoneNum': phoneController.text,
+      'password': passwordController.text,
+    });
+  }
   
   // --- VALIDACIÓN ---
   Timer? _debounce;
@@ -57,6 +92,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   // --- LÓGICA DE VALIDACIÓN ---
   void _onEmailChanged(String value) {
+    _saveLocalDraft();
     if (_debounce?.isActive ?? false) _debounce!.cancel();
     _debounce = Timer(const Duration(milliseconds: 500), () {
       _validateEmail(value);
@@ -80,6 +116,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   }
 
   void _onPhoneChanged(String value) {
+    _saveLocalDraft();
     if (_debounce?.isActive ?? false) _debounce!.cancel();
     _debounce = Timer(const Duration(milliseconds: 500), () {
       _validatePhone(value);
@@ -99,6 +136,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   }
 
   void _onCedulaChanged(String value) {
+    _saveLocalDraft();
     if (_debounce?.isActive ?? false) _debounce!.cancel();
     _debounce = Timer(const Duration(milliseconds: 500), () {
       _validateCedula(value);
@@ -118,6 +156,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   }
 
   void _onPasswordChanged(String value) {
+    _saveLocalDraft();
     if (_debounce?.isActive ?? false) _debounce!.cancel();
     _debounce = Timer(const Duration(milliseconds: 500), () {
       _validatePassword(value);
@@ -137,6 +176,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   }
 
   void _onNameChanged(String value) {
+    _saveLocalDraft();
     if (_debounce?.isActive ?? false) _debounce!.cancel();
     _debounce = Timer(const Duration(milliseconds: 500), () {
       _validateName(value);
@@ -198,6 +238,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       );
 
       if (user != null && user.emailVerified == false && mounted) {
+        DraftManager.clearSignUpDraft();
         _showSnackBar("Registro exitoso. Verifica tu correo para continuar.");
         Navigator.pushReplacement(
           context,
@@ -319,6 +360,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       setState(() {
                         tipoDocumento = val;
                         _docTypeError = null;
+                        _saveLocalDraft();
                       });
                     },
                   ),
@@ -372,6 +414,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       setState(() {
                         selectedPhonePrefix = val;
                         _phonePrefixError = null;
+                        _saveLocalDraft();
                       });
                     },
                   ),
