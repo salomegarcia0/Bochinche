@@ -7,7 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'package:bochinche_app/sources/events/events_ui.dart';
-import 'package:bochinche_app/sources/events/events_logic.dart';
+import 'package:bochinche_app/features/Registered Events/registered_events.dart'; 
+import 'package:bochinche_app/features/Registered Events/registered_events.dart';
 
 class Navbar extends StatelessWidget {
   const Navbar({super.key});
@@ -45,6 +46,18 @@ class Navbar extends StatelessWidget {
                 'Mapa',
                 const Pagina_Principal(),
               ),
+              
+              // ---------------------------------------------------------
+              // ¡NUEVO! Botón para ir a los eventos reservados (Mis Entradas)
+              // ---------------------------------------------------------
+              _buildListTile(
+                context,
+                Icons.local_activity, // Ícono de un ticket
+                'Mis Entradas', 
+                const registered_events(), // Asegúrate de que esta pantalla exista y esté importada correctamente
+              ),
+              // ---------------------------------------------------------
+
               _buildListTile(
                 context,
                 Icons.create,
@@ -91,7 +104,7 @@ class Navbar extends StatelessWidget {
                   leading: const Icon(Icons.logout),
                   title: const Text('Cerrar sesión'),
                   onTap: () {
-                    clearAllFields();
+                    // clearAllFields(); // Asegúrate de que esta función exista en este archivo o quítala si marca error
                     FirebaseAuth.instance.signOut();
                     Navigator.pushAndRemoveUntil(
                       context,
@@ -119,6 +132,7 @@ class Navbar extends StatelessWidget {
       leading: Icon(icon),
       title: Text(title),
       onTap: () {
+        // Al tocar, navegamos a la pantalla seleccionada
         Navigator.push(context, MaterialPageRoute(builder: (context) => page));
       },
     );

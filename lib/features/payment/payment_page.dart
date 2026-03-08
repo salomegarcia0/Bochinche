@@ -129,7 +129,7 @@ class _PaymentPageState extends State<PaymentPage> {
           .collection('users')
           .doc(uid)
           .collection('tickets')
-          .doc();
+          .doc(widget.eventId);
 
       await FirebaseFirestore.instance.runTransaction((txn) async {
         final eventSnap = await txn.get(eventRef);
@@ -149,10 +149,12 @@ class _PaymentPageState extends State<PaymentPage> {
         // Guardar la compra en el perfil del usuario
         txn.set(userTicketsRef, {
           'eventId': widget.eventId,
+          'id_evento': widget.eventId,
           'eventName': _eventName,
           'quantity': quantity,
           'totalPaid': _price * quantity,
           'reference': ref,
+          'isPayed': true, 
           'purchasedAt': FieldValue.serverTimestamp(),
         });
       });
