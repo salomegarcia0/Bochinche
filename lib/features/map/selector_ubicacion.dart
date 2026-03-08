@@ -8,13 +8,11 @@ import 'package:bochinche_app/widgets/detalle_evento.dart';
 class SelectorUbicacion extends StatefulWidget {
   final bool esSelector;
   final String tipoEvento;
-
   const SelectorUbicacion({
     super.key,
     this.esSelector = false,
     this.tipoEvento = 'Otros',
   });
-
   @override
   SelectorUbicacionState createState() => SelectorUbicacionState();
 }
@@ -23,19 +21,18 @@ class SelectorUbicacionState extends State<SelectorUbicacion> {
   final MapController _mapController = MapController();
   LatLng? puntoSeleccionado;
 
-  // Método que será llamado desde el buscador por el GlobalKey
   Future<void> buscarPorCodigo(String cod) async {
     final doc = await FirebaseFirestore.instance
         .collection('events')
         .doc(cod)
         .get();
-    if (!mounted) return;
-    if (doc.exists) {
-      final d = doc.data() as Map<String, dynamic>;
-      final point = LatLng(d['location'].latitude, d['location'].longitude);
-      _mapController.move(point, 16);
-      mostrarDetalles(context, d, doc.id);
-    }
+    if (!mounted || !doc.exists) return;
+    final d = doc.data() as Map<String, dynamic>;
+    _mapController.move(
+      LatLng(d['location'].latitude, d['location'].longitude),
+      16,
+    );
+    mostrarDetalles(context, d, doc.id);
   }
 
   Widget _buildMarker(String? type) {
@@ -44,22 +41,22 @@ class SelectorUbicacionState extends State<SelectorUbicacion> {
       alignment: Alignment.center,
       children: [
         Container(
-          width: 48,
-          height: 48,
+          width: 50,
+          height: 50,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: (cat['color'] as Color).withValues(alpha: 0.2),
           ),
         ),
         Container(
-          width: 34,
-          height: 34,
+          width: 35,
+          height: 35,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: cat['color'],
             border: Border.all(color: Colors.white, width: 2),
           ),
-          child: Icon(cat['icon'], color: Colors.white, size: 18),
+          child: Icon(cat['icon'], color: Colors.white, size: 20),
         ),
       ],
     );
@@ -94,7 +91,6 @@ class SelectorUbicacionState extends State<SelectorUbicacion> {
               .whereType<Marker>()
               .toList();
         }
-
         if (widget.esSelector && puntoSeleccionado != null) {
           markers.add(
             Marker(
@@ -105,7 +101,6 @@ class SelectorUbicacionState extends State<SelectorUbicacion> {
             ),
           );
         }
-
         return FlutterMap(
           mapController: _mapController,
           options: MapOptions(

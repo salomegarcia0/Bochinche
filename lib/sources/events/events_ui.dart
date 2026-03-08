@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:latlong2/latlong.dart';
+
+// Importaciones de tu proyecto
 import 'package:bochinche_app/styles/NavBar.dart';
 import 'package:bochinche_app/styles/Color.dart';
 import 'package:bochinche_app/styles/BochincheAppBar.dart';
@@ -10,6 +12,7 @@ import 'package:bochinche_app/sources/events/events_logic.dart';
 import 'package:bochinche_app/features/map/selector_ubicacion.dart';
 import 'package:bochinche_app/sources/user_profile/user_profile_ui.dart';
 
+// --- PANTALLA: EXPLORAR EVENTOS ---
 class PublicEventsScreen extends StatefulWidget {
   const PublicEventsScreen({super.key});
   @override
@@ -25,7 +28,7 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
 
   Future<void> _fakeLoading() async {
     setState(() => _isLoading = true);
-    await Future.delayed(const Duration(milliseconds: 800));
+    await Future.delayed(const Duration(milliseconds: 600));
     if (mounted) setState(() => _isLoading = false);
   }
 
@@ -78,6 +81,7 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
                 selectedCategory = 'Todos';
                 searchQuery = '';
                 _searchController.clear();
+                selectedPreferences = ['Eventos'];
               });
               _fakeLoading();
             },
@@ -89,15 +93,24 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
   }
 
   Widget _buildSearchBar(SearchMode mode) {
+    String hint = "Buscar eventos...";
+    if (mode == SearchMode.bochincheros) hint = "Buscar bochincheros...";
+    if (mode == SearchMode.privados) hint = "Ingresa código de acceso...";
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
       child: TextField(
         controller: _searchController,
         decoration: InputDecoration(
-          hintText: mode == SearchMode.bochincheros
-              ? 'Buscar bochincheros...'
-              : 'Buscar eventos...',
+          hintText: hint,
           prefixIcon: const Icon(Icons.search, color: PrimaryPurple),
+          suffixIcon: IconButton(
+            icon: const Icon(Icons.arrow_forward, color: PrimaryPurple),
+            onPressed: () {
+              setState(() => searchQuery = _searchController.text.trim());
+              _fakeLoading();
+            },
+          ),
           filled: true,
           fillColor: Colors.white,
           border: OutlineInputBorder(
@@ -106,7 +119,7 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
           ),
         ),
         onSubmitted: (val) {
-          setState(() => searchQuery = val);
+          setState(() => searchQuery = val.trim());
           _fakeLoading();
         },
       ),
@@ -116,17 +129,25 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
   Widget _buildFilters() {
     return Container(
       margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+          ),
+        ],
       ),
       child: Column(
         children: [
-          DropdownButton<String>(
-            value: selectedCategory,
-            isExpanded: true,
-            underline: Container(),
+          DropdownButtonFormField<String>(
+            initialValue: selectedCategory,
+            decoration: const InputDecoration(
+              labelText: 'Categoría',
+              border: InputBorder.none,
+            ),
             items: [
               'Todos',
               'Concierto',
@@ -135,11 +156,12 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
               'Stand Up',
               'Otros',
             ].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
-            onChanged: (val) => setState(() {
-              selectedCategory = val!;
+            onChanged: (val) {
+              setState(() => selectedCategory = val!);
               _fakeLoading();
-            }),
+            },
           ),
+          const Divider(),
           SizedBox(
             height: 40,
             child: ListView(
@@ -155,10 +177,12 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
                       pref,
                       style: TextStyle(
                         color: isSelected ? Colors.white : Colors.black87,
+                        fontSize: 12,
                       ),
                     ),
                     selected: isSelected,
                     selectedColor: PrimaryPurple,
+                    checkmarkColor: Colors.white,
                     onSelected: (s) {
                       setState(() {
                         selectedPreferences.clear();
@@ -191,21 +215,32 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
         }
 
         return ListView.builder(
+          padding: const EdgeInsets.only(bottom: 20),
           itemCount: items.length,
           itemBuilder: (context, i) {
             final item = items[i];
             return Card(
-              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
               child: ListTile(
                 leading: CircleAvatar(
+                  backgroundColor: PrimaryPurple.withValues(alpha: 0.1),
                   child: Icon(
                     mode == SearchMode.bochincheros
                         ? Icons.person
-                        : Icons.event,
+                        : Icons.celebration,
+                    color: PrimaryPurple,
                   ),
                 ),
-                title: Text(item['name'] ?? item['nombre'] ?? 'Sin nombre'),
-                subtitle: Text(item['type'] ?? 'Bochinchero'),
+                title: Text(
+                  item['name'] ?? item['nombre'] ?? 'Sin nombre',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                subtitle: Text(
+                  "${item['type'] ?? 'General'} • ${item['startDate'] ?? ''}",
+                ),
                 onTap: () {
                   if (mode == SearchMode.bochincheros) {
                     userToReport = item['uid'];
@@ -224,6 +259,7 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
   }
 }
 
+// --- PANTALLA: CREAR EVENTO ---
 class EventosCreate extends StatelessWidget {
   const EventosCreate({super.key});
   @override
@@ -231,17 +267,21 @@ class EventosCreate extends StatelessWidget {
     return Scaffold(
       appBar: const BochincheAppBar(),
       drawer: const Navbar(),
-      body: SingleChildScrollView(
+      body: const SingleChildScrollView(
         child: Column(
           children: [
-            const Padding(
+            Padding(
               padding: EdgeInsets.all(20.0),
               child: Text(
                 'Crea tu próximo Bochinche',
-                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 25),
+                style: TextStyle(
+                  fontWeight: FontWeight.w900,
+                  fontSize: 26,
+                  color: PrimaryPurple,
+                ),
               ),
             ),
-            const FormCreateEvent(),
+            FormCreateEvent(),
           ],
         ),
       ),
@@ -265,27 +305,33 @@ class _FormCreateEventState extends State<FormCreateEvent> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          _sectionTitle("Información General"),
           TextField(
             controller: nombreEventoController,
-            decoration: const InputDecoration(
-              labelText: 'Nombre',
-              border: OutlineInputBorder(),
+            decoration: _inputStyle("Nombre del Evento", Icons.title),
+          ),
+          const SizedBox(height: 15),
+          TextField(
+            controller: descripcionController,
+            maxLines: 3,
+            decoration: _inputStyle(
+              "Descripción del evento",
+              Icons.description,
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 15),
           DropdownButtonFormField<String>(
             initialValue: selectedType,
-            decoration: const InputDecoration(
-              labelText: 'Categoría',
-              border: OutlineInputBorder(),
-            ),
+            decoration: _inputStyle("Categoría", Icons.category),
             items: [
               'Concierto',
               'Teatro',
               'Fiesta',
+              'Stand Up',
               'Otros',
             ].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
             onChanged: (val) => setState(() {
@@ -293,14 +339,30 @@ class _FormCreateEventState extends State<FormCreateEvent> {
               typeC = val;
             }),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 25),
+          _sectionTitle("Ubicación y Aforo"),
+          TextField(
+            controller: direccionController,
+            decoration: _inputStyle("Dirección física", Icons.pin_drop),
+          ),
+          const SizedBox(height: 15),
+          TextField(
+            controller: aforoController,
+            keyboardType: TextInputType.number,
+            decoration: _inputStyle("Capacidad total", Icons.people),
+          ),
+          const SizedBox(height: 15),
           ListTile(
-            tileColor: Colors.purple[50],
+            tileColor: PrimaryPurple.withValues(alpha: 0.05),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(15),
+              side: BorderSide(color: PrimaryPurple.withValues(alpha: 0.2)),
+            ),
             leading: const Icon(Icons.map, color: PrimaryPurple),
             title: Text(
               latitudC != 10.4806
-                  ? "Ubicación fijada"
-                  : "Toca para ubicar en mapa",
+                  ? "📍 Ubicación fijada correctamente"
+                  : "Toca para ubicar en el mapa",
             ),
             onTap: () async {
               final LatLng? res = await Navigator.push(
@@ -317,24 +379,86 @@ class _FormCreateEventState extends State<FormCreateEvent> {
               }
             },
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 25),
+          _sectionTitle("Configuración de Acceso"),
+          SwitchListTile(
+            title: const Text(
+              "Evento Privado",
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            subtitle: const Text("Solo visible mediante código directo"),
+            value: isPrivateC,
+            activeThumbColor: PrimaryPurple,
+            onChanged: (v) => setState(() => isPrivateC = v),
+          ),
+          SwitchListTile(
+            title: const Text(
+              "Evento de Pago",
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            subtitle: const Text("Los bochincheros deben pagar entrada"),
+            value: isPayedC,
+            activeThumbColor: PrimaryPurple,
+            onChanged: (v) => setState(() => isPayedC = v),
+          ),
+          if (isPayedC) ...[
+            const SizedBox(height: 10),
+            TextField(
+              controller: priceController,
+              keyboardType: TextInputType.number,
+              decoration: _inputStyle("Precio (Bs)", Icons.monetization_on),
+            ),
+          ],
+          const SizedBox(height: 40),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: PrimaryPurple,
-              minimumSize: const Size(double.infinity, 50),
+              minimumSize: const Size(double.infinity, 60),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15),
+              ),
+              elevation: 4,
             ),
             onPressed: () => createEvent(context),
             child: const Text(
-              'PUBLICAR EVENTO',
-              style: TextStyle(color: Colors.white),
+              "PUBLICAR BOCHINCHE",
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
+          const SizedBox(height: 30),
         ],
+      ),
+    );
+  }
+
+  InputDecoration _inputStyle(String label, IconData icon) {
+    return InputDecoration(
+      labelText: label,
+      prefixIcon: Icon(icon, color: PrimaryPurple),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
+    );
+  }
+
+  Widget _sectionTitle(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10, left: 5),
+      child: Text(
+        text,
+        style: const TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.bold,
+          color: Colors.grey,
+        ),
       ),
     );
   }
 }
 
+// --- PANTALLA: PANEL DE CONTROL ---
 class ControlPanelEvent extends StatelessWidget {
   const ControlPanelEvent({super.key});
   @override
@@ -351,28 +475,33 @@ class MyEvents extends StatelessWidget {
   const MyEvents({super.key});
   @override
   Widget build(BuildContext context) {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
           .collection('events')
-          .where(
-            'id_organizer',
-            isEqualTo: FirebaseAuth.instance.currentUser?.uid,
-          )
+          .where('id_organizer', isEqualTo: uid)
           .snapshots(),
       builder: (context, snap) {
         if (!snap.hasData) {
           return const Center(child: CircularProgressIndicator());
         }
         final docs = snap.data!.docs;
+        if (docs.isEmpty) {
+          return const Center(child: Text("Aún no has creado eventos."));
+        }
+
         return ListView.builder(
           itemCount: docs.length,
           itemBuilder: (context, i) {
-            final d = docs[i].data() as Map<String, dynamic>;
+            final data = docs[i].data() as Map<String, dynamic>;
             return Card(
-              margin: const EdgeInsets.all(8),
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: ListTile(
-                title: Text(d['name'] ?? 'Evento'),
-                subtitle: Text(d['type'] ?? 'General'),
+                title: Text(
+                  data['name'] ?? 'Sin nombre',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                subtitle: Text("${data['type']} • ${data['state']}"),
                 trailing: IconButton(
                   icon: const Icon(Icons.delete, color: Colors.red),
                   onPressed: () => docs[i].reference.delete(),

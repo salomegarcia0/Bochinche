@@ -1,128 +1,134 @@
-import 'package:bochinche_app/data/user_model.dart';
-import 'package:bochinche_app/features/auth/LoginScreen.dart';
-import 'package:bochinche_app/styles/Color.dart';
+import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
+import 'package:bochinche_app/styles/Color.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
-
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
 class _ProfileScreenState extends State<ProfileScreen>
     with SingleTickerProviderStateMixin {
-  UserModel? _usuario;
-  bool _cargando = true;
   late TabController _tabController;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-    _cargarUsuario();
-  }
-
-  Future<void> _cargarUsuario() async {
-    User? currentUser = FirebaseAuth.instance.currentUser;
-    if (currentUser != null) {
-      try {
-        DocumentSnapshot doc = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(currentUser.uid)
-            .get();
-        if (doc.exists) {
-          setState(() {
-            _usuario = UserModel.fromMap(
-              doc.data() as Map<String, dynamic>,
-              currentUser.uid,
-            );
-            _cargando = false;
-          });
-        }
-      } catch (e) {
-        if (mounted) setState(() => _cargando = false);
-      }
-    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
+
     return Scaffold(
-      backgroundColor: PrimaryBackGroundPurple,
       appBar: AppBar(
         title: const Text("Mi Perfil"),
         backgroundColor: PrimaryPurple,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () async {
-              await FirebaseAuth.instance.signOut();
-              if (mounted) {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (c) => const LoginScreen()),
-                );
-              }
-            },
-          ),
-        ],
+        elevation: 0,
       ),
-      body: _cargando
-          ? const Center(child: CircularProgressIndicator())
-          : Column(
+      body: Column(
+        children: [
+          Container(
+            width: double.infinity,
+            decoration: const BoxDecoration(
+              color: PrimaryPurple,
+              borderRadius: BorderRadius.vertical(bottom: Radius.circular(30)),
+            ),
+            padding: const EdgeInsets.all(20),
+            child: Column(
               children: [
-                const SizedBox(height: 20),
-                CircleAvatar(
+                const CircleAvatar(
                   radius: 50,
-                  child: const Icon(Icons.person, size: 50),
+                  backgroundColor: Colors.white,
+                  child: Icon(Icons.person, size: 50, color: PrimaryPurple),
                 ),
+                const SizedBox(height: 15),
                 Text(
-                  _usuario?.nombre ?? "Usuario",
+                  user?.email ?? "Usuario",
                   style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 22,
+                    fontSize: 20,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 20),
-                TabBar(
-                  controller: _tabController,
-                  tabs: const [
-                    Tab(text: "Próximos"),
-                    Tab(text: "Pasados"),
-                    Tab(text: "Privados"),
-                  ],
-                ),
-                Expanded(
-                  child: TabBarView(
-                    controller: _tabController,
-                    children: [
-                      const Center(
-                        child: Text(
-                          "Eventos próximos",
-                          style: TextStyle(color: Colors.white),
-                        ),
-                      ),
-                      const Center(
-                        child: Text(
-                          "Eventos pasados",
-                          style: TextStyle(color: Colors.white),
-                        ),
-                      ),
-                      const Center(
-                        child: Text(
-                          "Eventos privados",
-                          style: TextStyle(color: Colors.white),
-                        ),
-                      ),
-                    ],
+                const SizedBox(height: 5),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white24,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: const Text(
+                    "Perfil Verificado",
+                    style: TextStyle(color: Colors.white, fontSize: 12),
                   ),
                 ),
               ],
             ),
+          ),
+          TabBar(
+            controller: _tabController,
+            labelColor: PrimaryPurple,
+            unselectedLabelColor: Colors.grey,
+            indicatorColor: PrimaryPurple,
+            tabs: const [
+              Tab(text: "Próximos"),
+              Tab(text: "Pasados"),
+              Tab(text: "Privados"),
+            ],
+          ),
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                _eventList("proximos"),
+                _eventList("pasados"),
+                _eventList("privados"),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _eventList(String type) {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('events')
+          .where('id_organizer', isEqualTo: uid)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        final docs = snapshot.data!.docs;
+        if (docs.isEmpty) return Center(child: Text("No hay eventos $type"));
+
+        return ListView.builder(
+          padding: const EdgeInsets.all(10),
+          itemCount: docs.length,
+          itemBuilder: (context, i) {
+            final data = docs[i].data() as Map<String, dynamic>;
+            return Card(
+              child: ListTile(
+                leading: const Icon(Icons.event, color: PrimaryPurple),
+                title: Text(data['name'] ?? 'Evento'),
+                subtitle: Text(
+                  data['startDate']?.toString().split('T')[0] ?? 'Sin fecha',
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }

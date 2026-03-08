@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:bochinche_app/features/payment/payment_page.dart';
+import 'package:bochinche_app/sources/reports/reports_ui.dart';
+import 'package:bochinche_app/sources/reports/reports_logic.dart';
 import 'package:bochinche_app/sources/events/events_logic.dart' as logic;
-import 'package:bochinche_app/sources/user_profile/user_profile_ui.dart';
 import 'package:bochinche_app/sources/events/comments_section.dart';
 
 void mostrarDetalles(
@@ -18,44 +19,62 @@ void mostrarDetalles(
     backgroundColor: Colors.transparent,
     builder: (context) => DraggableScrollableSheet(
       initialChildSize: 0.7,
+      maxChildSize: 0.95,
       builder: (context, scrollController) => Container(
         decoration: BoxDecoration(
           color: Theme.of(context).scaffoldBackgroundColor,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         ),
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         child: SingleChildScrollView(
           controller: scrollController,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Evento: ${data['name']}',
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              TextButton(
-                onPressed: () {
-                  logic.userToReport = data['id_organizer'];
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (c) => const OrgProfile()),
-                  );
-                },
-                child: Text("Organizador: ${data['id_organizer']}"),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      data['name'] ?? 'Evento',
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.flag_rounded, color: Colors.red),
+                    onPressed: () {
+                      eventToReport = eventoId;
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (c) => const ReportEvents()),
+                      );
+                    },
+                  ),
+                ],
               ),
               const Divider(),
-              Text("Descripción: ${data['description']}"),
+              Text("Descripción: ${data['description'] ?? 'Sin descripción'}"),
+              const SizedBox(height: 10),
               Text(
                 "Estado: $estadoActual",
                 style: TextStyle(
-                  color: isFinalizado ? Colors.red : Colors.black,
+                  color: isFinalizado ? Colors.red : Colors.green,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
               const SizedBox(height: 20),
-              ElevatedButton(
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(double.infinity, 55),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
                 onPressed: isFinalizado
                     ? null
                     : () {
@@ -77,11 +96,14 @@ void mostrarDetalles(
                           );
                         }
                       },
-                child: Text(
-                  data['isPayed'] == true ? "Comprar Entradas" : "Reservar",
+                icon: const Icon(Icons.shopping_cart),
+                label: Text(
+                  data['isPayed'] == true
+                      ? "COMPRAR ENTRADAS"
+                      : "RESERVAR ENTRADA",
                 ),
               ),
-              const Divider(),
+              const SizedBox(height: 30),
               CommentsSection(eventoId: eventoId),
             ],
           ),

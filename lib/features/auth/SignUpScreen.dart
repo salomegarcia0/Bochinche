@@ -21,7 +21,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController phoneController = TextEditingController();
   final AuthService _authService = AuthService();
 
-  Timer? _debounce;
   String? _emailError,
       _phoneError,
       _cedulaError,
