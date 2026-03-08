@@ -4,14 +4,12 @@ class NotificationsLogic {
   Stream<List<Map<String, dynamic>>> getFollowingEventsNotifications(
     String currentUserUid,
   ) {
-    // 1. Obtenemos el documento del usuario actual para ver a quién sigue
     return FirebaseFirestore.instance
         .collection('users')
         .doc(currentUserUid)
         .snapshots()
         .asyncMap((userDoc) async {
           List<dynamic> following = userDoc.data()?['following'] ?? [];
-
           if (following.isEmpty) return [];
 
           QuerySnapshot eventSnapshot = await FirebaseFirestore.instance
@@ -28,7 +26,6 @@ class NotificationsLogic {
           }).toList();
         });
   }
-<<<<<<< HEAD
 
   Future<void> notifyFollowers({
     required String organizerId,
@@ -40,31 +37,23 @@ class NotificationsLogic {
         .where('following', arrayContains: organizerId)
         .get();
 
-    if (followersSnapshot.docs.isEmpty) {
-      return; // Nadie lo sigue, no hacemos nada
-    }
+    if (followersSnapshot.docs.isEmpty) return;
 
     WriteBatch batch = FirebaseFirestore.instance.batch();
-
     for (var doc in followersSnapshot.docs) {
       DocumentReference notifRef = FirebaseFirestore.instance
           .collection('notifications')
           .doc();
-
       batch.set(notifRef, {
         'id_not': notifRef.id,
-        'receiverId': doc.id, // El ID del usuario que lo sigue
-        'title': '¡Nuevo evento de !',
-        'message': 'Se ha publicado: $eventName. ¡No te lo pierdas!',
+        'receiverId': doc.id,
+        'title': '¡Nuevo evento!',
+        'message': 'Se ha publicado: $eventName',
         'timestamp': FieldValue.serverTimestamp(),
         'type': eventType,
         'read': false,
       });
     }
-
     await batch.commit();
   }
 }
-=======
-}
->>>>>>> origin/develop

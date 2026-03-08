@@ -3,7 +3,7 @@ import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:bochinche_app/widgets/detalle_evento.dart'; 
+import 'package:bochinche_app/widgets/detalle_evento.dart';
 
 class MapaPrincipal extends StatefulWidget implements PreferredSizeWidget {
   const MapaPrincipal({super.key});

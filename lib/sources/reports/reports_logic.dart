@@ -2,316 +2,125 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+// Variables de estado para los formularios
 String? reportId;
 String? eventToReport;
 String? userToReport;
-bool? locationError = false;
-bool? montoError = false;
-bool? incumplimientoLey = false;
-bool? infrastructureFail = false;
-bool? otherError = false;
-bool? isViolentDiscourse = false;
-bool? isInappropriateContent = false;
-bool? isSpam = false;
-bool? isHarassment = false;
-bool? isHate = false;
+
+// Motivos de reporte (Eventos)
+bool locationError = false;
+bool montoError = false;
+bool incumplimientoLey = false;
+bool infrastructureFail = false;
+bool otherError = false;
+
+// Motivos de reporte (Usuarios)
+bool isViolentDiscourse = false;
+bool isInappropriateContent = false;
+bool isSpam = false;
+bool isHarassment = false;
+bool isHate = false;
 
 TextEditingController reportDetailsController = TextEditingController();
 TextEditingController feedbackController = TextEditingController();
 
+// --- LÓGICA DE ENVÍO DE REPORTES ---
+
 Future<void> reportEvent(BuildContext context) async {
   List<String> selectedReasons = [];
-  String reportDetails = ": ${reportDetailsController.text.trim()}";
-  if (locationError == false &&
-      montoError == false &&
-      incumplimientoLey == false &&
-      infrastructureFail == false &&
-      otherError == false) {
-    print('No se ha seleccionado ningún error para reportar.');
-  } else {
-    print('Reporte enviado:');
-    print('Evento ID: $eventToReport');
-    print('Usuario ID: $userToReport');
-    print('Errores:');
-    if (locationError == true) selectedReasons.add('Localización Incorrecta');
-    if (montoError == true) selectedReasons.add('Monto Incorrecto');
-<<<<<<< HEAD
-    if (incumplimientoLey == true) {
-      selectedReasons.add('Incumplimiento de Leyes o Normativas Locales');
-    }
-    if (infrastructureFail == true) {
-      selectedReasons.add('Fallas de infraestructura');
-    }
-    if (otherError == true && reportDetailsController.text.trim().isNotEmpty) {
-      selectedReasons.add('Otro error$reportDetails');
-=======
-    if (incumplimientoLey == true)
-      selectedReasons.add('Incumplimiento de Leyes o Normativas Locales');
-    if (infrastructureFail == true)
-      selectedReasons.add('Fallas de infraestructura');
-    if (otherError == true && reportDetailsController.text.trim().isNotEmpty) {
-      selectedReasons.add('Otro error${reportDetails}');
->>>>>>> origin/develop
-    } else {
-      if (otherError == true && reportDetailsController.text.trim().isEmpty) {
-        selectedReasons.add('Otro error no especificado');
-      }
-    }
+  if (locationError) selectedReasons.add('Localización Incorrecta');
+  if (montoError) selectedReasons.add('Monto Incorrecto');
+  if (incumplimientoLey) selectedReasons.add('Incumplimiento de Leyes');
+  if (infrastructureFail) selectedReasons.add('Fallas de infraestructura');
+  if (otherError) selectedReasons.add('Otro: ${reportDetailsController.text}');
 
-    try {
-      final newReportRef = FirebaseFirestore.instance
-          .collection('reports')
-          .doc();
-      await newReportRef.set({
-        'reportId': newReportRef.id,
-        'eventId': eventToReport,
-        'reporterId': FirebaseAuth.instance.currentUser?.uid,
-        'reason': selectedReasons,
-        'status': 'Pendiente',
-        'feedback': 'Ninguno',
-        'timestamp': FieldValue.serverTimestamp(),
-        'evento': true,
-      });
-    } catch (e) {
-      print('Error al enviar el reporte: $e');
-    }
-  }
-}
-
-Future<List<Map<String, dynamic>>> chargeReportsUser() async {
-  List<Map<String, dynamic>> reportes = [];
+  if (selectedReasons.isEmpty) return;
 
   try {
-    QuerySnapshot querySnapshot = await FirebaseFirestore.instance
-        .collection('reports')
-        .where('reporterId', isEqualTo: FirebaseAuth.instance.currentUser!.uid)
-        .get();
-
-    for (var doc in querySnapshot.docs) {
-      Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-      data['id'] = doc.id;
-      reportes.add(data);
-    }
+    final ref = FirebaseFirestore.instance.collection('reports').doc();
+    await ref.set({
+      'reportId': ref.id,
+      'eventId': eventToReport,
+      'reporterId': FirebaseAuth.instance.currentUser?.uid,
+      'reason': selectedReasons,
+      'status': 'Pendiente',
+      'feedback': 'Ninguno',
+      'timestamp': FieldValue.serverTimestamp(),
+      'evento': true,
+    });
   } catch (e) {
-    print("Error cargando reportes: $e");
-  }
-
-  return reportes;
-}
-
-Future<List<Map<String, dynamic>>> chargeReportsAdmin() async {
-  List<Map<String, dynamic>> reportes = [];
-
-  try {
-    QuerySnapshot querySnapshot = await FirebaseFirestore.instance
-        .collection('reports')
-        .where('status', isEqualTo: 'Pendiente')
-        .get();
-
-    for (var doc in querySnapshot.docs) {
-      Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-      data['id'] = doc.id;
-      reportes.add(data);
-    }
-  } catch (e) {
-    print("Error cargando reportes: $e");
-  }
-
-  return reportes;
-}
-
-Future<void> updateReportStatus(String reportId) async {
-  try {
-    await FirebaseFirestore.instance.collection('reports').doc(reportId).update(
-      {'status': 'Resuelto', 'feedback': feedbackController.text.trim()},
-    );
-    print('Reporte $reportId actualizado a estado: Resuelto');
-    feedbackController.text = '';
-    QuerySnapshot querySnapshot = await FirebaseFirestore.instance
-        .collection('reports')
-        .where('reportId', isEqualTo: reportId)
-        .get();
-    if (querySnapshot.docs.isNotEmpty) {
-      final data = querySnapshot.docs.first.data() as Map<String, dynamic>;
-      final evento = data['eventId'];
-      await FirebaseFirestore.instance
-          .collection('events')
-          .doc(evento)
-          .delete();
-<<<<<<< HEAD
-      final usuarioreportador = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(data['reporterId'])
-          .get();
-      final reportadormail = usuarioreportador.data()?['email'];
-      String? encodeQueryParameters(Map<String, String> params) {
-        return params.entries
-            .map(
-              (MapEntry<String, String> e) =>
-                  '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}',
-            )
-            .join('&');
-      }
-
-=======
->>>>>>> origin/develop
-      feedbackController.text = '';
-    } else {
-      print("No report found");
-    }
-  } catch (e) {
-    print('Error al actualizar el reporte: $e');
+    debugPrint('Error: $e');
   }
 }
 
 Future<void> reportUser(BuildContext context) async {
   List<String> selectedReasons = [];
-  if (isHate == false &&
-      isHarassment == false &&
-      isSpam == false &&
-      isViolentDiscourse == false &&
-      isInappropriateContent == false) {
-    print('No se ha seleccionado ningún error para reportar.');
-  } else {
-    print('Reporte enviado:');
-    print('Evento ID: $eventToReport');
-    print('Usuario ID: $userToReport');
-    print('Errores:');
-    if (isHate == true) selectedReasons.add('Odio');
-    if (isHarassment == true) selectedReasons.add('Abuso y acoso');
-    if (isViolentDiscourse == true) selectedReasons.add('Discurso violento');
-    if (isSpam == true) selectedReasons.add('Spam');
-<<<<<<< HEAD
-    if (isInappropriateContent == true) {
-      selectedReasons.add('Comportamientos ilegales');
-    }
-=======
-    if (isInappropriateContent == true)
-      selectedReasons.add('Comportamientos ilegales');
->>>>>>> origin/develop
-    try {
-      final newReportRef = FirebaseFirestore.instance
-          .collection('reports')
-          .doc();
-      await newReportRef.set({
-        'reportId': newReportRef.id,
-        'userId': userToReport,
-        'reporterId': FirebaseAuth.instance.currentUser?.uid,
-        'reason': selectedReasons,
-        'status': 'Pendiente',
-        'feedback': 'Ninguno',
-        'timestamp': FieldValue.serverTimestamp(),
-        'evento': false,
-      });
-    } catch (e) {
-      print('Error al enviar el reporte: $e');
-    }
+  if (isHate) selectedReasons.add('Odio');
+  if (isHarassment) selectedReasons.add('Abuso y acoso');
+  if (isViolentDiscourse) selectedReasons.add('Discurso violento');
+  if (isSpam) selectedReasons.add('Spam');
+  if (isInappropriateContent) selectedReasons.add('Comportamientos ilegales');
+
+  if (selectedReasons.isEmpty) return;
+
+  try {
+    final ref = FirebaseFirestore.instance.collection('reports').doc();
+    await ref.set({
+      'reportId': ref.id,
+      'userId': userToReport,
+      'reporterId': FirebaseAuth.instance.currentUser?.uid,
+      'reason': selectedReasons,
+      'status': 'Pendiente',
+      'feedback': 'Ninguno',
+      'timestamp': FieldValue.serverTimestamp(),
+      'evento': false,
+    });
+  } catch (e) {
+    debugPrint('Error: $e');
   }
 }
 
-Future<void> updateReportStatusUser(String reportId) async {
-  try {
-    await FirebaseFirestore.instance.collection('reports').doc(reportId).update(
-      {'status': 'Resuelto', 'feedback': feedbackController.text.trim()},
-    );
-    print('Reporte $reportId actualizado a estado: Resuelto');
-    feedbackController.text = '';
-    QuerySnapshot querySnapshot = await FirebaseFirestore.instance
-        .collection('reports')
-        .where('reportId', isEqualTo: reportId)
-        .get();
-    if (querySnapshot.docs.isNotEmpty) {
-      final data = querySnapshot.docs.first.data() as Map<String, dynamic>;
-      final usuario = data['userId'];
-      await FirebaseFirestore.instance.collection('users').doc(usuario).update({
-        'banned': true,
-      });
-    } else {
-      print("No report found");
-    }
-  } catch (e) {
-    print('Error al actualizar el reporte: $e');
+// --- LÓGICA DE ADMINISTRACIÓN ---
+
+Future<void> updateReportStatus(String reportId, String? eventId) async {
+  await FirebaseFirestore.instance.collection('reports').doc(reportId).update({
+    'status': 'Resuelto',
+    'feedback': feedbackController.text.trim(),
+  });
+  if (eventId != null) {
+    await FirebaseFirestore.instance.collection('events').doc(eventId).delete();
   }
+  feedbackController.clear();
+}
+
+Future<void> updateReportStatusUser(String reportId, String? userId) async {
+  await FirebaseFirestore.instance.collection('reports').doc(reportId).update({
+    'status': 'Resuelto',
+    'feedback': feedbackController.text.trim(),
+  });
+  if (userId != null) {
+    await FirebaseFirestore.instance.collection('users').doc(userId).update({
+      'banned': true,
+    });
+  }
+  feedbackController.clear();
 }
 
 Future<void> ignoreReport(String reportId) async {
-  try {
-    await FirebaseFirestore.instance.collection('reports').doc(reportId).update({
-      'status': 'Resuelto',
-      'feedback':
-          'Reporte ignorado por el administrador: ${feedbackController.text.trim()}',
-    });
-    feedbackController.text = '';
-    print('Reporte $reportId actualizado a estado: Ignorado');
-  } catch (e) {
-    print('Error al ignorar el reporte: $e');
-  }
-}
-
-Future<String> getEventName(String reportId) async {
-  try {
-    DocumentSnapshot doc = await FirebaseFirestore.instance
-        .collection('reports')
-        .doc(reportId)
-        .get();
-    if (doc.exists) {
-      doc['eventId'] ?? 'Evento sin nombre';
-      DocumentSnapshot eventDoc = await FirebaseFirestore.instance
-          .collection('events')
-          .doc(doc['eventId'])
-          .get();
-      if (eventDoc.exists) {
-        return eventDoc['name'] ?? 'Evento sin nombre';
-      } else {
-        return 'Evento eliminado';
-      }
-    } else {
-      return 'Evento eliminado';
-    }
-  } catch (e) {
-    print('Error al obtener el nombre del evento: $e');
-    return 'Error al cargar evento';
-  }
-}
-
-Future<String> getUserName(String reportId) async {
-  try {
-    DocumentSnapshot doc = await FirebaseFirestore.instance
-        .collection('reports')
-        .doc(reportId)
-        .get();
-    if (doc.exists) {
-      doc['userId'] ?? 'Usuario sin nombre';
-      DocumentSnapshot userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(doc['userId'])
-          .get();
-      if (userDoc.exists) {
-        return userDoc['nombre'] ?? 'Usuario sin nombre';
-      } else {
-        return 'Usuario no encontrado';
-      }
-    } else {
-      return 'Usuario no encontrado';
-    }
-  } catch (e) {
-    print('Error al obtener el nombre del usuario: $e');
-    return 'Error al cargar usuario';
-  }
+  await FirebaseFirestore.instance.collection('reports').doc(reportId).update({
+    'status': 'Resuelto',
+    'feedback': 'Ignorado: ${feedbackController.text.trim()}',
+  });
+  feedbackController.clear();
 }
 
 void setReportEventsFalse() {
-  locationError = false;
-  montoError = false;
-  incumplimientoLey = false;
-  infrastructureFail = false;
-  otherError = false;
+  locationError = montoError = incumplimientoLey = infrastructureFail =
+      otherError = false;
+  reportDetailsController.clear();
 }
 
 void setReportUserFalse() {
-  isHate = false;
-  isHarassment = false;
-  isSpam = false;
-  isViolentDiscourse = false;
-  isInappropriateContent = false;
+  isHate = isHarassment = isSpam = isViolentDiscourse = isInappropriateContent =
+      false;
 }

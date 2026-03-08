@@ -37,11 +37,7 @@ class _registered_events extends State<registered_events> {
             ),
           ),
           const SizedBox(height: 10),
-          const Divider(
-            color: Color(0xFFEBE6F3),
-            thickness: 1,
-            height: 20,
-          ),
+          const Divider(color: Color(0xFFEBE6F3), thickness: 1, height: 20),
           Expanded(
             child: FutureBuilder<List<Map<String, dynamic>>>(
               future: RegisteredEventsLogic().chargeEvents(),
@@ -51,7 +47,7 @@ class _registered_events extends State<registered_events> {
                     child: CircularProgressIndicator(color: PrimaryPurple),
                   );
                 }
-                
+
                 if (snapshot.hasError) {
                   return const Center(
                     child: Text("Hubo un error al cargar tus reservas."),
@@ -75,14 +71,20 @@ class _registered_events extends State<registered_events> {
                   itemCount: eventos.length,
                   itemBuilder: (context, index) {
                     var evento = eventos[index];
-                    
+
                     // ==========================================
                     // EXTRACCIÓN Y FORMATO DE DATOS
                     // ==========================================
                     String nombre = evento['name'] ?? 'Evento sin nombre';
                     bool isFinalizado = evento['isFinalizado'] ?? false;
                     bool isPayed = evento['isPayed'] ?? false;
-                    var montoPagado = evento['totalPaid'] ?? (evento['paymentInfo'] != null ? evento['paymentInfo']['price'] : null) ?? evento['price'] ?? '0.00';
+                    var montoPagado =
+                        evento['totalPaid'] ??
+                        (evento['paymentInfo'] != null
+                            ? evento['paymentInfo']['price']
+                            : null) ??
+                        evento['price'] ??
+                        '0.00';
 
                     String precioTexto = isPayed ? '$montoPagado Bs' : 'Gratis';
 
@@ -90,8 +92,11 @@ class _registered_events extends State<registered_events> {
                     String fechaFormateada = 'Por definir';
                     try {
                       if (evento['startDate'] != null) {
-                        DateTime parsedDate = DateTime.parse(evento['startDate']);
-                        fechaFormateada = '${parsedDate.day.toString().padLeft(2, '0')}/${parsedDate.month.toString().padLeft(2, '0')}/${parsedDate.year}';
+                        DateTime parsedDate = DateTime.parse(
+                          evento['startDate'],
+                        );
+                        fechaFormateada =
+                            '${parsedDate.day.toString().padLeft(2, '0')}/${parsedDate.month.toString().padLeft(2, '0')}/${parsedDate.year}';
                       }
                     } catch (e) {
                       fechaFormateada = 'Formato inválido';
@@ -101,8 +106,12 @@ class _registered_events extends State<registered_events> {
                     String horaFormateada = 'Por definir';
                     try {
                       if (evento['startTime'] != null) {
-                        String hora = evento['startTime']['hour'].toString().padLeft(2, '0');
-                        String minuto = evento['startTime']['minute'].toString().padLeft(2, '0');
+                        String hora = evento['startTime']['hour']
+                            .toString()
+                            .padLeft(2, '0');
+                        String minuto = evento['startTime']['minute']
+                            .toString()
+                            .padLeft(2, '0');
                         horaFormateada = '$hora:$minuto';
                       }
                     } catch (e) {
@@ -112,14 +121,19 @@ class _registered_events extends State<registered_events> {
                     return Container(
                       margin: const EdgeInsets.only(bottom: 20),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF7F4FD), 
+                        color: const Color(0xFFF7F4FD),
                         borderRadius: BorderRadius.circular(15.0),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Padding(
-                            padding: const EdgeInsets.only(left: 20, right: 20, top: 20, bottom: 10),
+                            padding: const EdgeInsets.only(
+                              left: 20,
+                              right: 20,
+                              top: 20,
+                              bottom: 10,
+                            ),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
@@ -132,15 +146,22 @@ class _registered_events extends State<registered_events> {
                                   ),
                                 ),
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 4,
+                                  ),
                                   decoration: BoxDecoration(
-                                    color: isFinalizado ? Colors.red.withOpacity(0.1) : Colors.green.withOpacity(0.1),
+                                    color: isFinalizado
+                                        ? Colors.red.withOpacity(0.1)
+                                        : Colors.green.withOpacity(0.1),
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                   child: Text(
                                     isFinalizado ? 'Finalizado' : 'Activo',
                                     style: TextStyle(
-                                      color: isFinalizado ? Colors.red[800] : Colors.green[800],
+                                      color: isFinalizado
+                                          ? Colors.red[800]
+                                          : Colors.green[800],
                                       fontWeight: FontWeight.bold,
                                       fontSize: 12,
                                     ),
@@ -150,9 +171,9 @@ class _registered_events extends State<registered_events> {
                             ),
                           ),
                           const Divider(
-                            color: Color(0xFFEBE6F3), 
-                            thickness: 1, 
-                            height: 1
+                            color: Color(0xFFEBE6F3),
+                            thickness: 1,
+                            height: 1,
                           ),
                           Padding(
                             padding: const EdgeInsets.all(20),
@@ -160,14 +181,24 @@ class _registered_events extends State<registered_events> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
-                                    const Text("Evento", style: TextStyle(color: Colors.black54, fontSize: 15)),
+                                    const Text(
+                                      "Evento",
+                                      style: TextStyle(
+                                        color: Colors.black54,
+                                        fontSize: 15,
+                                      ),
+                                    ),
                                     Expanded(
                                       child: Text(
                                         nombre,
                                         textAlign: TextAlign.right,
-                                        style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 15),
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w500,
+                                          fontSize: 15,
+                                        ),
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                       ),
@@ -176,37 +207,68 @@ class _registered_events extends State<registered_events> {
                                 ),
                                 const SizedBox(height: 15),
                                 Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
-                                    const Text("Fecha", style: TextStyle(color: Colors.black54, fontSize: 15)),
+                                    const Text(
+                                      "Fecha",
+                                      style: TextStyle(
+                                        color: Colors.black54,
+                                        fontSize: 15,
+                                      ),
+                                    ),
                                     Text(
                                       fechaFormateada,
-                                      style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 15),
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w500,
+                                        fontSize: 15,
+                                      ),
                                     ),
                                   ],
                                 ),
                                 const SizedBox(height: 15),
                                 Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
-                                    const Text("Hora", style: TextStyle(color: Colors.black54, fontSize: 15)),
+                                    const Text(
+                                      "Hora",
+                                      style: TextStyle(
+                                        color: Colors.black54,
+                                        fontSize: 15,
+                                      ),
+                                    ),
                                     Text(
                                       horaFormateada,
-                                      style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 15),
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w500,
+                                        fontSize: 15,
+                                      ),
                                     ),
                                   ],
                                 ),
                                 const SizedBox(height: 15),
                                 Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
-                                    const Text("Tipo de entrada", style: TextStyle(color: Colors.black54, fontSize: 15)),
-                                    Text(
-                                      isPayed ? 'Pagada ($precioTexto)' : 'Gratuita',
+                                    const Text(
+                                      "Tipo de entrada",
                                       style: TextStyle(
-                                        fontWeight: FontWeight.bold, 
+                                        color: Colors.black54,
                                         fontSize: 15,
-                                        color: isPayed ? Colors.blue[700] : PrimaryPurple,
+                                      ),
+                                    ),
+                                    Text(
+                                      isPayed
+                                          ? 'Pagada ($precioTexto)'
+                                          : 'Gratuita',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 15,
+                                        color: isPayed
+                                            ? Colors.blue[700]
+                                            : PrimaryPurple,
                                       ),
                                     ),
                                   ],

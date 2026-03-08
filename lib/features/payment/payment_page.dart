@@ -84,8 +84,7 @@ class _PaymentPageState extends State<PaymentPage> {
   }
 
   Future<void> _copyToClipboard() async {
-    final paymentInfo =
-        'Pago Móvil\nBanco: $_bankName\nTlf: $_phone\nCI: $_ci';
+    final paymentInfo = 'Pago Móvil\nBanco: $_bankName\nTlf: $_phone\nCI: $_ci';
     await Clipboard.setData(ClipboardData(text: paymentInfo));
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -101,8 +100,10 @@ class _PaymentPageState extends State<PaymentPage> {
   Future<void> _confirmPayment() async {
     final ref = _refCtrl.text.trim();
     if (ref.length < 4 || ref.length > 6) {
-      _showMessage('El número de referencia debe tener 4-6 dígitos.',
-          isError: true);
+      _showMessage(
+        'El número de referencia debe tener 4-6 dígitos.',
+        isError: true,
+      );
       return;
     }
 
@@ -135,16 +136,16 @@ class _PaymentPageState extends State<PaymentPage> {
         final eventSnap = await txn.get(eventRef);
         final currentSold = (eventSnap.data()?['ticketsSold'] ?? 0) as int;
         final rawCap = eventSnap.data()?['capacity'];
-        final cap = rawCap is int ? rawCap : int.tryParse(rawCap?.toString() ?? '0') ?? 0;
+        final cap = rawCap is int
+            ? rawCap
+            : int.tryParse(rawCap?.toString() ?? '0') ?? 0;
 
         if (currentSold + quantity > cap) {
           throw Exception('No hay suficientes entradas disponibles.');
         }
 
         // Incrementar entradas vendidas en el evento
-        txn.update(eventRef, {
-          'ticketsSold': FieldValue.increment(quantity),
-        });
+        txn.update(eventRef, {'ticketsSold': FieldValue.increment(quantity)});
 
         // Guardar la compra en el perfil del usuario
         txn.set(userTicketsRef, {
@@ -154,7 +155,7 @@ class _PaymentPageState extends State<PaymentPage> {
           'quantity': quantity,
           'totalPaid': _price * quantity,
           'reference': ref,
-          'isPayed': true, 
+          'isPayed': true,
           'purchasedAt': FieldValue.serverTimestamp(),
         });
       });
@@ -235,8 +236,9 @@ class _PaymentPageState extends State<PaymentPage> {
                               color: theme.primaryColor,
                             ),
                             Container(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 12),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                              ),
                               child: Text(
                                 '$quantity',
                                 style: const TextStyle(
@@ -247,7 +249,8 @@ class _PaymentPageState extends State<PaymentPage> {
                             ),
                             IconButton(
                               // Limitar al máximo de entradas disponibles
-                              onPressed: (_remaining == 0 || quantity >= _remaining)
+                              onPressed:
+                                  (_remaining == 0 || quantity >= _remaining)
                                   ? null
                                   : () => setState(() => quantity++),
                               icon: const Icon(Icons.add),
@@ -331,11 +334,12 @@ class _PaymentPageState extends State<PaymentPage> {
                           ),
                         ),
                         const SizedBox(height: 8),
-                        Text('Teléfono: $_phone',
-                            style: const TextStyle(fontSize: 15)),
+                        Text(
+                          'Teléfono: $_phone',
+                          style: const TextStyle(fontSize: 15),
+                        ),
                         const SizedBox(height: 8),
-                        Text('C.I: $_ci',
-                            style: const TextStyle(fontSize: 15)),
+                        Text('C.I: $_ci', style: const TextStyle(fontSize: 15)),
                         if (_price > 0) ...[
                           const SizedBox(height: 8),
                           Text(
@@ -355,13 +359,17 @@ class _PaymentPageState extends State<PaymentPage> {
                     width: double.infinity,
                     child: OutlinedButton.icon(
                       onPressed: _copyToClipboard,
-                      icon: Icon(_copySuccess ? Icons.check : Icons.copy,
-                          size: 18),
+                      icon: Icon(
+                        _copySuccess ? Icons.check : Icons.copy,
+                        size: 18,
+                      ),
                       label: Text(
-                          _copySuccess ? 'Copiado' : 'Copiar Datos Bancarios'),
+                        _copySuccess ? 'Copiado' : 'Copiar Datos Bancarios',
+                      ),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor:
-                            _copySuccess ? Colors.green : theme.primaryColor,
+                        foregroundColor: _copySuccess
+                            ? Colors.green
+                            : theme.primaryColor,
                         side: BorderSide(
                           color: _copySuccess
                               ? Colors.green
@@ -435,8 +443,11 @@ class _PaymentPageState extends State<PaymentPage> {
     );
   }
 
-  Widget _buildSectionCard(ThemeData theme,
-      {required String title, required Widget child}) {
+  Widget _buildSectionCard(
+    ThemeData theme, {
+    required String title,
+    required Widget child,
+  }) {
     return Card(
       elevation: 3,
       shadowColor: Colors.black12,

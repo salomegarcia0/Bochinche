@@ -32,26 +32,26 @@ class BochincheAppBar extends StatelessWidget implements PreferredSizeWidget {
   }
 
   Widget iconbell(BuildContext context) {
-  return IconButton(
-    icon: const Icon(Icons.notifications, color: SecondaryPurple),
-    onPressed: () {
-      User? usuario = FirebaseAuth.instance.currentUser;
-      if (usuario == null) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const LoginScreen()),
-        );
-      } else {
-        showNotifications(
-          context,
-          onEventSelected: (eventData) {
-            mostrarDetalles(context, eventData, eventData['id']);
-          },
-        );
-      }
-    },
-  );
-}
+    return IconButton(
+      icon: const Icon(Icons.notifications, color: SecondaryPurple),
+      onPressed: () {
+        User? usuario = FirebaseAuth.instance.currentUser;
+        if (usuario == null) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const LoginScreen()),
+          );
+        } else {
+          showNotifications(
+            context,
+            onEventSelected: (eventData) {
+              mostrarDetalles(context, eventData, eventData['id']);
+            },
+          );
+        }
+      },
+    );
+  }
 
   Widget iconpersona(BuildContext context) {
     return IconButton(

@@ -1,15 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:bochinche_app/data/auth_service.dart'; 
+import 'package:bochinche_app/data/auth_service.dart';
 
 class VerificationBadge extends StatelessWidget {
   final String uid;
   final double size;
 
-  const VerificationBadge({
-    super.key, 
-    required this.uid, 
-    this.size = 20.0, 
-  });
+  const VerificationBadge({super.key, required this.uid, this.size = 20.0});
 
   @override
   Widget build(BuildContext context) {
@@ -22,8 +18,8 @@ class VerificationBadge extends StatelessWidget {
             child: Icon(Icons.verified, color: Colors.blue, size: size),
           );
         }
-        
-        return const SizedBox.shrink(); 
+
+        return const SizedBox.shrink();
       },
     );
   }

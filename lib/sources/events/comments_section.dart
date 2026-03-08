@@ -1,246 +1,62 @@
-<<<<<<< HEAD
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:bochinche_app/sources/events/events_logic.dart';
-=======
-import 'package:bochinche_app/sources/reports/reports_ui.dart';
-import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter_svg/flutter_svg.dart';
-import 'events_logic.dart';
-import 'package:bochinche_app/features/auth/LoginScreen.dart';
-import 'package:bochinche_app/widgets/verification_badge.dart';
-import 'package:bochinche_app/sources/reports/reports_logic.dart';
->>>>>>> origin/develop
 
 class CommentsSection extends StatefulWidget {
   final String eventoId;
   const CommentsSection({super.key, required this.eventoId});
-<<<<<<< HEAD
-=======
 
->>>>>>> origin/develop
   @override
   State<CommentsSection> createState() => _CommentsSectionState();
 }
 
 class _CommentsSectionState extends State<CommentsSection> {
-<<<<<<< HEAD
-  final TextEditingController _con = TextEditingController();
-  int _stars = 5;
-=======
   final TextEditingController _commentController = TextEditingController();
-  int _rating = 5;
-  String get _currentUid => FirebaseAuth.instance.currentUser?.uid ?? '';
-  String get _currentName =>
-      FirebaseAuth.instance.currentUser?.displayName ?? 'Bochinchero';
->>>>>>> origin/develop
 
   @override
   Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-<<<<<<< HEAD
         const Text(
-          "Reseñas",
+          "Comentarios",
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         StreamBuilder<List<Map<String, dynamic>>>(
           stream: obtenerComentariosStream(widget.eventoId),
-          builder: (context, snap) {
-            if (!snap.hasData) return const LinearProgressIndicator();
-            final list = snap.data!;
-            return Column(
-              children: list
-                  .map(
-                    (c) => ListTile(
-                      leading: const CircleAvatar(child: Icon(Icons.person)),
-                      title: Text(c['nombre'] ?? 'Anónimo'),
-                      subtitle: Text(
-                        "${c['texto']}\n${'⭐' * (c['rating'] ?? 0)}",
-                      ),
-                    ),
-                  )
-                  .toList(),
-            );
-          },
-        ),
-        TextField(
-          controller: _con,
-          decoration: const InputDecoration(
-            hintText: "Escribe un comentario...",
-          ),
-        ),
-        Row(
-          children: [
-            DropdownButton<int>(
-              value: _stars,
-              items: [1, 2, 3, 4, 5]
-                  .map((v) => DropdownMenuItem(value: v, child: Text("$v ⭐")))
-                  .toList(),
-              onChanged: (v) => setState(() => _stars = v!),
-            ),
-            const Spacer(),
-            TextButton(
-              onPressed: () async {
-                final user = FirebaseAuth.instance.currentUser;
-                if (user == null || _con.text.isEmpty) return;
-                await agregarComentario(
-                  eventoId: widget.eventoId,
-                  texto: _con.text,
-                  usuarioNombre: user.displayName ?? "Usuario",
-                  usuarioUid: user.uid,
-                  rating: _stars,
-                );
-                _con.clear();
-              },
-              child: const Text("Publicar"),
-=======
-        Text('Comentarios', style: Theme.of(context).textTheme.titleLarge),
-        const SizedBox(height: 8),
-        StreamBuilder<List<Map<String, dynamic>>>(
-          stream: obtenerComentariosStream(widget.eventoId),
-          builder: (context, snap) {
-            if (snap.hasError) return Text('Error al cargar comentarios');
-            if (!snap.hasData) return const CircularProgressIndicator();
-            final comentarios = snap.data!;
-            if (comentarios.isEmpty) return const Text('Sin comentarios aún');
-            return SizedBox(
-              height: 200,
-              child: ListView.builder(
-                itemCount: comentarios.length,
-                itemBuilder: (context, i) {
-                  final c = comentarios[i];
-                  final ts = c['fecha'];
-                  final int rating = (c['rating'] is int)
-                      ? c['rating'] as int
-                      : (c['rating'] is double
-                            ? (c['rating'] as double).toInt()
-                            : 0);
-                  return ListTile(
-                    title: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(c['nombre'] ?? 'Usuario'),
-                        if (c['usuarioUid'] != null) ...[
-                          const SizedBox(width: 4),
-                          VerificationBadge(uid: c['usuarioUid'], size: 16),
-                        ],
-                      ],
-                    ),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: List.generate(5, (index) {
-                            final colored = index < rating;
-                            return Padding(
-                              padding: const EdgeInsets.only(right: 4.0),
-                              child: SvgPicture.asset(
-                                'assets/svgs/2451996.svg',
-                                width: 16,
-                                height: 16,
-                                color: colored
-                                    ? Colors.orange
-                                    : Colors.grey.shade400,
-                              ),
-                            );
-                          }),
-                        ),
-                        SizedBox(height: 5),
-                        Text(c['texto'] ?? ''),
-                        const SizedBox(height: 6),
-                        ElevatedButton(
-                          onPressed: () {
-                            setState(() {
-                              userToReport = c['usuarioUid'];
-                              print(userToReport);
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const ReportUser(),
-                                ),
-                              );
-                            });
-                          },
-                          child: Text('Reportar usuario'),
-                        ),
-                        const SizedBox(height: 6),
-                      ],
-                    ),
-                    trailing: ts is Timestamp
-                        ? Text(
-                            (ts.toDate()).toLocal().toString().split('.').first,
-                            style: const TextStyle(fontSize: 10),
-                          )
-                        : null,
-                  );
-                },
+          builder: (context, snapshot) {
+            if (!snapshot.hasData) return const CircularProgressIndicator();
+            final comments = snapshot.data!;
+            return ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: comments.length,
+              itemBuilder: (context, i) => ListTile(
+                title: Text(comments[i]['nombre'] ?? "Anónimo"),
+                subtitle: Text(comments[i]['texto'] ?? ""),
               ),
             );
           },
         ),
-        const SizedBox(height: 12),
         TextField(
           controller: _commentController,
-          decoration: const InputDecoration(labelText: 'Escribe un comentario'),
-        ),
-        Row(
-          children: [
-            const Text('Valoración:'),
-            const SizedBox(width: 8),
-            DropdownButton<int>(
-              value: _rating,
-              items: List.generate(5, (i) => i + 1)
-                  .map((v) => DropdownMenuItem(value: v, child: Text('$v')))
-                  .toList(),
-              onChanged: (v) => setState(() => _rating = v ?? 5),
-            ),
-            const Spacer(),
-            ElevatedButton(
+          decoration: InputDecoration(
+            hintText: "Escribe un comentario...",
+            suffixIcon: IconButton(
+              icon: const Icon(Icons.send),
               onPressed: () async {
-                if (FirebaseAuth.instance.currentUser == null) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const LoginScreen(),
-                    ),
-                  );
-                  return;
-                }
-                final texto = _commentController.text.trim();
-                if (texto.isEmpty) return;
-                try {
+                if (_commentController.text.isNotEmpty) {
+                  final user = FirebaseAuth.instance.currentUser;
                   await agregarComentario(
                     eventoId: widget.eventoId,
-                    texto: texto,
-                    usuarioNombre: _currentName,
-                    usuarioUid: _currentUid,
-                    rating: _rating,
-                  );
-                  await agregarValoracion(
-                    eventoId: widget.eventoId,
-                    rating: _rating,
-                    usuarioUid: _currentUid,
+                    texto: _commentController.text,
+                    usuarioNombre: user?.displayName ?? "Usuario",
+                    usuarioUid: user?.uid ?? "",
                   );
                   _commentController.clear();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Comentario y valoración guardados'),
-                    ),
-                  );
-                } catch (e) {
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(SnackBar(content: Text('Error: $e')));
                 }
               },
-              child: const Text('Enviar'),
->>>>>>> origin/develop
             ),
-          ],
+          ),
         ),
       ],
     );

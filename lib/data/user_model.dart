@@ -34,5 +34,4 @@ class UserModel {
       'profileImageUrl': profileImageUrl,
     };
   }
-
-}  
+}

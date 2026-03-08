@@ -1,58 +1,3 @@
-<<<<<<< HEAD
-import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
-
-class BuscadorEventoMapa extends StatefulWidget {
-  final bool esSelector;
-  final String tipoEvento;
-  final Function(String)? onSubmitted;
-
-  const BuscadorEventoMapa({
-    super.key,
-    this.esSelector = false,
-    this.tipoEvento = 'Otros',
-    this.onSubmitted,
-  });
-
-  @override
-  State<BuscadorEventoMapa> createState() => _BuscadorEventoMapaState();
-}
-
-class _BuscadorEventoMapaState extends State<BuscadorEventoMapa> {
-  LatLng? puntoSeleccionado;
-  final TextEditingController _searchController = TextEditingController();
-
-  Widget _buildCircularSelector() {
-    return Container(
-      width: 50,
-      height: 50,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        // CORRECCIÓN: Usamos withValues para evitar el warning de deprecated
-        color: Colors.red.withValues(alpha: 0.2),
-      ),
-      child: Center(
-        child: Container(
-          width: 35,
-          height: 35,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: Colors.red,
-            border: Border.all(color: Colors.white, width: 3),
-            boxShadow: const [
-              BoxShadow(
-                color: Colors.black45,
-                blurRadius: 8,
-                offset: Offset(0, 4),
-              ),
-            ],
-          ),
-          child: const Icon(Icons.add, color: Colors.white, size: 25),
-        ),
-      ),
-    );
-=======
 import 'package:bochinche_app/styles/Color.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -80,112 +25,33 @@ class _BuscadorEventoMapaState extends State<BuscadorEventoMapa> {
     _checkClipboard();
   }
 
-  // Verifica si hay texto copiado al abrir la pantalla
+  // Verifica si hay texto copiado al abrir el componente
   Future<void> _checkClipboard() async {
     final data = await Clipboard.getData(Clipboard.kTextPlain);
-    if (data?.text != null && data!.text!.isNotEmpty) {
+    if (data != null && data.text != null && data.text!.isNotEmpty) {
       setState(() {
         _showPasteButton = true;
       });
     }
   }
 
-  // Pega el texto y oculta el botón automáticamente
+  // Pega el texto del portapapeles y ejecuta la búsqueda
   Future<void> _pasteFromClipboard() async {
     final data = await Clipboard.getData(Clipboard.kTextPlain);
-    if (data?.text != null) {
+    if (data != null && data.text != null) {
       setState(() {
-        _controller.text = data!.text!;
+        _controller.text = data.text!;
         _showPasteButton = false;
       });
+      // Al pegar, también ejecutamos la búsqueda automáticamente
+      if (widget.onSubmitted != null) {
+        widget.onSubmitted!(data.text!);
+      }
     }
->>>>>>> origin/develop
   }
 
   @override
   Widget build(BuildContext context) {
-<<<<<<< HEAD
-    if (widget.esSelector) {
-      return Scaffold(
-        appBar: AppBar(
-          title: const Text('Toca para ubicar evento'),
-          backgroundColor: Colors.white,
-          foregroundColor: Colors.black,
-          elevation: 1,
-        ),
-        body: Container(
-          color: const Color(0xFFE5E3DF),
-          child: FlutterMap(
-            options: MapOptions(
-              initialCenter: const LatLng(10.4806, -66.8983),
-              initialZoom: 15,
-              onTap: (tapPos, point) =>
-                  setState(() => puntoSeleccionado = point),
-            ),
-            children: [
-              TileLayer(
-                urlTemplate:
-                    "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
-                subdomains: const ['a', 'b', 'c', 'd'],
-                userAgentPackageName: 'bochinche_app',
-              ),
-              if (puntoSeleccionado != null)
-                MarkerLayer(
-                  markers: [
-                    Marker(
-                      point: puntoSeleccionado!,
-                      width: 50,
-                      height: 50,
-                      alignment: Alignment.center,
-                      child: _buildCircularSelector(),
-                    ),
-                  ],
-                ),
-            ],
-          ),
-        ),
-        floatingActionButton: puntoSeleccionado != null
-            ? FloatingActionButton.extended(
-                onPressed: () => Navigator.pop(context, puntoSeleccionado),
-                backgroundColor: Colors.purple,
-                label: const Text(
-                  'Confirmar Punto',
-                  style: TextStyle(color: Colors.white),
-                ),
-                icon: const Icon(Icons.check, color: Colors.white),
-              )
-            : null,
-      );
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      child: Card(
-        elevation: 8,
-        shadowColor: Colors.black38,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-        child: TextField(
-          controller: _searchController,
-          decoration: InputDecoration(
-            hintText: 'Ingresa código de invitación...',
-            prefixIcon: const Icon(Icons.search, color: Colors.purple),
-            border: InputBorder.none,
-            contentPadding: const EdgeInsets.symmetric(vertical: 15),
-            suffixIcon: IconButton(
-              icon: const Icon(Icons.arrow_forward, color: Colors.purple),
-              onPressed: () {
-                if (widget.onSubmitted != null) {
-                  widget.onSubmitted!(_searchController.text.trim());
-                }
-              },
-            ),
-          ),
-          onSubmitted: (value) {
-            if (widget.onSubmitted != null) {
-              widget.onSubmitted!(value.trim());
-            }
-          },
-=======
     return Container(
       margin: const EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 8.0),
       decoration: BoxDecoration(
@@ -197,22 +63,25 @@ class _BuscadorEventoMapaState extends State<BuscadorEventoMapa> {
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [Container(), filtro(context)],
+            children: [
+              Container(), // Espaciador
+              _botonFiltro(context),
+            ],
           ),
-          buscador(context),
+          _buscadorInput(context),
         ],
       ),
     );
   }
 
-  Widget filtro(BuildContext context) {
+  Widget _botonFiltro(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16.0, 8.0, 16.0, 0.0),
       child: FilledButton(
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => PublicEventsScreen()),
+            MaterialPageRoute(builder: (context) => const PublicEventsScreen()),
           );
         },
         style: FilledButton.styleFrom(
@@ -226,7 +95,7 @@ class _BuscadorEventoMapaState extends State<BuscadorEventoMapa> {
     );
   }
 
-  Widget buscador(BuildContext context) {
+  Widget _buscadorInput(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8.0),
       child: Container(
@@ -238,30 +107,29 @@ class _BuscadorEventoMapaState extends State<BuscadorEventoMapa> {
             border: Border.all(color: PrimaryPurple, width: 1.0),
           ),
           child: TextField(
-            readOnly: true,
-            onTap: () {
-              Navigator.push(
-                context,
-                PageRouteBuilder(
-                  pageBuilder: (context, animation, secondaryAnimation) =>
-                      const PublicEventsScreen(),
-                  transitionDuration: const Duration(milliseconds: 800),
-                  transitionsBuilder:
-                      (context, animation, secondaryAnimation, child) {
-                    return FadeTransition(opacity: animation, child: child);
-                  },
-                ),
-              );
-            },
+            controller: _controller,
             decoration: InputDecoration(
               prefixIcon: const Icon(Icons.search, color: PrimaryPurple),
               suffixIcon: _showPasteButton
                   ? IconButton(
-                      icon: const Icon(Icons.content_paste, color: PrimaryPurple),
+                      icon: const Icon(
+                        Icons.content_paste,
+                        color: PrimaryPurple,
+                      ),
                       onPressed: _pasteFromClipboard,
                       tooltip: 'Pegar código',
                     )
-                  : null,
+                  : IconButton(
+                      icon: const Icon(
+                        Icons.arrow_forward,
+                        color: PrimaryPurple,
+                      ),
+                      onPressed: () {
+                        if (widget.onSubmitted != null) {
+                          widget.onSubmitted!(_controller.text.trim());
+                        }
+                      },
+                    ),
               hintText: 'Buscar evento o código privado',
               border: InputBorder.none,
               contentPadding: const EdgeInsets.symmetric(
@@ -269,15 +137,16 @@ class _BuscadorEventoMapaState extends State<BuscadorEventoMapa> {
                 horizontal: 16.0,
               ),
             ),
+            onSubmitted: (value) {
+              if (widget.onSubmitted != null) {
+                widget.onSubmitted!(value.trim());
+              }
+            },
           ),
->>>>>>> origin/develop
         ),
       ),
     );
   }
-<<<<<<< HEAD
-}
-=======
 
   @override
   void dispose() {
@@ -285,4 +154,3 @@ class _BuscadorEventoMapaState extends State<BuscadorEventoMapa> {
     super.dispose();
   }
 }
->>>>>>> origin/develop

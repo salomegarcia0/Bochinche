@@ -89,7 +89,7 @@ class AuthService {
         'telefono': phone,
         'fecha_creacion': FieldValue.serverTimestamp(),
         'cedula': cedula,
-        'verification_status': 'unverified', 
+        'verification_status': 'unverified',
         'email_verified': false,
       };
 
@@ -119,11 +119,14 @@ class AuthService {
   }
 
   // Función para pedir la verificación (Cambia estado a 'pending')
-  Future<void> solicitarVerificacion(String uid, Map<String, dynamic> formData) async {
+  Future<void> solicitarVerificacion(
+    String uid,
+    Map<String, dynamic> formData,
+  ) async {
     try {
       await _firestore.collection('users').doc(uid).update({
         'verification_status': 'pending',
-        'verification_request_data': formData, 
+        'verification_request_data': formData,
       });
     } catch (e) {
       throw "Error al enviar el formulario de verificación";
@@ -133,7 +136,8 @@ class AuthService {
   // Función para leer el estado actual (para saber qué botón mostrar)
   Stream<String> obtenerEstadoVerificacionStream(String uid) {
     return _firestore.collection('users').doc(uid).snapshots().map((snapshot) {
-      if (snapshot.exists && snapshot.data()!.containsKey('verification_status')) {
+      if (snapshot.exists &&
+          snapshot.data()!.containsKey('verification_status')) {
         return snapshot.get('verification_status');
       } else {
         return 'unverified';

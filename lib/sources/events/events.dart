@@ -45,7 +45,7 @@ class Events {
     print("Error $e");
   } */
 
- /* lass Events {
+/* lass Events {
   String? name_event;
   String? event_organizer;
   String? short_loc;

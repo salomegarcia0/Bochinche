@@ -28,29 +28,30 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     super.initState();
     _nameController = TextEditingController(text: widget.usuario.nombre);
     _phoneController = TextEditingController(text: widget.usuario.telefono);
-    _identificationController = TextEditingController(text: widget.usuario.cedula);
+    _identificationController = TextEditingController(
+      text: widget.usuario.cedula,
+    );
     _emailController = TextEditingController(text: widget.usuario.email);
   }
 
-
   Future<void> _pickImage() async {
-    final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
+    final pickedFile = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+    );
     if (pickedFile != null) {
       setState(() => _imageFile = File(pickedFile.path));
     }
   }
 
-  
   Future<String?> _subirImagenASupabase(File imagen) async {
     try {
-      final fileName = 'user_${widget.usuario.uid}_${DateTime.now().millisecondsSinceEpoch}.jpg';
-      
-     
+      final fileName =
+          'user_${widget.usuario.uid}_${DateTime.now().millisecondsSinceEpoch}.jpg';
+
       await Supabase.instance.client.storage
-          .from('profile_images') 
+          .from('profile_images')
           .upload(fileName, imagen);
 
-     
       final imageUrl = Supabase.instance.client.storage
           .from('profile_images')
           .getPublicUrl(fileName);
@@ -68,20 +69,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     setState(() => _subiendo = true);
 
     try {
-     
       String? finalImageUrl = widget.usuario.profileImageUrl;
 
-    
       if (_imageFile != null) {
-        
-        String? nuevaUrl = await _subirImagenASupabase(_imageFile!); 
-        
+        String? nuevaUrl = await _subirImagenASupabase(_imageFile!);
+
         if (nuevaUrl != null) {
           finalImageUrl = nuevaUrl;
         }
       }
 
-      
       UserModel usuarioActualizado = UserModel(
         uid: widget.usuario.uid,
         email: widget.usuario.email,
@@ -95,9 +92,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           .collection('users')
           .doc(widget.usuario.uid)
           .update(usuarioActualizado.toMap());
-        
-      if (mounted) Navigator.pop(context, true);
 
+      if (mounted) Navigator.pop(context, true);
     } catch (e) {
       print("Error: $e");
       // ... manejo de errores
@@ -107,23 +103,28 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   // --- UI ---
   @override
   Widget build(BuildContext context) {
-
     ImageProvider? imagenMostrada;
     if (_imageFile != null) {
       imagenMostrada = FileImage(_imageFile!);
-    } else if (widget.usuario.profileImageUrl != null && widget.usuario.profileImageUrl!.isNotEmpty) {
+    } else if (widget.usuario.profileImageUrl != null &&
+        widget.usuario.profileImageUrl!.isNotEmpty) {
       imagenMostrada = NetworkImage(widget.usuario.profileImageUrl!);
     }
 
     return Scaffold(
       backgroundColor: PrimaryBackGroundPurple,
       appBar: AppBar(
-        title: const Text("Editar Perfil", style: TextStyle(color: SecondaryPurple)),
+        title: const Text(
+          "Editar Perfil",
+          style: TextStyle(color: SecondaryPurple),
+        ),
         backgroundColor: PrimaryPurple,
         iconTheme: const IconThemeData(color: SecondaryPurple),
       ),
       body: _subiendo
-          ? const Center(child: CircularProgressIndicator(color: SecondaryPurple))
+          ? const Center(
+              child: CircularProgressIndicator(color: SecondaryPurple),
+            )
           : SingleChildScrollView(
               padding: const EdgeInsets.all(20),
               child: Form(
@@ -138,28 +139,59 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         backgroundColor: SecondaryPurple,
                         backgroundImage: imagenMostrada,
                         child: imagenMostrada == null
-                            ? const Icon(Icons.camera_alt, size: 50, color: PrimaryPurple)
+                            ? const Icon(
+                                Icons.camera_alt,
+                                size: 50,
+                                color: PrimaryPurple,
+                              )
                             : null,
                       ),
                     ),
                     const SizedBox(height: 20),
-                    
+
                     // --- CAMPOS ---
-                    _buildTextField(_nameController, "Nombre / Razón Social", Icons.person),
-                    _buildTextField(_identificationController, "Cédula / RIF", Icons.badge, TextInputType.text, true),
-                    _buildTextField(_phoneController, "Teléfono", Icons.phone, TextInputType.phone),
-                    _buildTextField(_emailController, "Correo Electrónico", Icons.email, TextInputType.emailAddress, true),
-                    
+                    _buildTextField(
+                      _nameController,
+                      "Nombre / Razón Social",
+                      Icons.person,
+                    ),
+                    _buildTextField(
+                      _identificationController,
+                      "Cédula / RIF",
+                      Icons.badge,
+                      TextInputType.text,
+                      true,
+                    ),
+                    _buildTextField(
+                      _phoneController,
+                      "Teléfono",
+                      Icons.phone,
+                      TextInputType.phone,
+                    ),
+                    _buildTextField(
+                      _emailController,
+                      "Correo Electrónico",
+                      Icons.email,
+                      TextInputType.emailAddress,
+                      true,
+                    ),
+
                     const SizedBox(height: 30),
-                    
+
                     // --- BOTÓN ---
                     ElevatedButton(
                       onPressed: _guardarCambios,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: SecondaryPurple,
-                        padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 50,
+                          vertical: 15,
+                        ),
                       ),
-                      child: const Text("Guardar Cambios", style: TextStyle(color: PrimaryPurple, fontSize: 16)),
+                      child: const Text(
+                        "Guardar Cambios",
+                        style: TextStyle(color: PrimaryPurple, fontSize: 16),
+                      ),
                     ),
                   ],
                 ),
@@ -168,7 +200,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
-  Widget _buildTextField(TextEditingController controller, String label, IconData icon, [TextInputType keyboardType = TextInputType.text, bool readOnly = false]) {
+  Widget _buildTextField(
+    TextEditingController controller,
+    String label,
+    IconData icon, [
+    TextInputType keyboardType = TextInputType.text,
+    bool readOnly = false,
+  ]) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10),
       child: TextFormField(
@@ -180,8 +218,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           labelText: label,
           labelStyle: const TextStyle(color: SecondaryPurple),
           prefixIcon: Icon(icon, color: SecondaryPurple),
-          enabledBorder: const OutlineInputBorder(borderSide: BorderSide(color: Colors.white30)),
-          focusedBorder: const OutlineInputBorder(borderSide: BorderSide(color: SecondaryPurple)),
+          enabledBorder: const OutlineInputBorder(
+            borderSide: BorderSide(color: Colors.white30),
+          ),
+          focusedBorder: const OutlineInputBorder(
+            borderSide: BorderSide(color: SecondaryPurple),
+          ),
         ),
         validator: (value) => value!.isEmpty ? "Este campo es requerido" : null,
       ),
