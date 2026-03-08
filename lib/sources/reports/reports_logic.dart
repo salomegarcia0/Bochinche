@@ -35,6 +35,7 @@ Future<void> reportEvent(BuildContext context) async {
     print('Errores:');
     if (locationError == true) selectedReasons.add('Localización Incorrecta');
     if (montoError == true) selectedReasons.add('Monto Incorrecto');
+<<<<<<< HEAD
     if (incumplimientoLey == true) {
       selectedReasons.add('Incumplimiento de Leyes o Normativas Locales');
     }
@@ -43,6 +44,14 @@ Future<void> reportEvent(BuildContext context) async {
     }
     if (otherError == true && reportDetailsController.text.trim().isNotEmpty) {
       selectedReasons.add('Otro error$reportDetails');
+=======
+    if (incumplimientoLey == true)
+      selectedReasons.add('Incumplimiento de Leyes o Normativas Locales');
+    if (infrastructureFail == true)
+      selectedReasons.add('Fallas de infraestructura');
+    if (otherError == true && reportDetailsController.text.trim().isNotEmpty) {
+      selectedReasons.add('Otro error${reportDetails}');
+>>>>>>> origin/develop
     } else {
       if (otherError == true && reportDetailsController.text.trim().isEmpty) {
         selectedReasons.add('Otro error no especificado');
@@ -129,6 +138,7 @@ Future<void> updateReportStatus(String reportId) async {
           .collection('events')
           .doc(evento)
           .delete();
+<<<<<<< HEAD
       final usuarioreportador = await FirebaseFirestore.instance
           .collection('users')
           .doc(data['reporterId'])
@@ -143,6 +153,8 @@ Future<void> updateReportStatus(String reportId) async {
             .join('&');
       }
 
+=======
+>>>>>>> origin/develop
       feedbackController.text = '';
     } else {
       print("No report found");
@@ -169,9 +181,14 @@ Future<void> reportUser(BuildContext context) async {
     if (isHarassment == true) selectedReasons.add('Abuso y acoso');
     if (isViolentDiscourse == true) selectedReasons.add('Discurso violento');
     if (isSpam == true) selectedReasons.add('Spam');
+<<<<<<< HEAD
     if (isInappropriateContent == true) {
       selectedReasons.add('Comportamientos ilegales');
     }
+=======
+    if (isInappropriateContent == true)
+      selectedReasons.add('Comportamientos ilegales');
+>>>>>>> origin/develop
     try {
       final newReportRef = FirebaseFirestore.instance
           .collection('reports')

@@ -225,6 +225,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   // FORMULARIO DE VERIFICACIÓN (TIPO INSTAGRAM/TWITTER/BINANCE)
   // ----------------------------------------------------------------------
   void _mostrarFormularioVerificacion(String uid) {
+<<<<<<< HEAD
     final formKey = GlobalKey<FormState>();
     final domicilioCtrl = TextEditingController();
     final edadCtrl = TextEditingController();
@@ -235,6 +236,18 @@ class _ProfileScreenState extends State<ProfileScreen>
     String sexoSeleccionado = 'Prefiero no decirlo';
     bool enviando = false;
     bool cedulaVerificada = false; // <--- NUEVA VARIABLE PARA EL CHECKBOX
+=======
+    final _formKey = GlobalKey<FormState>();
+    final _domicilioCtrl = TextEditingController();
+    final _edadCtrl = TextEditingController();
+    final _justificacionCtrl = TextEditingController();
+    final _cantidadEventosCtrl = TextEditingController();
+    final _tiempoEventosCtrl = TextEditingController();
+
+    String _sexoSeleccionado = 'Prefiero no decirlo';
+    bool _enviando = false;
+    bool _cedulaVerificada = false; // <--- NUEVA VARIABLE PARA EL CHECKBOX
+>>>>>>> origin/develop
 
     showModalBottomSheet(
       context: context,
@@ -255,7 +268,11 @@ class _ProfileScreenState extends State<ProfileScreen>
               ),
               child: SingleChildScrollView(
                 child: Form(
+<<<<<<< HEAD
                   key: formKey,
+=======
+                  key: _formKey,
+>>>>>>> origin/develop
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -296,10 +313,17 @@ class _ProfileScreenState extends State<ProfileScreen>
                             "Confirmo que ya realicé la verificación de identidad (Cédula)",
                             style: TextStyle(fontSize: 14),
                           ),
+<<<<<<< HEAD
                           value: cedulaVerificada,
                           onChanged: (bool? newValue) {
                             setModalState(() {
                               cedulaVerificada = newValue ?? false;
+=======
+                          value: _cedulaVerificada,
+                          onChanged: (bool? newValue) {
+                            setModalState(() {
+                              _cedulaVerificada = newValue ?? false;
+>>>>>>> origin/develop
                             });
                           },
                           controlAffinity: ListTileControlAffinity.leading,
@@ -311,7 +335,11 @@ class _ProfileScreenState extends State<ProfileScreen>
 
                       // 2. Domicilio Fiscal
                       TextFormField(
+<<<<<<< HEAD
                         controller: domicilioCtrl,
+=======
+                        controller: _domicilioCtrl,
+>>>>>>> origin/develop
                         decoration: const InputDecoration(
                           labelText: 'Domicilio Fiscal',
                           border: OutlineInputBorder(),
@@ -326,7 +354,11 @@ class _ProfileScreenState extends State<ProfileScreen>
                           Expanded(
                             flex: 1,
                             child: TextFormField(
+<<<<<<< HEAD
                               controller: edadCtrl,
+=======
+                              controller: _edadCtrl,
+>>>>>>> origin/develop
                               keyboardType: TextInputType.number,
                               decoration: const InputDecoration(
                                 labelText: 'Edad',
@@ -339,7 +371,11 @@ class _ProfileScreenState extends State<ProfileScreen>
                           Expanded(
                             flex: 2,
                             child: DropdownButtonFormField<String>(
+<<<<<<< HEAD
                               initialValue: sexoSeleccionado,
+=======
+                              value: _sexoSeleccionado,
+>>>>>>> origin/develop
                               decoration: const InputDecoration(
                                 labelText: 'Sexo',
                                 border: OutlineInputBorder(),
@@ -359,7 +395,11 @@ class _ProfileScreenState extends State<ProfileScreen>
                                       )
                                       .toList(),
                               onChanged: (val) =>
+<<<<<<< HEAD
                                   setModalState(() => sexoSeleccionado = val!),
+=======
+                                  setModalState(() => _sexoSeleccionado = val!),
+>>>>>>> origin/develop
                             ),
                           ),
                         ],
@@ -376,7 +416,11 @@ class _ProfileScreenState extends State<ProfileScreen>
                         children: [
                           Expanded(
                             child: TextFormField(
+<<<<<<< HEAD
                               controller: cantidadEventosCtrl,
+=======
+                              controller: _cantidadEventosCtrl,
+>>>>>>> origin/develop
                               keyboardType: TextInputType.number,
                               decoration: const InputDecoration(
                                 labelText: 'Cantidad aprox.',
@@ -388,7 +432,11 @@ class _ProfileScreenState extends State<ProfileScreen>
                           const SizedBox(width: 12),
                           Expanded(
                             child: TextFormField(
+<<<<<<< HEAD
                               controller: tiempoEventosCtrl,
+=======
+                              controller: _tiempoEventosCtrl,
+>>>>>>> origin/develop
                               decoration: const InputDecoration(
                                 labelText: 'Tiempo (ej. 2 años)',
                                 border: OutlineInputBorder(),
@@ -402,7 +450,11 @@ class _ProfileScreenState extends State<ProfileScreen>
 
                       // 5. Justificación
                       TextFormField(
+<<<<<<< HEAD
                         controller: justificacionCtrl,
+=======
+                        controller: _justificacionCtrl,
+>>>>>>> origin/develop
                         maxLines: 3,
                         decoration: const InputDecoration(
                           labelText:
@@ -421,11 +473,19 @@ class _ProfileScreenState extends State<ProfileScreen>
                           style: ElevatedButton.styleFrom(
                             backgroundColor: SecondaryPurple,
                           ),
+<<<<<<< HEAD
                           onPressed: enviando
                               ? null
                               : () async {
                                   // Validamos que haya marcado el checkbox de la cédula
                                   if (!cedulaVerificada) {
+=======
+                          onPressed: _enviando
+                              ? null
+                              : () async {
+                                  // Validamos que haya marcado el checkbox de la cédula
+                                  if (!_cedulaVerificada) {
+>>>>>>> origin/develop
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(
                                         content: Text(
@@ -437,6 +497,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                                     return;
                                   }
 
+<<<<<<< HEAD
                                   if (formKey.currentState!.validate()) {
                                     setModalState(() => enviando = true);
                                     try {
@@ -460,6 +521,31 @@ class _ProfileScreenState extends State<ProfileScreen>
                                             .text
                                             .trim(),
                                         'justificacion': justificacionCtrl.text
+=======
+                                  if (_formKey.currentState!.validate()) {
+                                    setModalState(() => _enviando = true);
+                                    try {
+                                      Map<String, dynamic> formData = {
+                                        'cedula_verificada':
+                                            _cedulaVerificada, // <--- GUARDAMOS EL BOOLEANO
+                                        'domicilio_fiscal': _domicilioCtrl.text
+                                            .trim(),
+                                        'edad':
+                                            int.tryParse(
+                                              _edadCtrl.text.trim(),
+                                            ) ??
+                                            0,
+                                        'sexo': _sexoSeleccionado,
+                                        'experiencia_cantidad':
+                                            int.tryParse(
+                                              _cantidadEventosCtrl.text.trim(),
+                                            ) ??
+                                            0,
+                                        'experiencia_tiempo': _tiempoEventosCtrl
+                                            .text
+                                            .trim(),
+                                        'justificacion': _justificacionCtrl.text
+>>>>>>> origin/develop
                                             .trim(),
                                         'fecha_solicitud':
                                             FieldValue.serverTimestamp(),
@@ -484,7 +570,11 @@ class _ProfileScreenState extends State<ProfileScreen>
                                         );
                                       }
                                     } catch (e) {
+<<<<<<< HEAD
                                       setModalState(() => enviando = false);
+=======
+                                      setModalState(() => _enviando = false);
+>>>>>>> origin/develop
                                       ScaffoldMessenger.of(
                                         context,
                                       ).showSnackBar(
@@ -496,7 +586,11 @@ class _ProfileScreenState extends State<ProfileScreen>
                                     }
                                   }
                                 },
+<<<<<<< HEAD
                           child: enviando
+=======
+                          child: _enviando
+>>>>>>> origin/develop
                               ? const CircularProgressIndicator(
                                   color: Colors.white,
                                 )

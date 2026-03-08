@@ -6,6 +6,7 @@ import 'package:bochinche_app/sources/events/events_logic.dart';
 import 'package:bochinche_app/sources/events/comments_section.dart';
 import 'package:bochinche_app/features/payment/payment_page.dart';
 
+<<<<<<< HEAD:lib/features/map/mapa.dart
 class MapaPrincipal extends StatefulWidget {
   const MapaPrincipal({super.key});
   @override
@@ -14,6 +15,20 @@ class MapaPrincipal extends StatefulWidget {
 
 class MapaPrincipalState extends State<MapaPrincipal> {
   final MapController _con = MapController();
+=======
+class SelectorUbicacion extends StatefulWidget {
+  final bool esSelector;
+  final String tipoEvento;
+
+  const SelectorUbicacion({super.key, this.esSelector = false, this.tipoEvento = 'Otros'});
+
+  @override
+  State<SelectorUbicacion> createState() => _SelectorUbicacionState();
+}
+
+class _SelectorUbicacionState extends State<SelectorUbicacion> {
+  LatLng? puntoSeleccionado;
+>>>>>>> origin/develop:lib/features/map/selector_ubicacion.dart
 
   Widget _buildMarker(String? type) {
     final cat = getCategoryData(type);
@@ -119,6 +134,7 @@ class MapaPrincipalState extends State<MapaPrincipal> {
 
   @override
   Widget build(BuildContext context) {
+<<<<<<< HEAD:lib/features/map/mapa.dart
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance.collection('events').snapshots(),
       builder: (context, snap) {
@@ -137,6 +153,53 @@ class MapaPrincipalState extends State<MapaPrincipal> {
                 child: GestureDetector(
                   onTap: () => _mostrarDetalles(context, d, doc.id),
                   child: _buildMarker(d['type']),
+=======
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          widget.esSelector ? 'Ubicación para ${widget.tipoEvento}' : 'Mapa',
+        ),
+        actions: [
+          if (widget.esSelector && puntoSeleccionado != null)
+            IconButton(
+              icon: const Icon(
+                Icons.check_circle,
+                color: Colors.green,
+                size: 30,
+              ),
+              onPressed: () => Navigator.pop(context, puntoSeleccionado),
+            ),
+        ],
+      ),
+      body: FlutterMap(
+        options: MapOptions(
+          initialCenter: const LatLng(10.4806, -66.8983),
+          initialZoom: 15,
+          onTap: (tapPos, point) {
+            if (widget.esSelector) {
+              setState(() => puntoSeleccionado = point);
+            }
+          },
+        ),
+        children: [
+          TileLayer(
+            urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+            userAgentPackageName: 'com.example.bochinche_app',
+          ),
+          CurrentLocationLayer(),
+          if (puntoSeleccionado != null)
+            MarkerLayer(
+              markers: [
+                Marker(
+                  point: puntoSeleccionado!,
+                  width: 50,
+                  height: 50,
+                  child: Icon(
+                    getIconoPin(widget.tipoEvento),
+                    color: getColorPin(widget.tipoEvento),
+                    size: 45,
+                  ),
+>>>>>>> origin/develop:lib/features/map/selector_ubicacion.dart
                 ),
               );
             })

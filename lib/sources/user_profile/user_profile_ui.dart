@@ -50,9 +50,14 @@ class _OrgProfileViewState extends State<OrgProfileView> {
           final userData = snapshot.data![0] as Map<String, dynamic>?;
           final bool followingStatus = snapshot.data![1] as bool;
 
+<<<<<<< HEAD
           if (userData == null) {
             return const Center(child: Text("Usuario no encontrado"));
           }
+=======
+          if (userData == null)
+            return const Center(child: Text("Usuario no encontrado"));
+>>>>>>> origin/develop
 
           isFollowing ??= followingStatus;
 

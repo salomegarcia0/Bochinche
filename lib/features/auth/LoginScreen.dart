@@ -1,11 +1,13 @@
+import 'dart:async';
 import 'package:bochinche_app/features/auth/SignUpScreen.dart';
-import 'package:bochinche_app/features/map/Paginna_Inicio.dart';
+import 'package:bochinche_app/features/map/pagina_inicio.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:bochinche_app/data/auth_service.dart';
 import 'package:bochinche_app/styles/Color.dart';
 import 'package:bochinche_app/sources/events/events_logic.dart';
+import 'package:bochinche_app/core/utils/draft_manager.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -19,13 +21,81 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController passwordController = TextEditingController();
   final AuthService _authService = AuthService();
 
+  @override
+  void initState() {
+    super.initState();
+    _loadDraft();
+  }
+
+  Future<void> _loadDraft() async {
+    final draft = await DraftManager.loadLoginDraft();
+    if (mounted && draft != null) {
+      setState(() {
+        emailController.text = draft['email'] ?? '';
+        passwordController.text = draft['password'] ?? '';
+      });
+    }
+  }
+  
+  // --- VALIDACIÓN ---
+  Timer? _debounce;
+  String? _emailError;
+  String? _passwordError;
+
   bool cargando = false;
   bool showPassword = false;
 
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    emailController.dispose();
+    passwordController.dispose();
+    super.dispose();
+  }
+
+  // --- LÓGICA DE VALIDACIÓN ---
+  void _validateEmail(String email) {
+    final bool emailValid = RegExp(
+            r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+")
+        .hasMatch(email);
+
+    setState(() {
+      if (email.isEmpty) {
+        _emailError = "El correo es requerido";
+      } else if (!emailValid) {
+        _emailError = "El correo no es válido";
+      } else {
+        _emailError = null;
+      }
+    });
+  }
+
+  void _validatePassword(String password) {
+    setState(() {
+      if (password.isEmpty) {
+        _passwordError = "La contraseña es requerida";
+      } else if (password.length < 6) {
+        _passwordError = "Mínimo 6 caracteres";
+      } else {
+        _passwordError = null;
+      }
+    });
+  }
+
+  bool _validateAll() {
+    _validateEmail(emailController.text);
+    _validatePassword(passwordController.text);
+
+    return _emailError == null && _passwordError == null;
+  }
+
   void ejecutarLogin() async {
-    if (emailController.text.isEmpty || passwordController.text.isEmpty) {
+    if (!_validateAll()) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Por favor, ingresa tus credenciales")),
+        const SnackBar(
+          content: Text("Por favor, corrige los errores en el formulario"),
+          backgroundColor: Colors.red,
+        ),
       );
       return;
     }
@@ -48,11 +118,15 @@ class _LoginScreenState extends State<LoginScreen> {
 
         if (snapshot.docs.isNotEmpty) {
           var data = snapshot.docs.first.data() as Map<String, dynamic>;
+<<<<<<< HEAD
           if (snapshot.docs.isNotEmpty) {
             var data = snapshot.docs.first.data() as Map<String, dynamic>;
 
             estaBaneado = data['banned'] ?? false;
           }
+=======
+          estaBaneado = data['banned'] ?? false;
+>>>>>>> origin/develop
 
           if (estaBaneado) {
             await FirebaseAuth.instance.signOut();
@@ -84,6 +158,10 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             );
             updateEventStatusOnLogin();
+<<<<<<< HEAD
+=======
+            DraftManager.clearLoginDraft();
+>>>>>>> origin/develop
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(builder: (context) => const Pagina_Principal()),
@@ -101,7 +179,11 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 );
                 user.sendEmailVerification();
+<<<<<<< HEAD
                               setState(() => cargando = false);
+=======
+                setState(() => cargando = false);
+>>>>>>> origin/develop
                 return;
               }
             }
@@ -215,12 +297,33 @@ class _LoginScreenState extends State<LoginScreen> {
               TextField(
                 controller: emailController,
                 keyboardType: TextInputType.emailAddress,
+<<<<<<< HEAD
                 decoration: const InputDecoration(
                   filled: true,
                   fillColor: SecondaryPurple,
                   labelText: "Correo Electrónico",
                   prefixIcon: Icon(Icons.email_outlined),
                   border: OutlineInputBorder(),
+=======
+                onChanged: (value) {
+                  DraftManager.saveLoginDraft({
+                    'email': value,
+                    'password': passwordController.text,
+                  });
+                  if (_debounce?.isActive ?? false) _debounce!.cancel();
+                  _debounce = Timer(const Duration(milliseconds: 500), () {
+                    _validateEmail(value);
+                  });
+                },
+                decoration: InputDecoration(
+                  filled: true,
+                  fillColor: SecondaryPurple,
+                  labelText: "Correo Electrónico",
+                  prefixIcon: const Icon(Icons.email_outlined),
+                  border: const OutlineInputBorder(),
+                  errorText: _emailError,
+                  errorStyle: const TextStyle(color: Colors.red),
+>>>>>>> origin/develop
                 ),
               ),
               const SizedBox(height: 20),
@@ -229,6 +332,19 @@ class _LoginScreenState extends State<LoginScreen> {
               TextField(
                 controller: passwordController,
                 obscureText: !showPassword,
+<<<<<<< HEAD
+=======
+                onChanged: (value) {
+                  DraftManager.saveLoginDraft({
+                    'email': emailController.text,
+                    'password': value,
+                  });
+                  if (_debounce?.isActive ?? false) _debounce!.cancel();
+                  _debounce = Timer(const Duration(milliseconds: 500), () {
+                    _validatePassword(value);
+                  });
+                },
+>>>>>>> origin/develop
                 decoration: InputDecoration(
                   filled: true,
                   fillColor: SecondaryPurple,
@@ -242,6 +358,11 @@ class _LoginScreenState extends State<LoginScreen> {
                         setState(() => showPassword = !showPassword),
                   ),
                   border: const OutlineInputBorder(),
+<<<<<<< HEAD
+=======
+                  errorText: _passwordError,
+                  errorStyle: const TextStyle(color: Colors.red),
+>>>>>>> origin/develop
                 ),
               ),
               const SizedBox(height: 30),

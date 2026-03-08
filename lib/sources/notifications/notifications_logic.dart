@@ -28,6 +28,7 @@ class NotificationsLogic {
           }).toList();
         });
   }
+<<<<<<< HEAD
 
   Future<void> notifyFollowers({
     required String organizerId,
@@ -64,3 +65,6 @@ class NotificationsLogic {
     await batch.commit();
   }
 }
+=======
+}
+>>>>>>> origin/develop

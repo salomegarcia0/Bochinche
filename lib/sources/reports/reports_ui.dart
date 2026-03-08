@@ -10,7 +10,11 @@ class ReportEvents extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Scaffold(
+<<<<<<< HEAD
       drawer: Navbar(),
+=======
+      drawer: const Navbar(),
+>>>>>>> origin/develop
       appBar: BochincheAppBar(),
       body: ReportEventsForm(),
     );
