@@ -819,3 +819,59 @@ Future<List<Map<String, dynamic>>> getEventPredictions(String input) async {
 
   return snap.docs.map((doc) => {...doc.data(), 'id': doc.id}).toList();
 }
+
+Future<void> registrarUsuarioEnEvento(BuildContext context, Map<String, dynamic> data, String eventoId) async {
+  final user = FirebaseAuth.instance.currentUser;
+
+  // 1. Verificamos que el usuario esté logueado
+  if (user == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Debes iniciar sesión para reservar tu entrada.')),
+    );
+    return;
+  }
+
+  try {
+    // Referencias a los documentos en Firebase
+    DocumentReference eventRef = FirebaseFirestore.instance.collection('events').doc(eventoId);
+    DocumentReference userRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
+
+    // Usamos un WriteBatch para hacer varios cambios al mismo tiempo y que no falle a la mitad
+    WriteBatch batch = FirebaseFirestore.instance.batch();
+
+    // 2. Actualizamos el evento: Sumamos 1 a las entradas vendidas/reservadas y guardamos el ID del usuario
+    batch.update(eventRef, {
+      'ticketsSold': FieldValue.increment(1),
+      'attendees': FieldValue.arrayUnion([user.uid]), // Asumiendo que guardas un arreglo de asistentes
+    });
+
+    // 3. (Opcional) Actualizamos al usuario: Guardamos el ID del evento en su perfil para que pueda ver sus reservas
+    batch.set(userRef, {
+      'mis_reservas': FieldValue.arrayUnion([eventoId]),
+    }, SetOptions(merge: true)); // Usamos merge por si el documento del usuario no tiene este campo aún
+
+    // Ejecutamos todo de un golpe
+    await batch.commit();
+
+    // 4. Le avisamos al usuario que todo salió bien
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('¡Entrada reservada con éxito! 🎉'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    }
+
+  } catch (e) {
+    print("Error al reservar la entrada: $e");
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Hubo un problema al reservar. Intenta de nuevo.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+}

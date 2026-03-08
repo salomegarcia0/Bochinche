@@ -1,3 +1,4 @@
+import 'package:bochinche_app/sources/events/events_logic.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -235,7 +236,6 @@ void mostrarDetalles(
                   ),
                   const SizedBox(height: 2),
 
-                  if (data['isPayed'] == true) ...[
                     Row(
                       children: [
                         Builder(
@@ -246,26 +246,27 @@ void mostrarDetalles(
                                 : int.tryParse(data['capacity']?.toString() ?? '0') ?? 0;
                             
                             final bool isAgotado = sold >= cap;
+                            final bool isPayed = data['isPayed'] ?? false;
+                            final String? uid = FirebaseAuth.instance.currentUser?.uid;
 
-                            // ========================================================
-                            // 3. LÓGICA DEL BOTÓN A PRUEBA DE BALAS
-                            // ========================================================
-                            // Si está Finalizado o Agotado, el botón se apaga (null).
-                            // Si está en "Próximo" o "Ocurriendo", el botón funciona.
-                            final bool botonDeshabilitado = isAgotado || isFinalizado;
+                            // --------------------------------------------------------
+                            // ESCENARIO 1: EL USUARIO NO HA INICIADO SESIÓN
+                            // --------------------------------------------------------
+                            if (uid == null) {
+                              final bool botonDeshabilitado = isAgotado || isFinalizado;
+                              String textoBoton = isPayed ? 'Comprar entradas' : 'Reservar Entrada';
+                              
+                              if (isFinalizado) {
+                                textoBoton = 'Evento Finalizado';
+                              } else if (isAgotado) {
+                                textoBoton = 'Agotado';
+                              }
 
-                            String textoBoton = 'Comprar entradas';
-                            if (isFinalizado) {
-                              textoBoton = 'Evento Finalizado';
-                            } else if (isAgotado) {
-                              textoBoton = 'Agotado';
-                            }
-
-                            return ElevatedButton(
-                              onPressed: botonDeshabilitado
-                                  ? null 
-                                  : () {
-                                      if (FirebaseAuth.instance.currentUser == null) {
+                              return ElevatedButton(
+                                onPressed: botonDeshabilitado
+                                    ? null 
+                                    : () {
+                                        // Lo mandamos a iniciar sesión
                                         Navigator.pop(context);
                                         Navigator.push(
                                           context,
@@ -273,26 +274,69 @@ void mostrarDetalles(
                                             builder: (context) => const LoginScreen(),
                                           ),
                                         );
-                                        return;
-                                      }
+                                      },
+                                child: Text(textoBoton),
+                              );
+                            }
+                            
+                            // --------------------------------------------------------
+                            // ESCENARIO 2: EL USUARIO ESTÁ LOGUEADO (VERIFICAMOS SU TICKET)
+                            // --------------------------------------------------------
+                            return StreamBuilder<DocumentSnapshot>(
+                              stream: FirebaseFirestore.instance
+                                  .collection('users')
+                                  .doc(uid)
+                                  .collection('tickets')
+                                  .doc(eventoId) 
+                                  .snapshots(),
+                              builder: (context, snapshot) {
+                                final bool yaReservo = snapshot.hasData && snapshot.data!.exists;
 
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => PaymentPage(
-                                            eventData: data,
-                                            eventId: eventoId,
-                                          ),
-                                        ),
-                                      );
-                                    },
-                              child: Text(textoBoton),
+
+                            // ========================================================
+                                // 3. LÓGICA DEL BOTÓN A PRUEBA DE BALAS
+                                // ========================================================
+                                final bool botonDeshabilitado = isAgotado || isFinalizado || yaReservo;
+
+                                String textoBoton = isPayed ? 'Comprar entradas' : 'Reservar Entrada';
+                                if (isFinalizado) {
+                                  textoBoton = 'Evento Finalizado';
+                                } else if (yaReservo) {
+                                  textoBoton = 'Ya reservaste';
+                                } else if (isAgotado) {
+                                  textoBoton = 'Agotado';
+                                }
+
+                                return ElevatedButton(
+                                  onPressed: botonDeshabilitado
+                                      ? null 
+                                      : () {
+                                          if (isPayed){
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (context) => PaymentPage(
+                                                  eventData: data,
+                                                  eventId: eventoId,
+                                                ),
+                                              ),
+                                            );
+                                          } else {
+                                            // --------------------------------------------------
+                                            // LÓGICA PARA EVENTOS GRATIS
+                                            // --------------------------------------------------
+                                            registrarUsuarioEnEvento(context, data, eventoId);
+                                          }  
+                                        },
+                                  child: Text(textoBoton),
+                                );
+                              },
                             );
                           },
                         ),
                       ],
                     ),
-                  ],
+
                   const SizedBox(height: 2),
                   const Divider(),
                   CommentsSection(eventoId: eventoId),
