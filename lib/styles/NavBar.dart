@@ -7,6 +7,7 @@ import 'package:bochinche_app/sources/events/events_ui.dart';
 import 'package:bochinche_app/sources/events/events_logic.dart';
 import 'package:bochinche_app/sources/reports/reports_ui.dart';
 import 'package:bochinche_app/features/Registered Events/registered_events.dart';
+import 'package:bochinche_app/styles/Color.dart';
 
 class Navbar extends StatelessWidget {
   const Navbar({super.key});
@@ -39,7 +40,7 @@ class Navbar extends StatelessWidget {
             padding: EdgeInsets.zero,
             children: [
               DrawerHeader(
-                decoration: const BoxDecoration(color: Colors.purple),
+                decoration: const BoxDecoration(color: PrimaryPurple),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -135,7 +136,7 @@ class Navbar extends StatelessWidget {
 
   Widget _item(BuildContext context, IconData icon, String title, Widget page) {
     return ListTile(
-      leading: Icon(icon, color: Colors.purple),
+      leading: Icon(icon, color: PrimaryPurple),
       title: Text(title),
       onTap: () {
         Navigator.pop(context); // Cierra el menú

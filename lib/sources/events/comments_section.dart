@@ -7,6 +7,7 @@ import 'events_logic.dart';
 import 'package:bochinche_app/features/auth/LoginScreen.dart';
 import 'package:bochinche_app/widgets/verification_badge.dart';
 import 'package:bochinche_app/sources/reports/reports_logic.dart';
+import 'package:bochinche_app/styles/Color.dart';
 
 class CommentsSection extends StatefulWidget {
   final String eventoId;
@@ -99,14 +100,58 @@ class _CommentsSectionState extends State<CommentsSection> {
                                             ),
                                             content: const Text(
                                               '¿Deseas reportar este usuario por incumplimiento de las normas?',
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                              ),
                                             ),
                                             actions: [
-                                              TextButton(
+                                              ElevatedButton(
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor:
+                                                      const Color.fromARGB(
+                                                        129,
+                                                        238,
+                                                        238,
+                                                        238,
+                                                      ),
+                                                  foregroundColor:
+                                                      Colors.black87,
+                                                  elevation: 0,
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                        horizontal: 24,
+                                                        vertical: 12,
+                                                      ),
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          12,
+                                                        ),
+                                                  ),
+                                                ),
                                                 onPressed: () =>
                                                     Navigator.pop(context),
                                                 child: const Text('Cancelar'),
                                               ),
-                                              TextButton(
+                                              ElevatedButton(
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor:
+                                                      PrimaryPurple, // Tu morado
+                                                  foregroundColor: Colors.white,
+                                                  elevation:
+                                                      0, // Plano se ve más moderno
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                        horizontal: 24,
+                                                        vertical: 12,
+                                                      ),
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          12,
+                                                        ), // Bordes suaves
+                                                  ),
+                                                ),
                                                 onPressed: () {
                                                   Navigator.pop(context);
                                                   userToReport =

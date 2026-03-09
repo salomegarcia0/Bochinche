@@ -1,4 +1,5 @@
 import 'package:bochinche_app/sources/events/events_logic.dart';
+import 'package:bochinche_app/styles/Color.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -131,10 +132,40 @@ void mostrarDetalles(
                                     ),
                                     actions: [
                                       ElevatedButton(
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor:
+                                              Colors.grey[200], // Fondo neutro
+                                          foregroundColor: Colors.black87,
+                                          elevation: 0,
+                                          padding: const EdgeInsets.symmetric(
+                                            vertical: 15,
+                                            horizontal: 20,
+                                          ),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                          ),
+                                        ),
                                         onPressed: () => Navigator.pop(context),
                                         child: const Text('Cancelar'),
                                       ),
                                       ElevatedButton(
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor:
+                                              PrimaryPurple, // Tu morado característico
+                                          foregroundColor: Colors.white,
+                                          elevation: 0,
+                                          padding: const EdgeInsets.symmetric(
+                                            vertical: 15,
+                                            horizontal: 20,
+                                          ),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                          ),
+                                        ),
                                         onPressed: () {
                                           Navigator.pop(context);
                                           eventToReport = eventoId;

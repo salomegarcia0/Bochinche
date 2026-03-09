@@ -761,7 +761,12 @@ class _AdminReportsViewState extends State<AdminReportsView> {
                                   context: context,
                                   builder: (context) {
                                     return AlertDialog(
-                                      title: Text('Resolver reporte'),
+                                      title: Text(
+                                        'Resolver reporte',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
                                       content: TextField(
                                         controller: feedbackController,
                                         maxLines: 4,
@@ -778,13 +783,26 @@ class _AdminReportsViewState extends State<AdminReportsView> {
                                           crossAxisAlignment:
                                               CrossAxisAlignment.stretch,
                                           children: [
-                                            TextButton(
+                                            ElevatedButton.icon(
+                                              icon: const Icon(Icons.cancel),
+                                              style: TextButton.styleFrom(
+                                                foregroundColor:
+                                                    Colors.grey[600],
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      vertical: 12,
+                                                    ),
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(10),
+                                                ),
+                                              ),
+                                              label: Text('Cancelar'),
                                               onPressed: () {
                                                 Navigator.of(context).pop();
                                               },
-                                              child: Text('Cancelar'),
                                             ),
-                                            TextButton(
+                                            ElevatedButton.icon(
                                               onPressed: () {
                                                 setState(() {
                                                   reportId = j['reportId'];
@@ -801,15 +819,50 @@ class _AdminReportsViewState extends State<AdminReportsView> {
                                                 });
                                                 Navigator.of(context).pop();
                                               },
-                                              child: Text(
+                                              icon: const Icon(
+                                                Icons.delete_forever,
+                                              ),
+                                              label: const Text(
                                                 'Eliminar evento/usuario',
                                               ),
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor:
+                                                    Colors.redAccent,
+                                                foregroundColor: Colors.white,
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      vertical: 12,
+                                                    ),
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(10),
+                                                ),
+                                              ),
                                             ),
-                                            TextButton(
+                                            ElevatedButton.icon(
+                                              style: OutlinedButton.styleFrom(
+                                                foregroundColor: PrimaryPurple,
+                                                side: const BorderSide(
+                                                  color: PrimaryPurple,
+                                                ),
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      vertical: 12,
+                                                    ),
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(10),
+                                                ),
+                                              ),
                                               onPressed: () {
                                                 ignoreReport(j['reportId']);
                                               },
-                                              child: Text('Ignorar reporte'),
+                                              icon: const Icon(
+                                                Icons.visibility_off,
+                                              ),
+                                              label: const Text(
+                                                'Ignorar reporte',
+                                              ),
                                             ),
                                           ],
                                         ),

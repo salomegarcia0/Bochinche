@@ -50,7 +50,7 @@ Future<void> loadEventDraft() async {
   aforoController.text = data['capacity'] ?? '';
   typeC = data['type'];
   if (typeC != null && typeC!.isEmpty) typeC = null;
-  
+
   isPrivateC = data['isPrivate'] ?? false;
   isPayedC = data['isPayed'] ?? false;
   latitudC = data['lat'] ?? 10.0;
@@ -61,7 +61,7 @@ Future<void> loadEventDraft() async {
     fecha1 = DateTime.parse(d1);
     fecha1C.text = d1.split('T')[0];
   }
-  
+
   final d2 = data['date2'];
   if (d2 != null) {
     fecha2 = DateTime.parse(d2);
@@ -79,18 +79,19 @@ Future<void> loadEventDraft() async {
 
   selectedBank = data['bank'];
   if (selectedBank != null && selectedBank!.isEmpty) selectedBank = null;
-  
+
   selectedPhonePrefix = data['phonePrefix'];
-  if (selectedPhonePrefix != null && selectedPhonePrefix!.isEmpty) selectedPhonePrefix = null;
-  
+  if (selectedPhonePrefix != null && selectedPhonePrefix!.isEmpty)
+    selectedPhonePrefix = null;
+
   paymentPhoneNumberController.text = data['phoneNum'] ?? '';
-  
+
   selectedCIType = data['ciType'];
   if (selectedCIType != null && selectedCIType!.isEmpty) selectedCIType = null;
-  
+
   paymentCINumberController.text = data['ciNum'] ?? '';
   priceController.text = data['price'] ?? '';
-  
+
   print("Draft loaded from DraftManager");
 }
 
@@ -266,26 +267,30 @@ Future<void> createEvent(BuildContext context) async {
     try {
       final newEventRef = FirebaseFirestore.instance.collection('events').doc();
       await newEventRef.set({
-  'id': newEventRef.id,
-  'name': nombreEventoController.text,
-  'address': direccionController.text,
-  'contact': contactoController.text,
-  'type': typeC,
-  'state': 'Proximo',
-  'id_organizer': FirebaseAuth.instance.currentUser!.uid,
-  'description': descripcionController.text.trim(), // <--- Fix: Adiós código muerto
-  'capacity': aforoController.text,
-  'startDate': fecha1!.toIso8601String(),
-  'endDate': fecha2!.toIso8601String(),
-  'startTime': {'hour': firstTimeHour.hour, 'minute': firstTimeHour.minute},
-  'endTime': {'hour': lastTimeHour.hour, 'minute': lastTimeHour.minute},
-  'location': GeoPoint(latitudC, longitudC),
-  'createdAt': FieldValue.serverTimestamp(),
-  'stars': 0,
-  'total_review': 0,
-  'isPrivate': isPrivateC, 
-  'isPayed': isPayedC,
-});
+        'id': newEventRef.id,
+        'name': nombreEventoController.text,
+        'address': direccionController.text,
+        'contact': contactoController.text,
+        'type': typeC,
+        'state': 'Proximo',
+        'id_organizer': FirebaseAuth.instance.currentUser!.uid,
+        'description': descripcionController.text
+            .trim(), // <--- Fix: Adiós código muerto
+        'capacity': aforoController.text,
+        'startDate': fecha1!.toIso8601String(),
+        'endDate': fecha2!.toIso8601String(),
+        'startTime': {
+          'hour': firstTimeHour.hour,
+          'minute': firstTimeHour.minute,
+        },
+        'endTime': {'hour': lastTimeHour.hour, 'minute': lastTimeHour.minute},
+        'location': GeoPoint(latitudC, longitudC),
+        'createdAt': FieldValue.serverTimestamp(),
+        'stars': 0,
+        'total_review': 0,
+        'isPrivate': isPrivateC,
+        'isPayed': isPayedC,
+      });
       if (isPayedC) {
         await newEventRef.update({
           'paymentInfo': {
@@ -322,6 +327,30 @@ Future<void> createEvent(BuildContext context) async {
 }
 
 // --- FUNCIÓN PARA LIMPIAR EL FORMULARIO ---
+void clearAllFields2() {
+  nombreEventoController.clear();
+  direccionController.clear();
+  contactoController.clear();
+  descripcionController.clear();
+  aforoController.clear();
+  isPrivate = false;
+  fecha1C.clear();
+  fecha2C.clear();
+  paymentPhoneNumberController.clear();
+  paymentCINumberController.clear();
+  priceController.clear();
+  selectedBank = null;
+  selectedPhonePrefix = null;
+  selectedCIType = null;
+  typeC = null;
+  isPrivateC = false;
+  latitudC = 10.0;
+  longitudC = -60.0;
+  firstTimeHour = TimeOfDay(hour: 0, minute: 0);
+  lastTimeHour = TimeOfDay(hour: 23, minute: 59);
+  clearEventDraft();
+}
+
 void clearAllFields() {
   nombreEventoController.clear();
   direccionController.clear();
@@ -448,7 +477,6 @@ Future<void> modifyEvent(BuildContext context, String id) async {
       var docSnapshot = await newEventRef.get();
 
       if (docSnapshot.exists) {
-
         var pagado = docSnapshot['isPayed'] ?? false;
 
         await newEventRef.update({
@@ -491,7 +519,7 @@ Future<void> modifyEvent(BuildContext context, String id) async {
       }
 
       // LIMPIAR TODOS LOS CAMPOS
-      clearAllFields();
+      clearAllFields2();
     } catch (e) {
       ScaffoldMessenger.of(
         context,
@@ -701,11 +729,7 @@ Stream<List<Map<String, dynamic>>> chargeFilteredEvents({
         .where('nombre', isGreaterThanOrEqualTo: safeSearch)
         .where('nombre', isLessThanOrEqualTo: '$safeSearch\uf8ff')
         .snapshots()
-        .map(
-          (snap) => snap.docs
-              .map((doc) => doc.data())
-              .toList(),
-        );
+        .map((snap) => snap.docs.map((doc) => doc.data()).toList());
   }
 
   // --- CASO 2: BÚSQUEDA DE EVENTOS ---
@@ -820,21 +844,31 @@ Future<List<Map<String, dynamic>>> getEventPredictions(String input) async {
   return snap.docs.map((doc) => {...doc.data(), 'id': doc.id}).toList();
 }
 
-Future<void> registrarUsuarioEnEvento(BuildContext context, Map<String, dynamic> data, String eventoId) async {
+Future<void> registrarUsuarioEnEvento(
+  BuildContext context,
+  Map<String, dynamic> data,
+  String eventoId,
+) async {
   final user = FirebaseAuth.instance.currentUser;
 
   // 1. Verificamos que el usuario esté logueado
   if (user == null) {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Debes iniciar sesión para reservar tu entrada.')),
+      const SnackBar(
+        content: Text('Debes iniciar sesión para reservar tu entrada.'),
+      ),
     );
     return;
   }
 
   try {
     // Referencias a los documentos en Firebase
-    DocumentReference eventRef = FirebaseFirestore.instance.collection('events').doc(eventoId);
-    DocumentReference userRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
+    DocumentReference eventRef = FirebaseFirestore.instance
+        .collection('events')
+        .doc(eventoId);
+    DocumentReference userRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid);
 
     // Usamos un WriteBatch para hacer varios cambios al mismo tiempo y que no falle a la mitad
     WriteBatch batch = FirebaseFirestore.instance.batch();
@@ -842,13 +876,19 @@ Future<void> registrarUsuarioEnEvento(BuildContext context, Map<String, dynamic>
     // 2. Actualizamos el evento: Sumamos 1 a las entradas vendidas/reservadas y guardamos el ID del usuario
     batch.update(eventRef, {
       'ticketsSold': FieldValue.increment(1),
-      'attendees': FieldValue.arrayUnion([user.uid]), // Asumiendo que guardas un arreglo de asistentes
+      'attendees': FieldValue.arrayUnion([
+        user.uid,
+      ]), // Asumiendo que guardas un arreglo de asistentes
     });
 
     // 3. (Opcional) Actualizamos al usuario: Guardamos el ID del evento en su perfil para que pueda ver sus reservas
-    batch.set(userRef, {
-      'mis_reservas': FieldValue.arrayUnion([eventoId]),
-    }, SetOptions(merge: true)); // Usamos merge por si el documento del usuario no tiene este campo aún
+    batch.set(
+      userRef,
+      {
+        'mis_reservas': FieldValue.arrayUnion([eventoId]),
+      },
+      SetOptions(merge: true),
+    ); // Usamos merge por si el documento del usuario no tiene este campo aún
 
     // Ejecutamos todo de un golpe
     await batch.commit();
@@ -862,7 +902,6 @@ Future<void> registrarUsuarioEnEvento(BuildContext context, Map<String, dynamic>
         ),
       );
     }
-
   } catch (e) {
     print("Error al reservar la entrada: $e");
     if (context.mounted) {
