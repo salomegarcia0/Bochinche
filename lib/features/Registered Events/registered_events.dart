@@ -19,7 +19,7 @@ class _registered_events extends State<registered_events> {
       backgroundColor: Colors.white, // Fondo blanco principal
       appBar: const BochincheAppBar(),
       drawer: const Navbar(),
-      body: cuerpo(context),
+      body: SafeArea(child: cuerpo(context)),
     );
   }
 

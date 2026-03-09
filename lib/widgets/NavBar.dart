@@ -54,6 +54,14 @@ class Navbar extends StatelessWidget {
                     ),
                     const SizedBox(height: 10),
                     Text(
+                      FirebaseAuth.instance.currentUser?.displayName ?? '',
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 13,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
                       FirebaseAuth.instance.currentUser?.email ?? '',
                       style: const TextStyle(
                         color: Colors.white70,

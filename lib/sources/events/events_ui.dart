@@ -961,10 +961,12 @@ class ControlPanelEvent extends StatelessWidget {
           color: Colors.white,
           padding: EdgeInsets.all(13),
 
-          child: Container(
-            color: Colors.white,
-            padding: EdgeInsets.all(10),
-            child: MyEvents(),
+          child: SafeArea(
+            child: Container(
+              color: Colors.white,
+              padding: EdgeInsets.all(10),
+              child: MyEvents(),
+            ),
           ),
         ),
       ),
