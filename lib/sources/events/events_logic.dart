@@ -54,7 +54,7 @@ const List<String> bankList = [
 const List<String> phonePrefixList = ['0412', '0414', '0416', '0424', '0426'];
 const List<String> ciTypeList = ['V', 'E', 'P', 'J', 'G'];
 
-// --- MAPEO DE CATEGORÍAS ---
+// --- MAPEO DE ICONOS Y COLORES (Pines distintivos) ---
 Map<String, dynamic> getCategoryData(String? type) {
   switch (type) {
     case 'Concierto':
@@ -158,7 +158,6 @@ void clearAllFields() {
   DraftManager.clearEventDraft();
 }
 
-// FIX: Corregido el mapeo de tipos y spread operator
 Stream<List<Map<String, dynamic>>> chargeFilteredEvents({
   required SearchMode mode,
   required String category,
@@ -166,14 +165,11 @@ Stream<List<Map<String, dynamic>>> chargeFilteredEvents({
 }) {
   Query query = FirebaseFirestore.instance.collection('events');
   if (category != 'Todos') query = query.where('type', isEqualTo: category);
-
-  return query.snapshots().map((snap) {
-    return snap.docs.map((doc) {
-      final data =
-          doc.data() as Map<String, dynamic>; // Cast explícito del dato
-      return <String, dynamic>{...data, 'id': doc.id};
-    }).toList();
-  });
+  return query.snapshots().map(
+    (snap) => snap.docs
+        .map((doc) => {...doc.data() as Map<String, dynamic>, 'id': doc.id})
+        .toList(),
+  );
 }
 
 Future<void> saveEventDraft() async {}
@@ -198,7 +194,6 @@ Future<void> agregarComentario({
       });
 }
 
-// FIX: Eliminado cast innecesario
 Stream<List<Map<String, dynamic>>> obtenerComentariosStream(String id) {
   return FirebaseFirestore.instance
       .collection('events')
