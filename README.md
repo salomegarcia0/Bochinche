@@ -1,5 +1,10 @@
 # Bochinche_app
 
+##  Branches
+
+    This branch is only to develoup the map
+    When you`re gonna pull this branch, type in the terminal "flutter pub get", as the dependeces have changed to use the map
+
 ## Commands for development
 
 flutter doctor      # Para verificar el estado del flutter 
@@ -16,6 +21,7 @@ lib/
  │    ├── auth/     # Login, Register
  │    ├── map/      # Mapa y marcadores
  │    ├── events/   # Detalle del evento, creación
+ |    ├── profile/  # Detalles y edición del Perfil 
  ├── data/          # Modelos de datos y servicios (Firebase)
  └── main.dart
 

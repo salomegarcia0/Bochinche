@@ -1,0 +1,140 @@
+import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:bochinche_app/features/auth/LoginScreen.dart';
+import 'package:bochinche_app/features/map/pagina_inicio.dart';
+import 'package:bochinche_app/sources/events/events_ui.dart';
+import 'package:bochinche_app/sources/events/events_logic.dart';
+import 'package:bochinche_app/sources/reports/reports_ui.dart';
+import 'package:bochinche_app/features/Registered Events/registered_events.dart';
+
+class Navbar extends StatelessWidget {
+  const Navbar({super.key});
+
+  Future<String> _getUserRole() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return 'guest';
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+      return doc.data()?['rol'] ?? 'usuario';
+    } catch (e) {
+      return 'usuario';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Drawer(
+      child: FutureBuilder<String>(
+        future: _getUserRole(),
+        builder: (context, snapshot) {
+          final role = snapshot.data ?? 'usuario';
+          // Si el rol es organizador o admin, habilitamos la creación
+          final bool isCreator = role == 'organizador' || role == 'admin';
+
+          return ListView(
+            padding: EdgeInsets.zero,
+            children: [
+              DrawerHeader(
+                decoration: const BoxDecoration(color: Colors.purple),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'BOCHINCHE',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      FirebaseAuth.instance.currentUser?.email ?? '',
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              _item(
+                context,
+                Icons.explore,
+                'Explorar eventos',
+                const PublicEventsScreen(),
+              ),
+              _item(context, Icons.map, 'Mapa', const PaginaPrincipal()),
+              _item(
+                context,
+                Icons.local_activity,
+                'Mis Entradas',
+                const registered_events(),
+              ),
+              _item(context, Icons.report, 'Mis Reportes', const MyReports()),
+
+              if (isCreator) ...[
+                const Divider(),
+                const Padding(
+                  padding: EdgeInsets.only(left: 16, top: 10, bottom: 5),
+                  child: Text(
+                    "GESTIÓN",
+                    style: TextStyle(
+                      color: Colors.grey,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+                _item(
+                  context,
+                  Icons.add_circle,
+                  'Crear eventos',
+                  const EventosCreate(),
+                ),
+                _item(
+                  context,
+                  Icons.dashboard,
+                  'Panel de control',
+                  const ControlPanelEvent(),
+                ),
+              ],
+
+              const Divider(),
+              ListTile(
+                leading: const Icon(Icons.logout, color: Colors.red),
+                title: const Text('Cerrar sesión'),
+                onTap: () async {
+                  clearAllFields();
+                  await FirebaseAuth.instance.signOut();
+                  if (context.mounted) {
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(builder: (c) => const LoginScreen()),
+                      (r) => false,
+                    );
+                  }
+                },
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _item(BuildContext context, IconData icon, String title, Widget page) {
+    return ListTile(
+      leading: Icon(icon, color: Colors.purple),
+      title: Text(title),
+      onTap: () {
+        Navigator.pop(context); // Cierra el menú
+        Navigator.push(context, MaterialPageRoute(builder: (c) => page));
+      },
+    );
+  }
+}
