@@ -37,9 +37,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
       setState(() {
         nameController.text = draft['name'] ?? '';
         emailController.text = draft['email'] ?? '';
-        tipoDocumento = (draft['docType'] != null && draft['docType']!.isNotEmpty) ? draft['docType'] : null;
+        tipoDocumento =
+            (draft['docType'] != null && draft['docType']!.isNotEmpty)
+            ? draft['docType']
+            : null;
         cedulaController.text = draft['cedula'] ?? '';
-        selectedPhonePrefix = (draft['phonePrefix'] != null && draft['phonePrefix']!.isNotEmpty) ? draft['phonePrefix'] : null;
+        selectedPhonePrefix =
+            (draft['phonePrefix'] != null && draft['phonePrefix']!.isNotEmpty)
+            ? draft['phonePrefix']
+            : null;
         phoneController.text = draft['phoneNum'] ?? '';
         passwordController.text = draft['password'] ?? '';
       });
@@ -58,7 +64,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       'password': passwordController.text,
     });
   }
-  
+
   // --- VALIDACIÓN ---
   Timer? _debounce;
   String? _emailError;
@@ -71,12 +77,20 @@ class _SignUpScreenState extends State<SignUpScreen> {
   // --- ESTADOS ---
   bool cargando = false;
   bool showPassword = false;
-  String? tipoDocumento; 
+  String? tipoDocumento;
   String? selectedPhonePrefix;
 
   // Listas oficiales según tu lógica de negocio en Caracas
-  final List<String> docTypes = ['V: Venezolano', 'E: Extranjero', 'P: Pasaporte', 'J: Jurídico', 'C: Comuna', 'G: Gubernamental', 'R: Firma Personal'];
-  
+  final List<String> docTypes = [
+    'V: Venezolano',
+    'E: Extranjero',
+    'P: Pasaporte',
+    'J: Jurídico',
+    'C: Comuna',
+    'G: Gubernamental',
+    'R: Firma Personal',
+  ];
+
   final List<String> phonePrefixes = ['0412', '0414', '0416', '0424', '0426'];
 
   @override
@@ -101,8 +115,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   void _validateEmail(String email) {
     final bool emailValid = RegExp(
-            r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+")
-        .hasMatch(email);
+      r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+",
+    ).hasMatch(email);
 
     setState(() {
       if (email.isEmpty) {
@@ -217,7 +231,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
   // --- LÓGICA DE REGISTRO ---
   void executeSignUp() async {
     if (!_validateAll()) {
-      _showSnackBar("Por favor, corrige los errores en el formulario", isError: true);
+      _showSnackBar(
+        "Por favor, corrige los errores en el formulario",
+        isError: true,
+      );
       return;
     }
 
@@ -225,8 +242,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
     try {
       String letraDoc = tipoDocumento!.split(':')[0];
-      String identificacionCompleta = "$letraDoc-${cedulaController.text.trim()}";
-      String telefonoCompleto = "$selectedPhonePrefix${phoneController.text.trim()}";
+      String identificacionCompleta =
+          "$letraDoc-${cedulaController.text.trim()}";
+      String telefonoCompleto =
+          "$selectedPhonePrefix${phoneController.text.trim()}";
 
       User? user = await _authService.signUp(
         email: emailController.text.trim(),
@@ -254,7 +273,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   void _showSnackBar(String message, {bool isError = false}) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: isError ? Colors.red : null),
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError ? Colors.red : null,
+      ),
     );
   }
 
@@ -262,14 +284,17 @@ class _SignUpScreenState extends State<SignUpScreen> {
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        Container(color: const Color.fromARGB(255, 239, 233, 240)),
+        Container(color: PrimaryBackGroundPurple),
         Scaffold(
           backgroundColor: Colors.transparent,
           resizeToAvoidBottomInset: true,
           appBar: AppBar(
             title: const Text(
               "Crear Cuenta",
-              style: TextStyle(color: SecondaryPurple, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                color: SecondaryPurple,
+                fontWeight: FontWeight.bold,
+              ),
             ),
             centerTitle: true,
             backgroundColor: PrimaryPurple,
@@ -278,7 +303,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
           ),
           body: SafeArea(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 20),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 10.0,
+                vertical: 20,
+              ),
               child: SingleChildScrollView(child: contenidoPrincipal(context)),
             ),
           ),
@@ -297,7 +325,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
         padding: const EdgeInsets.all(20.0),
         child: Column(
           children: [
-            Icon(Icons.person_add_alt_1_outlined, size: 80, color: PrimaryBackGroundPurple),
+            Icon(
+              Icons.person_add_alt_1_outlined,
+              size: 80,
+              color: PrimaryBackGroundPurple,
+            ),
             const SizedBox(height: 20),
 
             TextField(
@@ -347,13 +379,25 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       errorText: _docTypeError,
                       errorStyle: const TextStyle(color: Colors.red),
                     ),
-                    items: docTypes.map((val) => DropdownMenuItem(
-                      value: val, 
-                      child: Text(val, style: const TextStyle(fontWeight: FontWeight.bold))
-                    )).toList(),
+                    items: docTypes
+                        .map(
+                          (val) => DropdownMenuItem(
+                            value: val,
+                            child: Text(
+                              val,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        )
+                        .toList(),
                     selectedItemBuilder: (BuildContext context) {
                       return docTypes.map<Widget>((String item) {
-                        return Text(item.split(':')[0], style: const TextStyle(fontWeight: FontWeight.bold));
+                        return Text(
+                          item.split(':')[0],
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        );
                       }).toList();
                     },
                     onChanged: (val) {
@@ -406,10 +450,19 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       errorText: _phonePrefixError,
                       errorStyle: const TextStyle(color: Colors.red),
                     ),
-                    items: phonePrefixes.map((val) => DropdownMenuItem(
-                      value: val, 
-                      child: Text(val, style: const TextStyle(fontWeight: FontWeight.bold))
-                    )).toList(),
+                    items: phonePrefixes
+                        .map(
+                          (val) => DropdownMenuItem(
+                            value: val,
+                            child: Text(
+                              val,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        )
+                        .toList(),
                     onChanged: (val) {
                       setState(() {
                         selectedPhonePrefix = val;
@@ -454,7 +507,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 labelText: "Contraseña",
                 prefixIcon: const Icon(Icons.lock_outline),
                 suffixIcon: IconButton(
-                  icon: Icon(showPassword ? Icons.visibility : Icons.visibility_off),
+                  icon: Icon(
+                    showPassword ? Icons.visibility : Icons.visibility_off,
+                  ),
                   onPressed: () => setState(() => showPassword = !showPassword),
                 ),
                 border: const OutlineInputBorder(),
@@ -483,9 +538,18 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 const Text("¿Ya tienes cuenta?"),
                 TextButton(
                   onPressed: () => Navigator.pushReplacement(
-                    context, MaterialPageRoute(builder: (context) => const LoginScreen()),
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const LoginScreen(),
+                    ),
                   ),
-                  child: const Text("Ingresa aquí", style: TextStyle(color: PrimaryBackGroundPurple, fontWeight: FontWeight.bold)),
+                  child: const Text(
+                    "Ingresa aquí",
+                    style: TextStyle(
+                      color: PrimaryBackGroundPurple,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
               ],
             ),
