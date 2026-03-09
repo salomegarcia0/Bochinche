@@ -9,6 +9,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:bochinche_app/core/utils/draft_manager.dart';
+import 'package:bochinche_app/sources/notifications/notifications_logic.dart';
 
 Future<void> saveEventDraft() async {
   final Map<String, dynamic> data = {
@@ -316,7 +317,19 @@ Future<void> createEvent(BuildContext context) async {
           backgroundColor: Colors.green,
         ),
       );
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(FirebaseAuth.instance.currentUser!.uid)
+          .get();
 
+      String orgName = userDoc.get('nombre') ?? 'Un organizador';
+      NotificationsLogic noti = NotificationsLogic();
+      noti.notifyFollowersOfNewEvent(
+        FirebaseAuth.instance.currentUser!.uid,
+        newEventRef.id,
+        nombreEventoController.text,
+        orgName,
+      );
       clearAllFields();
     } catch (e) {
       ScaffoldMessenger.of(
@@ -912,5 +925,29 @@ Future<void> registrarUsuarioEnEvento(
         ),
       );
     }
+  }
+}
+
+Map<String, dynamic> getCategoryData(String? type) {
+  switch (type) {
+    case 'Concierto':
+      return {'icon': Icons.music_note_rounded, 'color': Colors.purple};
+    case 'Teatro':
+      return {'icon': Icons.theater_comedy_rounded, 'color': Colors.orange};
+    case 'Cine':
+      return {'icon': Icons.movie_filter_rounded, 'color': Colors.indigo};
+    case 'Restaurante':
+      return {'icon': Icons.restaurant_rounded, 'color': Colors.green};
+    case 'Stand Up':
+      return {
+        'icon': Icons.mic_external_on_rounded,
+        'color': Colors.deepOrange,
+      };
+    case 'Fiesta':
+      return {'icon': Icons.celebration_rounded, 'color': Colors.pinkAccent};
+    case 'Conferencia':
+      return {'icon': Icons.record_voice_over_rounded, 'color': Colors.blue};
+    default:
+      return {'icon': Icons.event_available_rounded, 'color': Colors.blueGrey};
   }
 }
