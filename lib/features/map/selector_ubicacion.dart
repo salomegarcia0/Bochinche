@@ -7,7 +7,11 @@ class SelectorUbicacion extends StatefulWidget {
   final bool esSelector;
   final String tipoEvento;
 
-  const SelectorUbicacion({super.key, this.esSelector = false, this.tipoEvento = 'Otros'});
+  const SelectorUbicacion({
+    super.key,
+    this.esSelector = false,
+    this.tipoEvento = 'Otros',
+  });
 
   @override
   State<SelectorUbicacion> createState() => _SelectorUbicacionState();

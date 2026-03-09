@@ -28,4 +28,59 @@ class NotificationsLogic {
           }).toList();
         });
   }
+
+  Future<void> markAllNotificationsAsRead(String userId) async {
+    final firestore = FirebaseFirestore.instance;
+
+    final unreadNotificationsQuery = await firestore
+        .collection('notifications')
+        .where('userId', isEqualTo: userId)
+        .where('read', isEqualTo: false)
+        .get();
+
+    WriteBatch batch = firestore.batch();
+
+    for (var doc in unreadNotificationsQuery.docs) {
+      batch.update(doc.reference, {'read': true});
+    }
+
+    await batch.commit();
+  }
+
+  Future<void> notifyFollowersOfNewEvent(
+    String organizerId,
+    String eventId,
+    String eventName,
+    String organizerName, // Pasamos el nombre por parámetro
+  ) async {
+    final firestore = FirebaseFirestore.instance;
+
+    // 1. Buscar a todos los usuarios que tengan al organizador en su lista 'following'
+    QuerySnapshot usersFollowingQuery = await firestore
+        .collection('users')
+        .where('following', arrayContains: organizerId)
+        .get();
+
+    if (usersFollowingQuery.docs.isEmpty) return;
+
+    // 2. Crear el lote de escritura
+    WriteBatch batch = firestore.batch();
+
+    for (var userDoc in usersFollowingQuery.docs) {
+      String followerId = userDoc.id;
+      DocumentReference notifRef = firestore.collection('notifications').doc();
+
+      batch.set(notifRef, {
+        'userId': followerId,
+        'type': 'new_event',
+        'message': '$organizerName ha creado un nuevo evento: $eventName',
+        'eventId': eventId,
+        'read': false,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+    }
+
+    // 3. Confirmar la operación
+    await batch.commit();
+  }
 }
