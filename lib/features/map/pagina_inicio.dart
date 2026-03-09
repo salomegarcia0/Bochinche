@@ -2,7 +2,7 @@ import 'package:bochinche_app/styles/BochincheAppBar.dart';
 import 'package:bochinche_app/features/map/mapa_principal.dart';
 import 'package:flutter/material.dart';
 import 'package:bochinche_app/features/map/BuscadorEventoMapa.dart';
-import 'package:bochinche_app/styles/NavBar.dart';
+import 'package:bochinche_app/widgets/NavBar.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:bochinche_app/sources/events/events_logic.dart';
 
@@ -13,7 +13,8 @@ class Pagina_Principal extends StatefulWidget {
 }
 
 class _Pagina_PrincipalState extends State<Pagina_Principal> {
-  final GlobalKey<MapaPrincipalState> _mapaKey = GlobalKey<MapaPrincipalState>();
+  final GlobalKey<MapaPrincipalState> _mapaKey =
+      GlobalKey<MapaPrincipalState>();
 
   @override
   void initState() {
@@ -34,7 +35,9 @@ class _Pagina_PrincipalState extends State<Pagina_Principal> {
             child: GestureDetector(
               onTap: () => FocusScope.of(context).unfocus(),
               behavior: HitTestBehavior.opaque,
-              child: MapaPrincipal(key: _mapaKey), // <--- Usando el nuevo nombre
+              child: MapaPrincipal(
+                key: _mapaKey,
+              ), // <--- Usando el nuevo nombre
             ),
           ),
 

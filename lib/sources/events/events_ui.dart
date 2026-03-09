@@ -10,7 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:bochinche_app/styles/NavBar.dart';
+import 'package:bochinche_app/widgets/NavBar.dart';
 import 'package:bochinche_app/sources/events/events_logic.dart';
 import 'package:bochinche_app/features/map/selector_ubicacion.dart';
 import 'package:bochinche_app/sources/events/comments_section.dart';
@@ -40,7 +40,7 @@ class EventosCreate extends StatelessWidget {
             ),
 
             Divider(),
-            FormCreateEvent(),
+            SafeArea(child: FormCreateEvent()),
           ],
         ),
       ),
@@ -898,37 +898,39 @@ class _FormCreateEventState extends State<FormCreateEvent> {
 
           // --- DATOS DE PAGO ---
           const SizedBox(height: 30),
-          Center(
-            child: SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: PrimaryPurple,
-                  foregroundColor: SecondaryPurple,
-                ),
-                onPressed: () {
-                  if (_validateAll()) {
-                    createEvent(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const ControlPanelEvent(),
-                      ),
-                    );
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          "Por favor, corrige los errores en el formulario",
+          SafeArea(
+            child: Center(
+              child: SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: PrimaryPurple,
+                    foregroundColor: SecondaryPurple,
+                  ),
+                  onPressed: () {
+                    if (_validateAll()) {
+                      createEvent(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ControlPanelEvent(),
                         ),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                  }
-                },
-                icon: const Icon(Icons.cloud_upload),
-                label: const Text('PUBLICAR EVENTO'),
+                      );
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            "Por favor, corrige los errores en el formulario",
+                          ),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
+                  },
+                  icon: const Icon(Icons.cloud_upload),
+                  label: const Text('PUBLICAR EVENTO'),
+                ),
               ),
             ),
           ),

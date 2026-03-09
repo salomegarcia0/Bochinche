@@ -2,7 +2,7 @@ import 'package:bochinche_app/sources/reports/reports_logic.dart';
 import 'package:bochinche_app/sources/user_profile/user_profile_logic.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:bochinche_app/styles/NavBar.dart';
+import 'package:bochinche_app/widgets/NavBar.dart';
 import 'package:bochinche_app/styles/BochincheAppBar.dart';
 import 'package:flutter/material.dart';
 
