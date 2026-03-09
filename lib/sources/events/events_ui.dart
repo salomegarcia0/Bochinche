@@ -1969,6 +1969,10 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
     } else if (selectedPreferences.contains('Bochincheros')) {
       currentMode = SearchMode.bochincheros;
     }
+    return SafeArea(child: cuerpo(context, currentMode));
+  }
+
+  Widget cuerpo(BuildContext context, SearchMode currentMode) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       appBar: BochincheAppBar(),
