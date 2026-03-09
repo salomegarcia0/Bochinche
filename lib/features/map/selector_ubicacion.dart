@@ -35,28 +35,41 @@ class SelectorUbicacionState extends State<SelectorUbicacion> {
     mostrarDetalles(context, d, doc.id);
   }
 
+  // --- MEJORA VISUAL DEL PIN ---
   Widget _buildMarker(String? type) {
     final cat = getCategoryData(type);
     return Stack(
       alignment: Alignment.center,
       children: [
+        // Sombra y halo exterior
         Container(
-          width: 50,
-          height: 50,
+          width: 52,
+          height: 52,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: (cat['color'] as Color).withValues(alpha: 0.2),
+            color: (cat['color'] as Color).withValues(alpha: 0.15),
           ),
         ),
+        // Pin principal con borde
         Container(
-          width: 35,
-          height: 35,
+          width: 40,
+          height: 40,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: cat['color'],
-            border: Border.all(color: Colors.white, width: 2),
+            border: Border.all(
+              color: Colors.white,
+              width: 3,
+            ), // Borde blanco grueso
+            boxShadow: const [
+              BoxShadow(
+                color: Colors.black38,
+                blurRadius: 8,
+                offset: Offset(0, 3),
+              ),
+            ],
           ),
-          child: Icon(cat['icon'], color: Colors.white, size: 20),
+          child: Icon(cat['icon'], color: Colors.white, size: 22),
         ),
       ],
     );
@@ -64,62 +77,86 @@ class SelectorUbicacionState extends State<SelectorUbicacion> {
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance.collection('events').snapshots(),
-      builder: (context, snap) {
-        List<Marker> markers = [];
-        if (snap.hasData) {
-          markers = snap.data!.docs
-              .map((doc) {
-                final d = doc.data() as Map<String, dynamic>;
-                if (d['location'] == null || d['isPrivate'] == true) {
-                  return null;
-                }
-                return Marker(
-                  point: LatLng(
-                    d['location'].latitude,
-                    d['location'].longitude,
-                  ),
-                  width: 55,
-                  height: 55,
-                  child: GestureDetector(
-                    onTap: () => mostrarDetalles(context, d, doc.id),
-                    child: _buildMarker(d['type']),
-                  ),
-                );
-              })
-              .whereType<Marker>()
-              .toList();
-        }
-        if (widget.esSelector && puntoSeleccionado != null) {
-          markers.add(
-            Marker(
-              point: puntoSeleccionado!,
-              width: 50,
-              height: 50,
-              child: const Icon(Icons.location_on, color: Colors.red, size: 45),
+    return Scaffold(
+      appBar: widget.esSelector
+          ? AppBar(
+              title: const Text("Toca para ubicar evento"),
+              backgroundColor: Colors.white,
+              foregroundColor: Colors.black,
+            )
+          : null,
+      body: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance.collection('events').snapshots(),
+        builder: (context, snap) {
+          List<Marker> markers = [];
+          if (snap.hasData) {
+            markers = snap.data!.docs
+                .map((doc) {
+                  final d = doc.data() as Map<String, dynamic>;
+                  if (d['location'] == null || d['isPrivate'] == true)
+                    return null;
+                  return Marker(
+                    point: LatLng(
+                      d['location'].latitude,
+                      d['location'].longitude,
+                    ),
+                    width: 60,
+                    height: 60,
+                    child: GestureDetector(
+                      onTap: () => mostrarDetalles(context, d, doc.id),
+                      child: _buildMarker(d['type']),
+                    ),
+                  );
+                })
+                .whereType<Marker>()
+                .toList();
+          }
+          if (widget.esSelector && puntoSeleccionado != null) {
+            markers.add(
+              Marker(
+                point: puntoSeleccionado!,
+                width: 60,
+                height: 60,
+                child: const Icon(
+                  Icons.location_on,
+                  color: Colors.red,
+                  size: 55,
+                ),
+              ),
+            );
+          }
+          return FlutterMap(
+            mapController: _mapController,
+            options: MapOptions(
+              initialCenter: const LatLng(10.4806, -66.8983),
+              initialZoom: 14,
+              onTap: (tapPos, point) {
+                if (widget.esSelector)
+                  setState(() => puntoSeleccionado = point);
+              },
             ),
+            children: [
+              TileLayer(
+                urlTemplate:
+                    "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
+                subdomains: const ['a', 'b', 'c', 'd'],
+              ),
+              MarkerLayer(markers: markers),
+            ],
           );
-        }
-        return FlutterMap(
-          mapController: _mapController,
-          options: MapOptions(
-            initialCenter: const LatLng(10.4806, -66.8983),
-            initialZoom: 14,
-            onTap: (tapPos, point) {
-              if (widget.esSelector) setState(() => puntoSeleccionado = point);
-            },
-          ),
-          children: [
-            TileLayer(
-              urlTemplate:
-                  "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
-              subdomains: const ['a', 'b', 'c', 'd'],
-            ),
-            MarkerLayer(markers: markers),
-          ],
-        );
-      },
+        },
+      ),
+      floatingActionButton: (widget.esSelector && puntoSeleccionado != null)
+          ? FloatingActionButton.extended(
+              backgroundColor: Colors.purple,
+              onPressed: () => Navigator.pop(context, puntoSeleccionado),
+              label: const Text(
+                "Confirmar Ubicación",
+                style: TextStyle(color: Colors.white),
+              ),
+              icon: const Icon(Icons.check, color: Colors.white),
+            )
+          : null,
     );
   }
 }

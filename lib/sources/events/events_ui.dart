@@ -152,7 +152,10 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
               'Todos',
               'Concierto',
               'Teatro',
+              'Cine',
+              'Restaurante',
               'Fiesta',
+              'Conferencia',
               'Stand Up',
               'Otros',
             ].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
@@ -210,15 +213,18 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
       builder: (context, snap) {
         if (!snap.hasData) return const BochincheFilterLoader();
         final items = snap.data!;
-        if (items.isEmpty) {
+        if (items.isEmpty)
           return const Center(child: Text("Sin resultados coincidentes"));
-        }
 
         return ListView.builder(
           padding: const EdgeInsets.only(bottom: 20),
           itemCount: items.length,
           itemBuilder: (context, i) {
             final item = items[i];
+
+            // Obtenemos los datos visuales de la categoría (Icono y Color)
+            final catData = getCategoryData(item['type']);
+
             return Card(
               margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
               shape: RoundedRectangleBorder(
@@ -226,12 +232,14 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
               ),
               child: ListTile(
                 leading: CircleAvatar(
-                  backgroundColor: PrimaryPurple.withValues(alpha: 0.1),
+                  backgroundColor: (catData['color'] as Color).withValues(
+                    alpha: 0.15,
+                  ),
                   child: Icon(
                     mode == SearchMode.bochincheros
                         ? Icons.person
-                        : Icons.celebration,
-                    color: PrimaryPurple,
+                        : catData['icon'],
+                    color: catData['color'],
                   ),
                 ),
                 title: Text(
@@ -267,24 +275,7 @@ class EventosCreate extends StatelessWidget {
     return Scaffold(
       appBar: const BochincheAppBar(),
       drawer: const Navbar(),
-      body: const SingleChildScrollView(
-        child: Column(
-          children: [
-            Padding(
-              padding: EdgeInsets.all(20.0),
-              child: Text(
-                'Crea tu próximo Bochinche',
-                style: TextStyle(
-                  fontWeight: FontWeight.w900,
-                  fontSize: 26,
-                  color: PrimaryPurple,
-                ),
-              ),
-            ),
-            FormCreateEvent(),
-          ],
-        ),
-      ),
+      body: const SingleChildScrollView(child: FormCreateEvent()),
     );
   }
 }
@@ -330,7 +321,10 @@ class _FormCreateEventState extends State<FormCreateEvent> {
             items: [
               'Concierto',
               'Teatro',
+              'Cine',
+              'Restaurante',
               'Fiesta',
+              'Conferencia',
               'Stand Up',
               'Otros',
             ].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
@@ -371,6 +365,7 @@ class _FormCreateEventState extends State<FormCreateEvent> {
                   builder: (c) => const SelectorUbicacion(esSelector: true),
                 ),
               );
+
               if (res != null) {
                 setState(() {
                   latitudC = res.latitude;
@@ -435,27 +430,22 @@ class _FormCreateEventState extends State<FormCreateEvent> {
     );
   }
 
-  InputDecoration _inputStyle(String label, IconData icon) {
-    return InputDecoration(
-      labelText: label,
-      prefixIcon: Icon(icon, color: PrimaryPurple),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
-    );
-  }
-
-  Widget _sectionTitle(String text) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10, left: 5),
-      child: Text(
-        text,
-        style: const TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.bold,
-          color: Colors.grey,
-        ),
+  InputDecoration _inputStyle(String label, IconData icon) => InputDecoration(
+    labelText: label,
+    prefixIcon: Icon(icon, color: PrimaryPurple),
+    border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
+  );
+  Widget _sectionTitle(String text) => Padding(
+    padding: const EdgeInsets.only(bottom: 10, left: 5),
+    child: Text(
+      text,
+      style: const TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.bold,
+        color: Colors.grey,
       ),
-    );
-  }
+    ),
+  );
 }
 
 // --- PANTALLA: PANEL DE CONTROL ---
@@ -482,13 +472,11 @@ class MyEvents extends StatelessWidget {
           .where('id_organizer', isEqualTo: uid)
           .snapshots(),
       builder: (context, snap) {
-        if (!snap.hasData) {
+        if (!snap.hasData)
           return const Center(child: CircularProgressIndicator());
-        }
         final docs = snap.data!.docs;
-        if (docs.isEmpty) {
+        if (docs.isEmpty)
           return const Center(child: Text("Aún no has creado eventos."));
-        }
 
         return ListView.builder(
           itemCount: docs.length,
