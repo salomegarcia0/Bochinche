@@ -33,7 +33,12 @@ class _OrgProfileViewState extends State<OrgProfileView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Perfil de Organizador")),
+      appBar: AppBar(
+        title: const Text(
+          "Perfil del usuario",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+      ),
       body: FutureBuilder<List<dynamic>>(
         future: Future.wait([
           _profileLogic.chargeProfileOrg(userToReport!),

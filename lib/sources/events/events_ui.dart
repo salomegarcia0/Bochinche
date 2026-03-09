@@ -30,16 +30,11 @@ class EventosCreate extends StatelessWidget {
       body: const SingleChildScrollView(
         child: Column(
           children: [
-            Card(
-              color: Colors.white,
-              elevation: 4,
-              margin: EdgeInsets.all(23),
-              child: Padding(
-                padding: EdgeInsets.all(15.0),
-                child: Text(
-                  'Crea tus eventos y promociónalos al mundo',
-                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 25),
-                ),
+            Padding(
+              padding: EdgeInsets.all(10),
+              child: Text(
+                'Crea tu evento',
+                style: TextStyle(fontWeight: FontWeight.w900, fontSize: 30),
               ),
             ),
 
@@ -71,8 +66,9 @@ class _FormCreateEventState extends State<FormCreateEvent> {
     if (mounted) {
       setState(() {
         selectedValue = typeC;
-        ubicacionTemporal = (latitudC != 0.0 && (latitudC != 10.0 || longitudC != -60.0)) 
-            ? LatLng(latitudC, longitudC) 
+        ubicacionTemporal =
+            (latitudC != 0.0 && (latitudC != 10.0 || longitudC != -60.0))
+            ? LatLng(latitudC, longitudC)
             : null;
         hora1select = firstTimeHour;
         hora2select = lastTimeHour;
@@ -122,7 +118,9 @@ class _FormCreateEventState extends State<FormCreateEvent> {
 
   void _validateDireccion(String value) {
     setState(() {
-      _direccionError = value.trim().isEmpty ? "La dirección es requerida" : null;
+      _direccionError = value.trim().isEmpty
+          ? "La dirección es requerida"
+          : null;
     });
   }
 
@@ -143,7 +141,9 @@ class _FormCreateEventState extends State<FormCreateEvent> {
 
   void _validateTipo(String? value) {
     setState(() {
-      _tipoError = (value == null || value.isEmpty) ? "Selecciona un tipo" : null;
+      _tipoError = (value == null || value.isEmpty)
+          ? "Selecciona un tipo"
+          : null;
     });
   }
 
@@ -157,7 +157,9 @@ class _FormCreateEventState extends State<FormCreateEvent> {
 
       if (fecha2C.text.isEmpty) {
         _fecha2Error = "Requerida";
-      } else if (fecha1 != null && fecha2 != null && fecha2!.isBefore(fecha1!)) {
+      } else if (fecha1 != null &&
+          fecha2 != null &&
+          fecha2!.isBefore(fecha1!)) {
         _fecha2Error = "No puede ser anterior al inicio";
       } else {
         _fecha2Error = null;
@@ -167,21 +169,23 @@ class _FormCreateEventState extends State<FormCreateEvent> {
 
   void _validateUbicacion() {
     setState(() {
-      _ubicacionError = ubicacionTemporal == null ? "Selecciona la ubicación" : null;
+      _ubicacionError = ubicacionTemporal == null
+          ? "Selecciona la ubicación"
+          : null;
     });
   }
 
   void _validateHoras() {
     setState(() {
       // Por ahora validación básica: que no sean iguales si es el mismo día
-      if (fecha1 != null && fecha2 != null && 
-          fecha1!.year == fecha2!.year && 
-          fecha1!.month == fecha2!.month && 
+      if (fecha1 != null &&
+          fecha2 != null &&
+          fecha1!.year == fecha2!.year &&
+          fecha1!.month == fecha2!.month &&
           fecha1!.day == fecha2!.day) {
-        
         double start = hora1select.hour + hora1select.minute / 60.0;
         double end = hora2select.hour + hora2select.minute / 60.0;
-        
+
         if (end <= start) {
           _hora2Error = "Debe ser posterior al inicio";
         } else {
@@ -195,7 +199,9 @@ class _FormCreateEventState extends State<FormCreateEvent> {
 
   void _validateBank(String? value) {
     setState(() {
-      _bankError = (value == null || value.isEmpty) ? "Selecciona un banco" : null;
+      _bankError = (value == null || value.isEmpty)
+          ? "Selecciona un banco"
+          : null;
     });
   }
 
@@ -253,7 +259,8 @@ class _FormCreateEventState extends State<FormCreateEvent> {
     _validateUbicacion();
     _validateHoras();
 
-    bool isValid = _nombreError == null &&
+    bool isValid =
+        _nombreError == null &&
         _direccionError == null &&
         _aforoError == null &&
         _tipoError == null &&
@@ -270,7 +277,8 @@ class _FormCreateEventState extends State<FormCreateEvent> {
       _validatePaymentCI(paymentCINumberController.text);
       _validatePrice(priceController.text);
 
-      isValid = isValid &&
+      isValid =
+          isValid &&
           _bankError == null &&
           _phonePrefixError == null &&
           _paymentPhoneError == null &&
@@ -628,7 +636,10 @@ class _FormCreateEventState extends State<FormCreateEvent> {
                           padding: const EdgeInsets.only(left: 8),
                           child: Text(
                             _hora2Error!,
-                            style: const TextStyle(color: Colors.red, fontSize: 12),
+                            style: const TextStyle(
+                              color: Colors.red,
+                              fontSize: 12,
+                            ),
                           ),
                         ),
                     ],
@@ -856,7 +867,9 @@ class _FormCreateEventState extends State<FormCreateEvent> {
             const SizedBox(height: 12),
             TextFormField(
               controller: priceController,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
               inputFormatters: <TextInputFormatter>[
                 FilteringTextInputFormatter.digitsOnly,
               ],
@@ -878,9 +891,7 @@ class _FormCreateEventState extends State<FormCreateEvent> {
             // Opcional: widgets que solo se ven si es GRATUITO
             const Padding(
               padding: EdgeInsets.all(8.0),
-              child: Text(
-                "Este evento será visible para todos de forma gratuita.",
-              ),
+              child: Text("Visible para todos de forma gratuita."),
             ),
           ],
 
@@ -907,7 +918,9 @@ class _FormCreateEventState extends State<FormCreateEvent> {
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content: Text("Por favor, corrige los errores en el formulario"),
+                        content: Text(
+                          "Por favor, corrige los errores en el formulario",
+                        ),
                         backgroundColor: Colors.red,
                       ),
                     );
@@ -997,6 +1010,7 @@ class _MyEventsState extends State<MyEvents> {
             if (snapshot.hasData) {
               final eventos = snapshot.data!;
               return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: eventos
                     .map(
                       (i) => Padding(
@@ -1004,8 +1018,8 @@ class _MyEventsState extends State<MyEvents> {
                         child: Container(
                           padding: const EdgeInsets.all(20),
                           decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(4),
-                            border: Border.all(color: Colors.black),
+                            borderRadius: BorderRadius.circular(10),
+                            color: const Color(0xFFF7F4FD),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1019,65 +1033,6 @@ class _MyEventsState extends State<MyEvents> {
                                 ),
                               ),
                               SizedBox(height: 5),
-                              Text(
-                                'Aforo: ${i['capacity']}',
-                                style: const TextStyle(
-                                  color: Colors.black,
-                                  fontSize: 13,
-                                ),
-                              ),
-                              Text(
-                                'Contacto: ${i['contact']}',
-                                style: const TextStyle(
-                                  color: Colors.black,
-                                  fontSize: 13,
-                                ),
-                              ),
-                              Text(
-                                'Tipo: ${i['type']}',
-                                style: const TextStyle(
-                                  color: Colors.black,
-                                  fontSize: 13,
-                                ),
-                              ),
-                              Text(
-                                'Direccion corta: ${i['address']}',
-                                style: const TextStyle(
-                                  color: Colors.black,
-                                  fontSize: 13,
-                                ),
-                              ),
-                              Text(
-                                'Descripción: ${i['description']}',
-                                style: const TextStyle(
-                                  color: Colors.black,
-                                  fontSize: 13,
-                                ),
-                              ),
-                              Text(
-                                'Fechas: ${DateTime.parse(i['startDate']).day}/${DateTime.parse(i['startDate']).month}/${DateTime.parse(i['startDate']).year} hasta ${DateTime.parse(i['endDate']).day}/${DateTime.parse(i['endDate']).month}/${DateTime.parse(i['endDate']).year}',
-                                style: const TextStyle(
-                                  color: Colors.black,
-                                  fontSize: 13,
-                                ),
-                              ),
-                              Text(
-                                'Horarios: ${i['startTime']['hour']}:${i['startTime']['minute'].toString().padLeft(2, '0')} hasta ${i['endTime']['hour']}:${i['endTime']['minute'].toString().padLeft(2, '0')}',
-                                style: const TextStyle(
-                                  color: Colors.black,
-                                  fontSize: 13,
-                                ),
-                              ),
-                              Text(
-                                'Localización: ${i['location'].latitude}, ${i['location'].longitude}',
-                                style: const TextStyle(
-                                  color: Colors.black,
-                                  fontSize: 13,
-                                ),
-                              ),
-                              const SizedBox(height: 10),
-
-                              const SizedBox(height: 10),
                               if (i['isPrivate'] == true) ...[
                                 Container(
                                   padding: const EdgeInsets.symmetric(
@@ -1109,35 +1064,228 @@ class _MyEventsState extends State<MyEvents> {
                                     ],
                                   ),
                                 ),
-                                const SizedBox(height: 10),
-                                ElevatedButton.icon(
-                                  onPressed: () async {
-                                    await Clipboard.setData(
-                                      ClipboardData(text: i['id']),
-                                    );
-                                    if (context.mounted) {
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        SnackBar(
-                                          content: Text(
-                                            'Código de invitación copiado: ${i['id']}',
-                                          ),
-                                          backgroundColor: Colors.green,
-                                        ),
-                                      );
-                                    }
-                                  },
-                                  icon: const Icon(Icons.link),
-                                  label: const Text('Copiar Código'),
-                                ),
-                                const SizedBox(height: 10),
+                                SizedBox(height: 5),
                               ],
-
-                              const SizedBox(height: 10),
                               Wrap(
                                 children: [
+                                  Text(
+                                    'Aforo:',
+                                    style: TextStyle(
+                                      color: Colors.black,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  Text(
+                                    ' ${i['capacity']}  ',
+                                    style: TextStyle(
+                                      color: Colors.black,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              SizedBox(height: 2),
+                              Wrap(
+                                children: [
+                                  Text(
+                                    'Contacto:',
+                                    style: TextStyle(
+                                      color: Colors.black,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  Text(
+                                    ' ${i['contact']}',
+                                    style: TextStyle(
+                                      color: Colors.black,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              SizedBox(height: 2),
+                              Wrap(
+                                children: [
+                                  Text(
+                                    'Tipo:',
+                                    style: TextStyle(
+                                      color: Colors.black,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  Text(
+                                    ' ${i['type']}',
+                                    style: TextStyle(
+                                      color: Colors.black,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              SizedBox(height: 2),
+                              Wrap(
+                                children: [
+                                  Text(
+                                    'Direccion corta:',
+                                    style: TextStyle(
+                                      color: Colors.black,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  Text(
+                                    ' ${i['address']}',
+                                    style: TextStyle(
+                                      color: Colors.black,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              SizedBox(height: 2),
+                              Wrap(
+                                children: [
+                                  Text(
+                                    'Descripción:',
+                                    style: TextStyle(
+                                      color: Colors.black,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  Text(
+                                    ' ${i['description']}',
+                                    style: TextStyle(
+                                      color: Colors.black,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              SizedBox(height: 2),
+                              Wrap(
+                                children: [
+                                  Text(
+                                    'Fechas:',
+                                    style: TextStyle(
+                                      color: Colors.black,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  Text(
+                                    ' ${DateTime.parse(i['startDate']).day}/${DateTime.parse(i['startDate']).month}/${DateTime.parse(i['startDate']).year} hasta ${DateTime.parse(i['endDate']).day}/${DateTime.parse(i['endDate']).month}/${DateTime.parse(i['endDate']).year}',
+                                    style: TextStyle(
+                                      color: Colors.black,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              SizedBox(height: 2),
+                              Wrap(
+                                children: [
+                                  Text(
+                                    'Horarios:',
+                                    style: TextStyle(
+                                      color: Colors.black,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  Text(
+                                    ' ${i['startTime']['hour']}:${i['startTime']['minute'].toString().padLeft(2, '0')} hasta ${i['endTime']['hour']}:${i['endTime']['minute'].toString().padLeft(2, '0')}',
+                                    style: TextStyle(
+                                      color: Colors.black,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              SizedBox(height: 2),
+                              Wrap(
+                                children: [
+                                  Text(
+                                    'Localización:',
+                                    style: TextStyle(
+                                      color: Colors.black,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  Text(
+                                    ' ${i['location'].latitude}, ${i['location'].longitude}',
+                                    style: TextStyle(
+                                      color: Colors.black,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ],
+                              ),
+
+                              const SizedBox(height: 10),
+
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  if (i['isPrivate'] == true) ...[
+                                    ElevatedButton.icon(
+                                      style: ElevatedButton.styleFrom(
+                                        elevation:
+                                            0, // Sin sombra pesada para un look plano y moderno
+                                        backgroundColor: const Color(
+                                          0xFFEADDFF,
+                                        ), // Un lila suave
+                                        foregroundColor: const Color(
+                                          0xFF21005D,
+                                        ), // Texto e icono en morado oscuro
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 16,
+                                          vertical: 10,
+                                        ),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ), // Bordes redondeados modernos
+                                        ),
+                                      ),
+                                      onPressed: () async {
+                                        await Clipboard.setData(
+                                          ClipboardData(text: i['id']),
+                                        );
+                                        if (context.mounted) {
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                'Código de invitación copiado: ${i['id']}',
+                                              ),
+                                              backgroundColor: Colors.green,
+                                            ),
+                                          );
+                                        }
+                                      },
+                                      icon: const Icon(Icons.link),
+                                      label: const Text('Copiar Código'),
+                                    ),
+                                    const SizedBox(height: 5),
+                                  ],
                                   ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      foregroundColor: Colors.blue[800],
+                                      backgroundColor: Colors.blue[50],
+                                      elevation: 0,
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 12,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                    ),
                                     onPressed: () {
                                       idmod = i['id'];
                                       Navigator.push(
@@ -1158,7 +1306,19 @@ class _MyEventsState extends State<MyEvents> {
                                       ],
                                     ),
                                   ),
+                                  SizedBox(height: 5),
                                   ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      foregroundColor: Colors.red[800],
+                                      backgroundColor: Colors.red[50],
+                                      elevation: 0,
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 12,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                    ),
                                     onPressed: () {
                                       try {
                                         setState(() {
@@ -1208,18 +1368,15 @@ class ModifyEvents extends StatelessWidget {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            const Card(
-              color: Colors.white,
-              elevation: 4,
-              margin: EdgeInsets.all(23),
-              child: Padding(
-                padding: EdgeInsets.all(15.0),
-                child: Text(
-                  'Modifica tus eventos',
-                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 25),
-                ),
-              ),
+            Text(
+              'Modifica tus eventos',
+              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 25),
             ),
+            Text(
+              'Aquí puedes modificar los datos de tus eventos',
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+            ),
+
             const Divider(),
             const FormCreateEvent2(),
           ],
@@ -1939,18 +2096,17 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
                               .white, // Para que el check sea blanco al seleccionar
                           onSelected: (bool s) {
                             setState(() {
-                              // LIMPIAMOS la lista y añadimos solo el nuevo valor
                               selectedPreferences.clear();
 
                               if (s) {
                                 selectedPreferences.add(pref);
                               } else {
-                                // Si deselecciona el que ya estaba, volvemos a 'Todos' por defecto
                                 selectedPreferences.add('Todos');
                               }
+
+                              selectedCategory = 'Todos';
                             });
 
-                            // Esto hará que el StreamBuilder detecte el cambio y busque en Firebase
                             _fakeLoading();
                           },
                         ),
@@ -2022,7 +2178,7 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
                               ),
                               title: Text(item['name'] ?? 'Evento sin nombre'),
                               subtitle: Text(
-                                "${item['type']} • ${item['startDate']}",
+                                "${item['type']} • ${item['startDate'] != null ? DateTime.parse(item['startDate']).day.toString().padLeft(2, '0') + '/' + DateTime.parse(item['startDate']).month.toString().padLeft(2, '0') + '/' + DateTime.parse(item['startDate']).year.toString() : 'Fecha no disponible'}",
                               ),
                               onTap: () {},
                             ),

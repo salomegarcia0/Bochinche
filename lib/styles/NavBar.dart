@@ -1,13 +1,11 @@
+import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:bochinche_app/features/auth/LoginScreen.dart';
 import 'package:bochinche_app/features/map/pagina_inicio.dart';
-import 'package:bochinche_app/sources/reports/reports_ui.dart';
-
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 import 'package:bochinche_app/sources/events/events_ui.dart';
-import 'package:bochinche_app/features/Registered Events/registered_events.dart'; 
+import 'package:bochinche_app/sources/events/events_logic.dart';
+import 'package:bochinche_app/sources/reports/reports_ui.dart';
 import 'package:bochinche_app/features/Registered Events/registered_events.dart';
 
 class Navbar extends StatelessWidget {
@@ -16,13 +14,15 @@ class Navbar extends StatelessWidget {
   Future<String> _getUserRole() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return 'guest';
-
-    final doc = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(user.uid)
-        .get();
-
-    return doc.data()!['rol'];
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+      return doc.data()?['rol'] ?? 'usuario';
+    } catch (e) {
+      return 'usuario';
+    }
   }
 
   @override
@@ -31,90 +31,101 @@ class Navbar extends StatelessWidget {
       child: FutureBuilder<String>(
         future: _getUserRole(),
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          final String role = snapshot.data ?? 'organizador';
-          final bool isOrganizador = role == 'admin';
+          final role = snapshot.data ?? 'usuario';
+          // Si el rol es organizador o admin, habilitamos la creación
+          final bool isCreator = role == 'organizador' || role == 'admin';
 
           return ListView(
+            padding: EdgeInsets.zero,
             children: [
-              _buildListTile(
-                context,
-                Icons.map,
-                'Mapa',
-                const Pagina_Principal(),
+              DrawerHeader(
+                decoration: const BoxDecoration(color: Colors.purple),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'BOCHINCHE',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      FirebaseAuth.instance.currentUser?.email ?? '',
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              
-              // ---------------------------------------------------------
-              // ¡NUEVO! Botón para ir a los eventos reservados (Mis Entradas)
-              // ---------------------------------------------------------
-              _buildListTile(
+              _item(
                 context,
-                Icons.local_activity, // Ícono de un ticket
-                'Mis Entradas', 
-                const registered_events(), // Asegúrate de que esta pantalla exista y esté importada correctamente
+                Icons.explore,
+                'Explorar eventos',
+                const PublicEventsScreen(),
               ),
-              // ---------------------------------------------------------
+              _item(context, Icons.map, 'Mapa', const Pagina_Principal()),
+              _item(
+                context,
+                Icons.local_activity,
+                'Mis Entradas',
+                const registered_events(),
+              ),
+              _item(context, Icons.report, 'Mis Reportes', const MyReports()),
 
-              _buildListTile(
-                context,
-                Icons.create,
-                'Crear eventos',
-                const EventosCreate(),
-              ),
-              _buildListTile(
-                context,
-                Icons.view_array,
-                'Panel de control',
-                const ControlPanelEvent(),
-              ),
-              _buildListTile(
-                context,
-                Icons.report,
-                'Ver mis reportes',
-                MyReports(),
-              ),
-
-              if (isOrganizador) ...[
-                _buildListTile(
+              if (isCreator) ...[
+                const Divider(),
+                const Padding(
+                  padding: EdgeInsets.only(left: 16, top: 10, bottom: 5),
+                  child: Text(
+                    "GESTIÓN",
+                    style: TextStyle(
+                      color: Colors.grey,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+                _item(
                   context,
                   Icons.report_problem,
                   'Administrar reportes',
                   const AdminReports(),
                 ),
+                _item(
+                  context,
+                  Icons.add_circle,
+                  'Crear eventos',
+                  const EventosCreate(),
+                ),
+                _item(
+                  context,
+                  Icons.dashboard,
+                  'Panel de control',
+                  const ControlPanelEvent(),
+                ),
               ],
 
-              if (role == 'guest')
-                ListTile(
-                  leading: const Icon(Icons.login),
-                  title: const Text('Iniciar sesión'),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const LoginScreen(),
-                      ),
-                    );
-                  },
-                )
-              else
-                ListTile(
-                  leading: const Icon(Icons.logout),
-                  title: const Text('Cerrar sesión'),
-                  onTap: () {
-                    // clearAllFields(); // Asegúrate de que esta función exista en este archivo o quítala si marca error
-                    FirebaseAuth.instance.signOut();
+              const Divider(),
+              ListTile(
+                leading: const Icon(Icons.logout, color: Colors.red),
+                title: const Text('Cerrar sesión'),
+                onTap: () async {
+                  clearAllFields();
+                  await FirebaseAuth.instance.signOut();
+                  if (context.mounted) {
                     Navigator.pushAndRemoveUntil(
                       context,
-                      MaterialPageRoute(
-                        builder: (context) => const LoginScreen(),
-                      ),
-                      (route) => false,
+                      MaterialPageRoute(builder: (c) => const LoginScreen()),
+                      (r) => false,
                     );
-                  },
-                ),
+                  }
+                },
+              ),
             ],
           );
         },
@@ -122,18 +133,13 @@ class Navbar extends StatelessWidget {
     );
   }
 
-  Widget _buildListTile(
-    BuildContext context,
-    IconData icon,
-    String title,
-    Widget page,
-  ) {
+  Widget _item(BuildContext context, IconData icon, String title, Widget page) {
     return ListTile(
-      leading: Icon(icon),
+      leading: Icon(icon, color: Colors.purple),
       title: Text(title),
       onTap: () {
-        // Al tocar, navegamos a la pantalla seleccionada
-        Navigator.push(context, MaterialPageRoute(builder: (context) => page));
+        Navigator.pop(context); // Cierra el menú
+        Navigator.push(context, MaterialPageRoute(builder: (c) => page));
       },
     );
   }

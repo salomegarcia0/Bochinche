@@ -52,14 +52,14 @@ class _BuscadorEventoMapaState extends State<BuscadorEventoMapa> {
       margin: const EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 8.0),
       decoration: BoxDecoration(
         color: PrimaryBackGroundPurple,
-        borderRadius: BorderRadius.circular(35.0),
+        borderRadius: BorderRadius.circular(50.0),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [Container(), filtro(context)],
+            children: [Container()],
           ),
           buscador(context),
         ],
@@ -110,20 +110,23 @@ class _BuscadorEventoMapaState extends State<BuscadorEventoMapa> {
                   transitionDuration: const Duration(milliseconds: 800),
                   transitionsBuilder:
                       (context, animation, secondaryAnimation, child) {
-                    return FadeTransition(opacity: animation, child: child);
-                  },
+                        return FadeTransition(opacity: animation, child: child);
+                      },
                 ),
               );
             },
             decoration: InputDecoration(
               prefixIcon: const Icon(Icons.search, color: PrimaryPurple),
-              suffixIcon: _showPasteButton
+              /*suffixIcon: _showPasteButton
                   ? IconButton(
-                      icon: const Icon(Icons.content_paste, color: PrimaryPurple),
+                      icon: const Icon(
+                        Icons.content_paste,
+                        color: PrimaryPurple,
+                      ),
                       onPressed: _pasteFromClipboard,
                       tooltip: 'Pegar código',
                     )
-                  : null,
+                  : null,*/
               hintText: 'Buscar evento o código privado',
               border: InputBorder.none,
               contentPadding: const EdgeInsets.symmetric(

@@ -51,13 +51,103 @@ class _CommentsSectionState extends State<CommentsSection> {
                             : 0);
                   return ListTile(
                     title: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(c['nombre'] ?? 'Usuario'),
-                        if (c['usuarioUid'] != null) ...[
-                          const SizedBox(width: 4),
-                          VerificationBadge(uid: c['usuarioUid'], size: 16),
-                        ],
+                        Expanded(
+                          child: Row(
+                            children: [
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(c['nombre'] ?? 'Usuario'),
+                                  if (c['usuarioUid'] != null) ...[
+                                    const SizedBox(width: 4),
+                                    VerificationBadge(
+                                      uid: c['usuarioUid'],
+                                      size: 16,
+                                    ),
+                                  ],
+                                ],
+                              ),
+                              PopupMenuButton<String>(
+                                icon: const Icon(
+                                  Icons.more_vert,
+                                  color: Colors.grey,
+                                ),
+                                onSelected: (value) {
+                                  if (value == 'reportar') {
+                                    if (FirebaseAuth.instance.currentUser ==
+                                        null) {
+                                      Navigator.pop(context);
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              const LoginScreen(),
+                                        ),
+                                      );
+                                      return;
+                                    } else {
+                                      Navigator.pop(context);
+                                      showDialog(
+                                        context: context,
+                                        builder: (context) {
+                                          return AlertDialog(
+                                            title: const Text(
+                                              'Reportar usuario',
+                                            ),
+                                            content: const Text(
+                                              '¿Deseas reportar este usuario por incumplimiento de las normas?',
+                                            ),
+                                            actions: [
+                                              TextButton(
+                                                onPressed: () =>
+                                                    Navigator.pop(context),
+                                                child: const Text('Cancelar'),
+                                              ),
+                                              TextButton(
+                                                onPressed: () {
+                                                  Navigator.pop(context);
+                                                  userToReport =
+                                                      c['usuarioUid'];
+                                                  Navigator.push(
+                                                    context,
+                                                    MaterialPageRoute(
+                                                      builder: (context) =>
+                                                          const ReportUser(),
+                                                    ),
+                                                  );
+                                                },
+                                                child: const Text('Reportar'),
+                                              ),
+                                            ],
+                                          );
+                                        },
+                                      );
+                                    }
+                                  }
+                                },
+                                itemBuilder: (context) => [
+                                  const PopupMenuItem(
+                                    value: 'reportar',
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.flag_outlined,
+                                          color: Colors.red,
+                                          size: 20,
+                                        ),
+                                        SizedBox(width: 8),
+                                        Text('Reportar usuario'),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
                       ],
                     ),
                     subtitle: Column(
@@ -81,22 +171,6 @@ class _CommentsSectionState extends State<CommentsSection> {
                         ),
                         SizedBox(height: 5),
                         Text(c['texto'] ?? ''),
-                        const SizedBox(height: 6),
-                        ElevatedButton(
-                          onPressed: () {
-                            setState(() {
-                              userToReport = c['usuarioUid'];
-                              print(userToReport);
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const ReportUser(),
-                                ),
-                              );
-                            });
-                          },
-                          child: Text('Reportar usuario'),
-                        ),
                         const SizedBox(height: 6),
                       ],
                     ),

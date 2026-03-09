@@ -1,3 +1,4 @@
+import 'package:bochinche_app/styles/Color.dart';
 import 'package:flutter/material.dart';
 import 'package:bochinche_app/styles/BochincheAppBar.dart';
 import 'package:bochinche_app/sources/reports/reports_logic.dart';
@@ -48,13 +49,19 @@ class _ReportEventsFormState extends State<ReportEventsForm> {
             'Reportar Evento',
             style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
-          Text(
-            'Describa el problema que encontró con el evento seleccionado.',
-            style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+          Center(
+            child: Text(
+              'Describa el problema que encontró con el evento seleccionado.',
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+            ),
           ),
+
           Divider(),
           CheckboxListTile(
-            title: Text('Localización Incorrecta'),
+            title: Text(
+              'Localización Incorrecta',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
             subtitle: Text(
               'El evento se muestra en un lugar diferente al real.',
             ),
@@ -67,7 +74,10 @@ class _ReportEventsFormState extends State<ReportEventsForm> {
             controlAffinity: ListTileControlAffinity.leading,
           ),
           CheckboxListTile(
-            title: Text('Monto Incorrecto'),
+            title: Text(
+              'Monto Incorrecto',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
             subtitle: Text('Describa el problema en detalle.'),
             value: montoError,
             onChanged: (value) {
@@ -79,7 +89,10 @@ class _ReportEventsFormState extends State<ReportEventsForm> {
             controlAffinity: ListTileControlAffinity.leading,
           ),
           CheckboxListTile(
-            title: Text('Incumplimiento de Leyes o Normativas Locales'),
+            title: Text(
+              'Incumplimiento de Leyes o Normativas Locales',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
             subtitle: Text('Ruido excesivo, falta de permisos, etc.'),
             value: incumplimientoLey,
             onChanged: (value) {
@@ -90,7 +103,10 @@ class _ReportEventsFormState extends State<ReportEventsForm> {
             controlAffinity: ListTileControlAffinity.leading,
           ),
           CheckboxListTile(
-            title: Text('Fallas de infraestructura'),
+            title: Text(
+              'Fallas de infraestructura',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
             subtitle: Text('Falta de baños, problemas de seguridad, etc.'),
             value: infrastructureFail,
             onChanged: (value) {
@@ -101,7 +117,7 @@ class _ReportEventsFormState extends State<ReportEventsForm> {
             controlAffinity: ListTileControlAffinity.leading,
           ),
           CheckboxListTile(
-            title: Text('Otros'),
+            title: Text('Otros', style: TextStyle(fontWeight: FontWeight.bold)),
             subtitle: Text('Describa el problema en detalle.'),
             value: otherError,
             onChanged: (value) {
@@ -135,6 +151,23 @@ class _ReportEventsFormState extends State<ReportEventsForm> {
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color.fromARGB(
+                    129,
+                    238,
+                    238,
+                    238,
+                  ), // Un gris claro y limpio
+                  foregroundColor: Colors.black87,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
                 onPressed: () {
                   eventToReport = null;
                   Navigator.pop(context);
@@ -142,6 +175,18 @@ class _ReportEventsFormState extends State<ReportEventsForm> {
                 child: Text('Cancelar'),
               ),
               ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: PrimaryPurple, // Tu morado
+                  foregroundColor: Colors.white,
+                  elevation: 0, // Plano se ve más moderno
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12), // Bordes suaves
+                  ),
+                ),
                 onPressed: () {
                   reportEvent(context);
                   setState(() {
@@ -177,13 +222,16 @@ class _ReportUserViewState extends State<ReportUserView> {
             'Reportar Usuario',
             style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
-          Text(
-            'Describa el problema que encontró con el usuario seleccionado.',
-            style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+          Center(
+            child: Text(
+              'Describa el problema que encontró con el usuario seleccionado.',
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+            ),
           ),
+
           Divider(),
           CheckboxListTile(
-            title: Text('Odio'),
+            title: Text('Odio', style: TextStyle(fontWeight: FontWeight.bold)),
             subtitle: Text(
               'Palabras ofensivas, estereotipos racistas o sexistas, deshumanización, incitación al miedo o la discriminación.',
             ),
@@ -196,7 +244,10 @@ class _ReportUserViewState extends State<ReportUserView> {
             controlAffinity: ListTileControlAffinity.leading,
           ),
           CheckboxListTile(
-            title: Text('Abuso y acoso'),
+            title: Text(
+              'Abuso y acoso',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
             subtitle: Text(
               'Insultos, contenido no deseado de carácter sexual y cosificación explícita, contenido no apto para el ambiente laboral.',
             ),
@@ -210,7 +261,10 @@ class _ReportUserViewState extends State<ReportUserView> {
             controlAffinity: ListTileControlAffinity.leading,
           ),
           CheckboxListTile(
-            title: Text('Discurso violento'),
+            title: Text(
+              'Discurso violento',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
             subtitle: Text(
               'Amenazas, intimidación, incitación a la violencia, etc.',
             ),
@@ -223,7 +277,7 @@ class _ReportUserViewState extends State<ReportUserView> {
             controlAffinity: ListTileControlAffinity.leading,
           ),
           CheckboxListTile(
-            title: Text('Spam'),
+            title: Text('Spam', style: TextStyle(fontWeight: FontWeight.bold)),
             subtitle: Text('Mensajes no deseados, publicidad excesiva, etc.'),
             value: isSpam,
             onChanged: (value) {
@@ -234,7 +288,10 @@ class _ReportUserViewState extends State<ReportUserView> {
             controlAffinity: ListTileControlAffinity.leading,
           ),
           CheckboxListTile(
-            title: Text('Comportamientos ilegales o sujetos a reglamentación'),
+            title: Text(
+              'Comportamientos ilegales o sujetos a reglamentación',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
             subtitle: Text(
               'Explotación humana, servicios sexuales, drogas, armas, especies en peligro de extinción, facilitación de actividades ilegales.',
             ),
@@ -251,14 +308,40 @@ class _ReportUserViewState extends State<ReportUserView> {
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color.fromARGB(129, 238, 238, 238),
+                  foregroundColor: Colors.black87,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
                 onPressed: () {
+                  FocusScope.of(context).unfocus();
                   eventToReport = null;
                   Navigator.pop(context);
                 },
                 child: Text('Cancelar'),
               ),
               ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: PrimaryPurple, // Tu morado
+                  foregroundColor: Colors.white,
+                  elevation: 0, // Plano se ve más moderno
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12), // Bordes suaves
+                  ),
+                ),
                 onPressed: () {
+                  FocusScope.of(context).unfocus();
                   reportUser(context);
                   setState(() {
                     setReportUserFalse();
@@ -319,6 +402,7 @@ class _MyReportsCardsState extends State<MyReportsCards> {
               } else {
                 List<Map<String, dynamic>> reportes = snapshot.data!;
                 return ListView.builder(
+                  physics: const NeverScrollableScrollPhysics(),
                   shrinkWrap: true,
                   itemCount: reportes.length,
                   itemBuilder: (context, index) {
@@ -328,6 +412,7 @@ class _MyReportsCardsState extends State<MyReportsCards> {
                         horizontal: 16.0,
                         vertical: 8.0,
                       ),
+
                       child: Padding(
                         padding: const EdgeInsets.all(16.0),
                         child: Column(
@@ -344,12 +429,28 @@ class _MyReportsCardsState extends State<MyReportsCards> {
                                       if (snapshot.hasError) {
                                         return Text("Error");
                                       }
-                                      return Text(
-                                        'Evento: ${snapshot.data ?? "Evento sin nombre"}',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 20,
-                                        ),
+                                      return Row(
+                                        children: [
+                                          const Icon(
+                                            Icons
+                                                .celebration, // Icono de fiesta/evento
+                                            color:
+                                                PrimaryBackGroundPurple, // Tu morado característico
+                                            size: 24,
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Expanded(
+                                            child: Text(
+                                              '${snapshot.data ?? "Evento sin nombre"}',
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 20,
+                                              ),
+                                              overflow: TextOverflow
+                                                  .ellipsis, // Evita que el texto rompa el diseño si es muy largo
+                                            ),
+                                          ),
+                                        ],
                                       );
                                     },
                                   )
@@ -363,26 +464,112 @@ class _MyReportsCardsState extends State<MyReportsCards> {
                                       if (snapshot.hasError) {
                                         return Text("Error");
                                       }
-                                      return Text(
-                                        'Usuario: ${snapshot.data ?? "Usuario sin nombre"}',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 20,
-                                        ),
+                                      return Row(
+                                        children: [
+                                          const Icon(
+                                            Icons
+                                                .person_3_sharp, // El icono de persona
+                                            color:
+                                                PrimaryBackGroundPurple, // Tu color morado
+                                            size:
+                                                24, // Un tamaño que acompañe bien al texto
+                                          ),
+                                          const SizedBox(
+                                            width: 8,
+                                          ), // Un pequeño espacio entre icono y texto
+                                          Expanded(
+                                            // Expanded evita errores si el nombre es muy largo
+                                            child: Text(
+                                              '${snapshot.data ?? "Usuario sin nombre"}',
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 20,
+                                              ),
+                                              overflow: TextOverflow
+                                                  .ellipsis, // Si el nombre es gigante, pone "..."
+                                            ),
+                                          ),
+                                        ],
                                       );
                                     },
                                   ),
                             SizedBox(height: 8),
-                            Text(
-                              'Razones:  ${j['reason'].toString().replaceFirst('[', '').replaceFirst(']', '')}',
+                            Wrap(
+                              children: [
+                                Text(
+                                  'Razones: ',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                                Text(
+                                  '${j['reason'].toString().replaceFirst('[', '').replaceFirst(']', '')}',
+                                ),
+                              ],
                             ),
                             SizedBox(height: 8),
-                            Text('Estado: ${j['status'] ?? 'Desconocido'}'),
+                            Row(
+                              children: [
+                                Text(
+                                  'Estado del reporte: ',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: j['status'] == 'Pendiente'
+                                        ? const Color.fromARGB(
+                                            255,
+                                            207,
+                                            158,
+                                            21,
+                                          ).withOpacity(0.1)
+                                        : Colors.green.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Text(
+                                    j['status'] == 'Pendiente'
+                                        ? 'Pendiente'
+                                        : 'Resuelto',
+                                    style: TextStyle(
+                                      color: j['status'] == 'Pendiente'
+                                          ? const Color.fromARGB(
+                                              255,
+                                              207,
+                                              158,
+                                              21,
+                                            )
+                                          : Colors.green[800],
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+
                             SizedBox(height: 8),
-                            Text('Feedback: ${j['feedback'] ?? 'Desconocido'}'),
+                            Wrap(
+                              children: [
+                                Text(
+                                  'Feedback: ',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                                Text('${j['feedback'] ?? 'Desconocido'}'),
+                              ],
+                            ),
                             SizedBox(height: 8),
-                            Text(
-                              'Fecha del reporte: ${j['timestamp'] != null ? (j['timestamp'] as Timestamp).toDate().toString() : 'Fecha no disponible'}',
+                            Wrap(
+                              children: [
+                                Text(
+                                  'Fecha del reporte: ',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                                Text(
+                                  '${j['timestamp'] != null ? (j['timestamp'] as Timestamp).toDate().toString() : 'Fecha no disponible'}',
+                                ),
+                              ],
                             ),
                           ],
                         ),
@@ -424,10 +611,11 @@ class _AdminReportsViewState extends State<AdminReportsView> {
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           SizedBox(height: 20),
           Text(
-            'Administrar reportes a usuarios y eventos',
+            'Administrar reportes',
             style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
           Divider(),
@@ -443,6 +631,7 @@ class _AdminReportsViewState extends State<AdminReportsView> {
               } else {
                 List<Map<String, dynamic>> reportes = snapshot.data!;
                 return ListView.builder(
+                  physics: const NeverScrollableScrollPhysics(),
                   shrinkWrap: true,
                   itemCount: reportes.length,
                   itemBuilder: (context, index) {
@@ -468,12 +657,28 @@ class _AdminReportsViewState extends State<AdminReportsView> {
                                       if (snapshot.hasError) {
                                         return Text("Error");
                                       }
-                                      return Text(
-                                        'Evento: ${snapshot.data ?? "Evento sin nombre"}',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 20,
-                                        ),
+                                      return Row(
+                                        children: [
+                                          const Icon(
+                                            Icons
+                                                .celebration, // Icono de fiesta/evento
+                                            color:
+                                                PrimaryBackGroundPurple, // Tu morado característico
+                                            size: 24,
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Expanded(
+                                            child: Text(
+                                              '${snapshot.data ?? "Evento sin nombre"}',
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 20,
+                                              ),
+                                              overflow: TextOverflow
+                                                  .ellipsis, // Evita que el texto rompa el diseño si es muy largo
+                                            ),
+                                          ),
+                                        ],
                                       );
                                     },
                                   )
@@ -487,25 +692,70 @@ class _AdminReportsViewState extends State<AdminReportsView> {
                                       if (snapshot.hasError) {
                                         return Text("Error");
                                       }
-                                      return Text(
-                                        'Usuario: ${snapshot.data ?? "Usuario sin nombre"}',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 20,
-                                        ),
+                                      return Row(
+                                        children: [
+                                          const Icon(
+                                            Icons
+                                                .person_3_sharp, // El icono de persona
+                                            color:
+                                                PrimaryBackGroundPurple, // Tu color morado
+                                            size:
+                                                24, // Un tamaño que acompañe bien al texto
+                                          ),
+                                          const SizedBox(
+                                            width: 8,
+                                          ), // Un pequeño espacio entre icono y texto
+                                          Expanded(
+                                            // Expanded evita errores si el nombre es muy largo
+                                            child: Text(
+                                              '${snapshot.data ?? "Usuario sin nombre"}',
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 20,
+                                              ),
+                                              overflow: TextOverflow
+                                                  .ellipsis, // Si el nombre es gigante, pone "..."
+                                            ),
+                                          ),
+                                        ],
                                       );
                                     },
                                   ),
                             SizedBox(height: 8),
-                            Text(
-                              'Razones:  ${j['reason'].toString().replaceFirst('[', '').replaceFirst(']', '')}',
+                            Wrap(
+                              children: [
+                                Text(
+                                  'Razones: ',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                                Text(
+                                  '${j['reason'].toString().replaceFirst('[', '').replaceFirst(']', '')}',
+                                ),
+                              ],
+                            ),
+
+                            SizedBox(height: 8),
+                            Wrap(
+                              children: [
+                                Text(
+                                  'Fecha del reporte: ',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                                Text(
+                                  '${j['timestamp'] != null ? (j['timestamp'] as Timestamp).toDate().toString() : 'Fecha no disponible'}',
+                                ),
+                              ],
                             ),
                             SizedBox(height: 8),
-                            Text(
-                              'Fecha del reporte: ${j['timestamp'] != null ? (j['timestamp'] as Timestamp).toDate().toString() : 'Fecha no disponible'}',
-                            ),
-                            SizedBox(height: 8),
+
                             ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: PrimaryBackGroundPurple,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
                               onPressed: () {
                                 showDialog(
                                   context: context,
@@ -524,9 +774,9 @@ class _AdminReportsViewState extends State<AdminReportsView> {
                                         ),
                                       ),
                                       actions: [
-                                        Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceEvenly,
+                                        Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.stretch,
                                           children: [
                                             TextButton(
                                               onPressed: () {
