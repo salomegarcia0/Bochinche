@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:bochinche_app/data/user_model.dart';
 import 'package:bochinche_app/styles/Color.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -95,12 +96,21 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           .collection('users')
           .doc(widget.usuario.uid)
           .update(usuarioActualizado.toMap());
+
+      // Sincronizar con FirebaseAuth para que los cambios se vean en toda la app
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        await user.updateDisplayName(_nameController.text);
+        if (finalImageUrl != null) {
+          await user.updatePhotoURL(finalImageUrl);
+        }
+        await user.reload();
+      }
         
       if (mounted) Navigator.pop(context, true);
 
     } catch (e) {
       print("Error: $e");
-      // ... manejo de errores
     }
   }
 
