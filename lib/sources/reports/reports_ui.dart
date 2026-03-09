@@ -856,6 +856,8 @@ class _AdminReportsViewState extends State<AdminReportsView> {
                                               ),
                                               onPressed: () {
                                                 ignoreReport(j['reportId']);
+                                                setState(() {});
+                                                Navigator.of(context).pop();
                                               },
                                               icon: const Icon(
                                                 Icons.visibility_off,

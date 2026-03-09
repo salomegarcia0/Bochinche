@@ -315,6 +315,14 @@ void mostrarDetalles(
                             }
 
                             return ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.green,
+                                foregroundColor: Colors.white,
+
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
                               onPressed: botonDeshabilitado
                                   ? null
                                   : () {
@@ -364,6 +372,13 @@ void mostrarDetalles(
                               }
 
                               return ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.green,
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
                                 onPressed: botonDeshabilitado
                                     ? null
                                     : () {

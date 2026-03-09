@@ -535,7 +535,7 @@ class _FormCreateEventState extends State<FormCreateEvent> {
 
           const SizedBox(height: 12),
 
-          Row(
+          Wrap(
             children: [
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1402,6 +1402,15 @@ class _FormCreateEvent2State extends State<FormCreateEvent2> {
   TimeOfDay hora2select = TimeOfDay.now();
   TimeOfDay hora1 = TimeOfDay.now();
   MapController controladormapa = MapController();
+  String? _nombreError;
+  String? _direccionError;
+  String? _aforoError;
+  String? _bankError;
+  String? _phonePrefixError;
+  String? _paymentPhoneError;
+  String? _ciTypeError;
+  String? _paymentCIError;
+  String? _priceError;
 
   Future<void> fechaselect2(BuildContext context) async {
     DateTime? date = await showDatePicker(
@@ -1417,6 +1426,35 @@ class _FormCreateEvent2State extends State<FormCreateEvent2> {
         fecha2 = date;
       });
     }
+  }
+
+  void _validateNombre(String value) {
+    setState(() {
+      _nombreError = value.trim().isEmpty ? "El nombre es requerido" : null;
+    });
+  }
+
+  void _validateDireccion(String value) {
+    setState(() {
+      _direccionError = value.trim().isEmpty
+          ? "La dirección es requerida"
+          : null;
+    });
+  }
+
+  void _validateAforo(String value) {
+    setState(() {
+      if (value.isEmpty) {
+        _aforoError = "El aforo es requerido";
+      } else {
+        int? a = int.tryParse(value);
+        if (a == null || a <= 0) {
+          _aforoError = "Número inválido";
+        } else {
+          _aforoError = null;
+        }
+      }
+    });
   }
 
   Future<void> fechaselect1(BuildContext context) async {
