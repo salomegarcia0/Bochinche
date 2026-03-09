@@ -26,20 +26,20 @@ void mostrarDetalles(
       DateTime endDate = DateTime.parse(data['endDate']);
       int endHour = data['endTime']['hour'];
       int endMinute = data['endTime']['minute'];
-      
+
       DateTime fechaFinReal = DateTime(
-        endDate.year, 
-        endDate.month, 
-        endDate.day, 
-        endHour, 
-        endMinute
+        endDate.year,
+        endDate.month,
+        endDate.day,
+        endHour,
+        endMinute,
       );
 
       // Si el momento actual ya pasó la fecha de fin del evento...
       if (DateTime.now().isAfter(fechaFinReal)) {
         isFinalizado = true;
         estadoActual = 'Finalizado';
-        
+
         // Actualizamos Firebase silenciosamente para arreglarlo en la base de datos
         FirebaseFirestore.instance
             .collection('events')
@@ -120,23 +120,29 @@ void mostrarDetalles(
                                 context: context,
                                 builder: (context) {
                                   return AlertDialog(
-                                    title: const Text('Reportar evento'),
+                                    title: const Text(
+                                      'Reportar evento',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
                                     content: const Text(
                                       '¿Deseas reportar este evento por incumplimiento de las normas?',
                                     ),
                                     actions: [
-                                      TextButton(
+                                      ElevatedButton(
                                         onPressed: () => Navigator.pop(context),
                                         child: const Text('Cancelar'),
                                       ),
-                                      TextButton(
+                                      ElevatedButton(
                                         onPressed: () {
                                           Navigator.pop(context);
                                           eventToReport = eventoId;
                                           Navigator.push(
                                             context,
                                             MaterialPageRoute(
-                                              builder: (context) => const ReportEvents(),
+                                              builder: (context) =>
+                                                  const ReportEvents(),
                                             ),
                                           );
                                         },
@@ -154,7 +160,11 @@ void mostrarDetalles(
                             value: 'reportar',
                             child: Row(
                               children: [
-                                Icon(Icons.flag_outlined, color: Colors.red, size: 20),
+                                Icon(
+                                  Icons.flag_outlined,
+                                  color: Colors.red,
+                                  size: 20,
+                                ),
                                 SizedBox(width: 8),
                                 Text('Reportar evento'),
                               ],
@@ -178,8 +188,10 @@ void mostrarDetalles(
                               return Text("Organizador: Desconocido");
                             }
 
-                            final userData = snapshot.data!.data() as Map<String, dynamic>;
-                            final String nombreOrg = userData['nombre'] ?? 'Sin nombre';
+                            final userData =
+                                snapshot.data!.data() as Map<String, dynamic>;
+                            final String nombreOrg =
+                                userData['nombre'] ?? 'Sin nombre';
 
                             return TextButton(
                               onPressed: () {
@@ -223,119 +235,136 @@ void mostrarDetalles(
                     'Fecha de finalización: ${DateTime.parse(data['endDate']).day}/${DateTime.parse(data['endDate']).month}/${DateTime.parse(data['endDate']).year} a las ${data['endTime']['hour'].toString().padLeft(2, '0')}:${data['endTime']['minute'].toString().padLeft(2, '0')}',
                   ),
                   const SizedBox(height: 1),
-                  
+
                   // ========================================================
                   // 2. TEXTO DEL ESTADO CON COLOR ROJO SI ESTÁ FINALIZADO
                   // ========================================================
                   Text(
                     'Estado: $estadoActual',
                     style: TextStyle(
-                      fontWeight: isFinalizado ? FontWeight.bold : FontWeight.normal,
+                      fontWeight: isFinalizado
+                          ? FontWeight.bold
+                          : FontWeight.normal,
                       color: isFinalizado ? Colors.red : Colors.black,
                     ),
                   ),
                   const SizedBox(height: 2),
 
-                    Row(
-                      children: [
-                        Builder(
-                          builder: (context) {
-                            final int sold = data['ticketsSold'] ?? 0;
-                            final int cap = data['capacity'] is int
-                                ? data['capacity'] as int
-                                : int.tryParse(data['capacity']?.toString() ?? '0') ?? 0;
-                            
-                            final bool isAgotado = sold >= cap;
-                            final bool isPayed = data['isPayed'] ?? false;
-                            final String? uid = FirebaseAuth.instance.currentUser?.uid;
+                  Row(
+                    children: [
+                      Builder(
+                        builder: (context) {
+                          final int sold = data['ticketsSold'] ?? 0;
+                          final int cap = data['capacity'] is int
+                              ? data['capacity'] as int
+                              : int.tryParse(
+                                      data['capacity']?.toString() ?? '0',
+                                    ) ??
+                                    0;
 
-                            // --------------------------------------------------------
-                            // ESCENARIO 1: EL USUARIO NO HA INICIADO SESIÓN
-                            // --------------------------------------------------------
-                            if (uid == null) {
-                              final bool botonDeshabilitado = isAgotado || isFinalizado;
-                              String textoBoton = isPayed ? 'Comprar entradas' : 'Reservar Entrada';
-                              
+                          final bool isAgotado = sold >= cap;
+                          final bool isPayed = data['isPayed'] ?? false;
+                          final String? uid =
+                              FirebaseAuth.instance.currentUser?.uid;
+
+                          // --------------------------------------------------------
+                          // ESCENARIO 1: EL USUARIO NO HA INICIADO SESIÓN
+                          // --------------------------------------------------------
+                          if (uid == null) {
+                            final bool botonDeshabilitado =
+                                isAgotado || isFinalizado;
+                            String textoBoton = isPayed
+                                ? 'Comprar entradas'
+                                : 'Reservar Entrada';
+
+                            if (isFinalizado) {
+                              textoBoton = 'Evento Finalizado';
+                            } else if (isAgotado) {
+                              textoBoton = 'Agotado';
+                            }
+
+                            return ElevatedButton(
+                              onPressed: botonDeshabilitado
+                                  ? null
+                                  : () {
+                                      // Lo mandamos a iniciar sesión
+                                      Navigator.pop(context);
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              const LoginScreen(),
+                                        ),
+                                      );
+                                    },
+                              child: Text(textoBoton),
+                            );
+                          }
+
+                          // --------------------------------------------------------
+                          // ESCENARIO 2: EL USUARIO ESTÁ LOGUEADO (VERIFICAMOS SU TICKET)
+                          // --------------------------------------------------------
+                          return StreamBuilder<DocumentSnapshot>(
+                            stream: FirebaseFirestore.instance
+                                .collection('users')
+                                .doc(uid)
+                                .collection('tickets')
+                                .doc(eventoId)
+                                .snapshots(),
+                            builder: (context, snapshot) {
+                              final bool yaReservo =
+                                  snapshot.hasData && snapshot.data!.exists;
+
+                              // ========================================================
+                              // 3. LÓGICA DEL BOTÓN A PRUEBA DE BALAS
+                              // ========================================================
+                              final bool botonDeshabilitado =
+                                  isAgotado || isFinalizado || yaReservo;
+
+                              String textoBoton = isPayed
+                                  ? 'Comprar entradas'
+                                  : 'Reservar Entrada';
                               if (isFinalizado) {
                                 textoBoton = 'Evento Finalizado';
+                              } else if (yaReservo) {
+                                textoBoton = 'Ya reservaste';
                               } else if (isAgotado) {
                                 textoBoton = 'Agotado';
                               }
 
                               return ElevatedButton(
                                 onPressed: botonDeshabilitado
-                                    ? null 
+                                    ? null
                                     : () {
-                                        // Lo mandamos a iniciar sesión
-                                        Navigator.pop(context);
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) => const LoginScreen(),
-                                          ),
-                                        );
+                                        if (isPayed) {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) => PaymentPage(
+                                                eventData: data,
+                                                eventId: eventoId,
+                                              ),
+                                            ),
+                                          );
+                                        } else {
+                                          // --------------------------------------------------
+                                          // LÓGICA PARA EVENTOS GRATIS
+                                          // --------------------------------------------------
+                                          registrarUsuarioEnEvento(
+                                            context,
+                                            data,
+                                            eventoId,
+                                          );
+                                        }
                                       },
                                 child: Text(textoBoton),
                               );
-                            }
-                            
-                            // --------------------------------------------------------
-                            // ESCENARIO 2: EL USUARIO ESTÁ LOGUEADO (VERIFICAMOS SU TICKET)
-                            // --------------------------------------------------------
-                            return StreamBuilder<DocumentSnapshot>(
-                              stream: FirebaseFirestore.instance
-                                  .collection('users')
-                                  .doc(uid)
-                                  .collection('tickets')
-                                  .doc(eventoId) 
-                                  .snapshots(),
-                              builder: (context, snapshot) {
-                                final bool yaReservo = snapshot.hasData && snapshot.data!.exists;
-
-
-                            // ========================================================
-                                // 3. LÓGICA DEL BOTÓN A PRUEBA DE BALAS
-                                // ========================================================
-                                final bool botonDeshabilitado = isAgotado || isFinalizado || yaReservo;
-
-                                String textoBoton = isPayed ? 'Comprar entradas' : 'Reservar Entrada';
-                                if (isFinalizado) {
-                                  textoBoton = 'Evento Finalizado';
-                                } else if (yaReservo) {
-                                  textoBoton = 'Ya reservaste';
-                                } else if (isAgotado) {
-                                  textoBoton = 'Agotado';
-                                }
-
-                                return ElevatedButton(
-                                  onPressed: botonDeshabilitado
-                                      ? null 
-                                      : () {
-                                          if (isPayed){
-                                            Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder: (context) => PaymentPage(
-                                                  eventData: data,
-                                                  eventId: eventoId,
-                                                ),
-                                              ),
-                                            );
-                                          } else {
-                                            // --------------------------------------------------
-                                            // LÓGICA PARA EVENTOS GRATIS
-                                            // --------------------------------------------------
-                                            registrarUsuarioEnEvento(context, data, eventoId);
-                                          }  
-                                        },
-                                  child: Text(textoBoton),
-                                );
-                              },
-                            );
-                          },
-                        ),
-                      ],
-                    ),
+                            },
+                          );
+                        },
+                      ),
+                    ],
+                  ),
 
                   const SizedBox(height: 2),
                   const Divider(),

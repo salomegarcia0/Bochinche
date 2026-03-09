@@ -3,6 +3,7 @@ import 'package:bochinche_app/sources/reports/reports_logic.dart';
 import 'package:bochinche_app/sources/user_profile/user_profile_ui.dart';
 import 'package:bochinche_app/styles/BochincheAppBar.dart';
 import 'package:bochinche_app/styles/Color.dart';
+import 'package:bochinche_app/widgets/detalle_evento.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter/material.dart';
@@ -2180,7 +2181,8 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
                               subtitle: Text(
                                 "${item['type']} • ${item['startDate'] != null ? DateTime.parse(item['startDate']).day.toString().padLeft(2, '0') + '/' + DateTime.parse(item['startDate']).month.toString().padLeft(2, '0') + '/' + DateTime.parse(item['startDate']).year.toString() : 'Fecha no disponible'}",
                               ),
-                              onTap: () {},
+                              onTap: () =>
+                                  mostrarDetalles(context, item, item['id']),
                             ),
                           );
                         },
