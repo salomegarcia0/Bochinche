@@ -83,8 +83,8 @@ class _SelectorUbicacionState extends State<SelectorUbicacion> {
       ),
       body: FlutterMap(
         options: MapOptions(
-          initialCenter: const LatLng(10.4806, -66.8983),
-          initialZoom: 15,
+          initialCenter: const LatLng(10.4806, -66.8983), 
+          initialZoom: 16, 
           onTap: (tapPos, point) {
             if (widget.esSelector) {
               setState(() => puntoSeleccionado = point);
@@ -96,7 +96,21 @@ class _SelectorUbicacionState extends State<SelectorUbicacion> {
             urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
             userAgentPackageName: 'com.example.bochinche_app',
           ),
-          CurrentLocationLayer(),
+          
+          CurrentLocationLayer(
+            alignPositionOnUpdate: AlignOnUpdate.once, 
+            style: const LocationMarkerStyle(
+              marker: DefaultLocationMarker(
+                    child: Icon(
+                      Icons.my_location,
+                      color: Colors.blue,
+                      size: 30,
+                    ),
+                  ),
+              markerSize: Size(30, 30),
+              markerDirection: MarkerDirection.heading,
+            ),
+          ),
           if (puntoSeleccionado != null)
             MarkerLayer(
               markers: [

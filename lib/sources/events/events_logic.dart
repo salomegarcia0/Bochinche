@@ -3,13 +3,7 @@ import 'package:bochinche_app/sources/events/events_ui.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'dart:math';
-import 'package:bochinche_app/sources/events/events_ui.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:bochinche_app/core/utils/draft_manager.dart';
-import 'package:bochinche_app/sources/notifications/notifications_logic.dart';
 
 Future<void> saveEventDraft() async {
   final Map<String, dynamic> data = {
@@ -275,8 +269,7 @@ Future<void> createEvent(BuildContext context) async {
         'type': typeC,
         'state': 'Proximo',
         'id_organizer': FirebaseAuth.instance.currentUser!.uid,
-        'description': descripcionController.text
-            .trim(), // <--- Fix: Adiós código muerto
+        'description': descripcionController.text.trim(),
         'capacity': aforoController.text,
         'startDate': fecha1!.toIso8601String(),
         'endDate': fecha2!.toIso8601String(),
@@ -298,18 +291,66 @@ Future<void> createEvent(BuildContext context) async {
             'bank': selectedBank ?? '',
             'phone':
                 selectedPhonePrefix != null &&
-                    paymentPhoneNumberController.text.isNotEmpty
-                ? '$selectedPhonePrefix-${paymentPhoneNumberController.text}'
-                : '',
+                        paymentPhoneNumberController.text.isNotEmpty
+                    ? '$selectedPhonePrefix-${paymentPhoneNumberController.text}'
+                    : '',
             'ci':
                 selectedCIType != null &&
-                    paymentCINumberController.text.isNotEmpty
-                ? '$selectedCIType-${paymentCINumberController.text}'
-                : '',
+                        paymentCINumberController.text.isNotEmpty
+                    ? '$selectedCIType-${paymentCINumberController.text}'
+                    : '',
             'price': double.tryParse(priceController.text) ?? 0.0,
           },
         });
       }
+
+      // =====================================================================
+      // LÓGICA DE NOTIFICACIONES
+      // =====================================================================
+      try {
+        String orgId = FirebaseAuth.instance.currentUser!.uid;
+        DocumentSnapshot userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(orgId)
+            .get();
+
+        String orgName = userDoc.get('nombre') ?? 'Un organizador';
+
+        // 1. Buscamos a todos los usuarios que siguen a este organizador
+        QuerySnapshot followersSnapshot = await FirebaseFirestore.instance
+            .collection('users')
+            .where('following', arrayContains: orgId)
+            .get();
+
+        if (followersSnapshot.docs.isNotEmpty) {
+          WriteBatch batch = FirebaseFirestore.instance.batch();
+
+          // 2. Creamos una notificación in-app para cada seguidor
+          for (var followerDoc in followersSnapshot.docs) {
+            String followerId = followerDoc.id;
+            DocumentReference notifRef = FirebaseFirestore.instance.collection('notifications').doc();
+
+            batch.set(notifRef, {
+              'id_not': notifRef.id,
+              'userId': followerId,
+              'eventId': newEventRef.id,
+              'titulo': '¡Nuevo Evento Creado!',
+              'mensaje': '$orgName ha creado un nuevo evento: ${nombreEventoController.text.trim()}',
+              'timestamp': FieldValue.serverTimestamp(),
+              'type': 'new_event',
+              'read': false,
+            });
+          }
+
+          // 3. Ejecutamos el guardado masivo
+          await batch.commit();
+          debugPrint("✅ Notificaciones guardadas para ${followersSnapshot.docs.length} seguidores.");
+        }
+      } catch (e) {
+        debugPrint("❌ Error guardando notificaciones in-app: $e");
+      }
+      // =====================================================================
+
       // Mostrar mensaje de éxito
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -317,19 +358,7 @@ Future<void> createEvent(BuildContext context) async {
           backgroundColor: Colors.green,
         ),
       );
-      DocumentSnapshot userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(FirebaseAuth.instance.currentUser!.uid)
-          .get();
-
-      String orgName = userDoc.get('nombre') ?? 'Un organizador';
-      NotificationsLogic noti = NotificationsLogic();
-      noti.notifyFollowersOfNewEvent(
-        FirebaseAuth.instance.currentUser!.uid,
-        newEventRef.id,
-        nombreEventoController.text,
-        orgName,
-      );
+      
       clearAllFields();
     } catch (e) {
       ScaffoldMessenger.of(
@@ -864,7 +893,6 @@ Future<void> registrarUsuarioEnEvento(
 ) async {
   final user = FirebaseAuth.instance.currentUser;
 
-  // 1. Verificamos que el usuario esté logueado
   if (user == null) {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
@@ -875,38 +903,29 @@ Future<void> registrarUsuarioEnEvento(
   }
 
   try {
-    // Referencias a los documentos en Firebase
-    DocumentReference eventRef = FirebaseFirestore.instance
-        .collection('events')
-        .doc(eventoId);
-    DocumentReference userRef = FirebaseFirestore.instance
-        .collection('users')
-        .doc(user.uid);
+    DocumentReference eventRef = FirebaseFirestore.instance.collection('events').doc(eventoId);
+    DocumentReference userRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
+    
+    // CREAMOS LA REFERENCIA A LA SUBCOLECCIÓN 'tickets'
+    // Usamos el eventoId como nombre del documento para evitar reservas duplicadas
+    DocumentReference ticketRef = userRef.collection('tickets').doc(eventoId);
 
-    // Usamos un WriteBatch para hacer varios cambios al mismo tiempo y que no falle a la mitad
     WriteBatch batch = FirebaseFirestore.instance.batch();
 
-    // 2. Actualizamos el evento: Sumamos 1 a las entradas vendidas/reservadas y guardamos el ID del usuario
+    // 1. Actualizamos el evento
     batch.update(eventRef, {
       'ticketsSold': FieldValue.increment(1),
-      'attendees': FieldValue.arrayUnion([
-        user.uid,
-      ]), // Asumiendo que guardas un arreglo de asistentes
+      'attendees': FieldValue.arrayUnion([user.uid]),
     });
 
-    // 3. (Opcional) Actualizamos al usuario: Guardamos el ID del evento en su perfil para que pueda ver sus reservas
-    batch.set(
-      userRef,
-      {
-        'mis_reservas': FieldValue.arrayUnion([eventoId]),
-      },
-      SetOptions(merge: true),
-    ); // Usamos merge por si el documento del usuario no tiene este campo aún
+    // 2. Guardamos el ticket en la subcolección correcta
+    batch.set(ticketRef, {
+      'eventId': eventoId, 
+      'reservedAt': FieldValue.serverTimestamp(),
+    });
 
-    // Ejecutamos todo de un golpe
     await batch.commit();
 
-    // 4. Le avisamos al usuario que todo salió bien
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(

@@ -124,7 +124,7 @@ Future<void> main() async {
 
   await Supabase.initialize(
     url: 'https://mnsffmoscncicppdmumh.supabase.co',
-    anonKey: 'TU_ANON_KEY_AQUI', 
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1uc2ZmbW9zY25jaWNwcGRtdW1oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEzNTEzNzIsImV4cCI6MjA4NjkyNzM3Mn0.OMfxVszd2T-dKTq-fncwGfvzRNLbtR0JxO2Hm_zjDVE', 
   );
 
   runApp(const MyApp());

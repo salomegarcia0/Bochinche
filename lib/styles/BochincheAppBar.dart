@@ -54,30 +54,26 @@ class BochincheAppBar extends StatelessWidget implements PreferredSizeWidget {
 }
 
   Widget iconpersona(BuildContext context) {
-    return IconButton(
-      icon: const Icon(Icons.person, color: SecondaryPurple),
-      onPressed: () {
-        User? usuario = FirebaseAuth.instance.currentUser;
+  return IconButton(
+    icon: const Icon(Icons.person, color: SecondaryPurple),
+    onPressed: () {
+      User? usuario = FirebaseAuth.instance.currentUser;
 
-        if (usuario == null) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const LoginScreen()),
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text("Hola, ${usuario.displayName ?? 'Bochinchero'}"),
-            ),
-          );
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const ProfileScreen()),
-          );
-        }
-      },
-    );
-  }
+      if (usuario == null) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
+        );
+      } else {
+        // 🧹 Se eliminó el SnackBar de aquí
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const ProfileScreen()),
+        );
+      }
+    },
+  );
+}
 
   Widget icon(BuildContext context) {
     return IconButton(

@@ -6,6 +6,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:bochinche_app/data/auth_service.dart';
+import 'package:bochinche_app/features/authentication/authentication_steps.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -234,7 +235,6 @@ class _ProfileScreenState extends State<ProfileScreen>
 
     String _sexoSeleccionado = 'Prefiero no decirlo';
     bool _enviando = false;
-    bool _cedulaVerificada = false; // <--- NUEVA VARIABLE PARA EL CHECKBOX
 
     showModalBottomSheet(
       context: context,
@@ -284,30 +284,6 @@ class _ProfileScreenState extends State<ProfileScreen>
                         style: TextStyle(color: Colors.grey),
                       ),
                       const SizedBox(height: 20),
-
-                      // 1. Confirmación de Cédula (Checkbox estilo Binance)
-                      Container(
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey.shade400),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: CheckboxListTile(
-                          title: const Text(
-                            "Confirmo que ya realicé la verificación de identidad (Cédula)",
-                            style: TextStyle(fontSize: 14),
-                          ),
-                          value: _cedulaVerificada,
-                          onChanged: (bool? newValue) {
-                            setModalState(() {
-                              _cedulaVerificada = newValue ?? false;
-                            });
-                          },
-                          controlAffinity: ListTileControlAffinity.leading,
-                          contentPadding: EdgeInsets.zero,
-                          activeColor: PrimaryPurple,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
 
                       // 2. Domicilio Fiscal
                       TextFormField(
@@ -424,25 +400,10 @@ class _ProfileScreenState extends State<ProfileScreen>
                           onPressed: _enviando
                               ? null
                               : () async {
-                                  // Validamos que haya marcado el checkbox de la cédula
-                                  if (!_cedulaVerificada) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text(
-                                          "Debes confirmar tu verificación de identidad",
-                                        ),
-                                        backgroundColor: Colors.red,
-                                      ),
-                                    );
-                                    return;
-                                  }
-
                                   if (_formKey.currentState!.validate()) {
                                     setModalState(() => _enviando = true);
                                     try {
                                       Map<String, dynamic> formData = {
-                                        'cedula_verificada':
-                                            _cedulaVerificada, // <--- GUARDAMOS EL BOOLEANO
                                         'domicilio_fiscal': _domicilioCtrl.text
                                             .trim(),
                                         'edad':
@@ -601,18 +562,26 @@ class _ProfileScreenState extends State<ProfileScreen>
                           : null,
                     ),
                     const SizedBox(height: 10),
-                    // --- INICIO LÓGICA DE VERIFICACIÓN ---
-                    StreamBuilder<String>(
-                      stream: AuthService().obtenerEstadoVerificacionStream(
-                        _usuario!.uid,
-                      ),
+                    // --- SISTEMA DE VERIFICACIÓN EN CASCADA (ID -> INSIGNIA) ---
+                    StreamBuilder<DocumentSnapshot>(
+                      stream: FirebaseFirestore.instance
+                          .collection('users')
+                          .doc(_usuario!.uid)
+                          .snapshots(),
                       builder: (context, snapshot) {
-                        String verificationStatus =
-                            snapshot.data ?? 'unverified';
+                        if (!snapshot.hasData) return const SizedBox();
+                        
+                        var data = snapshot.data!.data() as Map<String, dynamic>;
+                        
+                        // Estados de Cédula
+                        String idState = data['idProcessState'] ?? 'none'; 
+                        
+                        // Estados de Insignia Azul
+                        String vStatus = data['verificationStatus'] ?? 'unverified';
 
                         return Column(
                           children: [
-                            // 1. Nombre y Check Azul
+                            // 1. NOMBRE Y CHECK AZUL (Solo si ya es 'verified')
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
@@ -624,54 +593,67 @@ class _ProfileScreenState extends State<ProfileScreen>
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
-                                if (verificationStatus == 'verified') ...[
+                                if (vStatus == 'verified') ...[
                                   const SizedBox(width: 5),
-                                  const Icon(
-                                    Icons.verified,
-                                    color: Colors.blue,
-                                    size: 24,
-                                  ),
+                                  const Icon(Icons.verified, color: Colors.blue, size: 24),
                                 ],
                               ],
                             ),
                             const SizedBox(height: 15),
 
-                            // 2. Botón de Solicitud o Estado Pendiente
-                            if (verificationStatus == 'unverified')
-                              ElevatedButton.icon(
-                                onPressed: () {
-                                  // Al presionar, abrimos el formulario
-                                  _mostrarFormularioVerificacion(_usuario!.uid);
-                                },
-                                icon: const Icon(
-                                  Icons.verified_user,
-                                  size: 16,
-                                  color: Colors.white,
-                                ),
-                                label: const Text(
-                                  "Solicitar Verificación",
-                                  style: TextStyle(color: Colors.white),
-                                ),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.blue,
+                            // 2. SECCIÓN CÉDULA (Solo se muestra si no está aprobada ni en espera)
+                            if (vStatus != 'verified' && idState == 'none')
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 10),
+                                child: OutlinedButton.icon(
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(builder: (context) => const Authetication_steps()),
+                                    );
+                                  },
+                                  icon: const Icon(Icons.badge_outlined, color: Colors.orange),
+                                  label: const Text("Verificar Cédula (ID)", style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold)),
+                                  style: OutlinedButton.styleFrom(
+                                    backgroundColor: Colors.white,
+                                    side: const BorderSide(color: Colors.orange, width: 2),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  ),
                                 ),
                               )
-                            else if (verificationStatus == 'pending')
-                              const Text(
-                                "Verificación en revisión ⏳",
-                                style: TextStyle(
-                                  color: Colors.amber,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
+                            else if (idState == 'waiting' && vStatus != 'verified')
+                              const Padding(
+                                padding: EdgeInsets.only(bottom: 15),
+                                child: Text("Cédula en revisión ⏳", style: TextStyle(color: Colors.orangeAccent, fontWeight: FontWeight.bold)),
                               ),
 
+                            // 3. SECCIÓN INSIGNIA (Solo se habilita si la Cédula ya es 'approved')
+                            if (idState == 'approved') ...[
+                              if (vStatus == 'unverified')
+                                ElevatedButton.icon(
+                                  onPressed: () => _mostrarFormularioVerificacion(_usuario!.uid),
+                                  icon: const Icon(Icons.verified_user, size: 16, color: Colors.white),
+                                  label: const Text("Solicitar Insignia Oficial", style: TextStyle(color: Colors.white)),
+                                  style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
+                                )
+                              else if (vStatus == 'pending')
+                                const Text(
+                                  "Solicitud de Insignia en revisión ⏳",
+                                  style: TextStyle(color: Colors.blueAccent, fontWeight: FontWeight.bold, fontSize: 16),
+                                ),
+                            ] else if (vStatus != 'verified') ...[
+                              // Mensaje informativo opcional mientras no esté aprobada la ID
+                              const Text(
+                                "Debes validar tu ID para solicitar la insignia oficial",
+                                style: TextStyle(color: Colors.white38, fontSize: 12, fontStyle: FontStyle.italic),
+                              ),
+                            ],
+                            
                             const SizedBox(height: 10),
                           ],
                         );
                       },
                     ),
-                    // --- FIN LÓGICA DE VERIFICACIÓN ---
 
                     // --- BOTÓN EDITAR ---
                     ElevatedButton.icon(

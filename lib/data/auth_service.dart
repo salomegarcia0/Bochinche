@@ -22,24 +22,41 @@ class AuthService {
     }
   }
 
-  //LOGIN //
+  // LOGIN CON SINCRONIZACIÓN DE CORREO //
   Future<User?> signInWithEmailAndPassword(
     String email,
     String password,
   ) async {
     try {
+      // 1. Intentamos el login normal
       UserCredential result = await _auth.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
+
       if (result.user != null) {
+        // 2. FORZAMOS el refresco de los datos del usuario (VITAL)
+        // Sin esto, la app sigue creyendo que emailVerified es false
+        await result.user!.reload();
+        User? userActualizado = _auth.currentUser; 
+
+        // 3. Si Firebase Auth dice que ya está verificado, actualizamos Firestore
+        if (userActualizado != null && userActualizado.emailVerified) {
+          await _firestore.collection('users').doc(userActualizado.uid).update({
+            'email_verified': true,
+          });
+          print("✅ Firestore sincronizado: email_verified ahora es true");
+        }
+
+        // 4. Actualizamos el token de notificaciones (lo que ya tenías)
         await _actualizarFCMToken(result.user!.uid);
       }
+
       return result.user;
     } on FirebaseAuthException catch (e) {
       throw e.message ?? "Error en Firebase";
     } catch (e) {
-      throw "Error de conexión odatos inválidos";
+      throw "Error de conexión o datos inválidos";
     }
   }
 

@@ -855,10 +855,12 @@ class _FormCreateEventState extends State<FormCreateEvent> {
                         saveEventDraft();
                       });
                     },
+                    maxLength: 10,
                     decoration: InputDecoration(
                       labelText: 'Número de Identificación',
                       prefixIcon: const Icon(Icons.badge),
                       border: const OutlineInputBorder(),
+                      counterText: '',
                       errorText: _paymentCIError,
                     ),
                   ),
@@ -1690,10 +1692,12 @@ class _FormCreateEvent2State extends State<FormCreateEvent2> {
                 child: TextFormField(
                   controller: paymentCINumberController,
                   keyboardType: TextInputType.number,
+                  maxLength: 10,
                   decoration: const InputDecoration(
                     labelText: 'Número de Identificación',
                     prefixIcon: Icon(Icons.badge),
                     border: OutlineInputBorder(),
+                    counterText: '',
                   ),
                 ),
               ),

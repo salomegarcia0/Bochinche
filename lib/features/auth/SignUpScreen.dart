@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:bochinche_app/data/auth_service.dart';
 import 'package:bochinche_app/features/auth/LoginScreen.dart';
-import 'package:bochinche_app/features/authentication/authentication_steps.dart';
 import 'package:bochinche_app/styles/Color.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -261,7 +260,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
         _showSnackBar("Registro exitoso. Verifica tu correo para continuar.");
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const Authetication_steps()),
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
         );
       }
     } catch (error) {

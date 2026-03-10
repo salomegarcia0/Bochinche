@@ -22,7 +22,6 @@ export const sendPushNotification = onDocumentCreated(
     }
 
     try {
-      // 1. Buscamos el token del usuario en su documento de perfil
       const userDoc = await admin.firestore().collection("users").doc(userId).get();
       const fcmToken = userDoc.data()?.fcmToken;
 
@@ -31,7 +30,6 @@ export const sendPushNotification = onDocumentCreated(
         return;
       }
 
-      // 2. Construimos el mensaje con el campo 'data' para que el clic funcione
       const message = {
         notification: {
           title: title,
@@ -43,9 +41,8 @@ export const sendPushNotification = onDocumentCreated(
         token: fcmToken,
       };
 
-      // 3. Enviamos el mensaje a través de Firebase Cloud Messaging
       await admin.messaging().send(message);
-      console.log(`✅ Notificación enviada con éxito al usuario ${userId} para el evento ${eventId}`);
+      console.log(`✅ Notificación enviada con éxito al usuario ${userId}`);
 
     } catch (error) {
       console.error("❌ Error enviando la notificación push:", error);
@@ -55,11 +52,9 @@ export const sendPushNotification = onDocumentCreated(
 
 export const checkUpcomingEvents = onSchedule("every 1 hours", async (event) => {
     const db = admin.firestore();
-    const now = new Date();
+    const now = new Date(); // Esta es la hora UTC actual
     
     try {
-        // 1. Buscamos TODOS los tickets de todos los usuarios usando un "Collection Group"
-        // Esto es mucho más eficiente que buscar usuario por usuario
         const ticketsSnapshot = await db.collectionGroup("tickets").get();
 
         if (ticketsSnapshot.empty) {
@@ -70,18 +65,13 @@ export const checkUpcomingEvents = onSchedule("every 1 hours", async (event) => 
         const batch = db.batch();
         const eventsCache: { [key: string]: FirebaseFirestore.DocumentData } = {};
 
-        // 2. Revisamos cada ticket
         for (const ticketDoc of ticketsSnapshot.docs) {
             const ticketData = ticketDoc.data();
             const eventId = ticketData.eventId;
-            
-            // Para saber de quién es este ticket, extraemos el ID del usuario de la ruta del documento
-            // Ruta típica: users/{userId}/tickets/{ticketId}
             const userId = ticketDoc.ref.parent.parent?.id; 
 
             if (!eventId || !userId) continue;
 
-            // 3. Buscamos los datos del evento (usamos un caché para no consultar Firestore 100 veces por el mismo evento)
             if (!eventsCache[eventId]) {
                 const eventSnap = await db.collection("events").doc(eventId).get();
                 if (eventSnap.exists) {
@@ -94,17 +84,31 @@ export const checkUpcomingEvents = onSchedule("every 1 hours", async (event) => 
             const eventData = eventsCache[eventId];
             if (!eventData.startDate) continue;
 
-            // 4. Calculamos el tiempo restante
+            // =============================================================
+            // FIX DE HORA PARA CARACAS (UTC-4)
+            // =============================================================
             const fechaEvento = new Date(eventData.startDate);
+            const startTime = eventData.startTime;
+
+            if (startTime && typeof startTime.hour !== 'undefined') {
+                // Sumamos 4 horas para convertir la hora de Caracas a UTC
+                // Así 3:00 AM Caracas se convierte en 7:00 AM UTC
+                fechaEvento.setUTCHours(startTime.hour + 4);
+                fechaEvento.setUTCMinutes(startTime.minute || 0);
+            }
+
             const diffEnMilisegundos = fechaEvento.getTime() - now.getTime();
             const diffEnHoras = diffEnMilisegundos / (1000 * 60 * 60);
 
+            console.log(`Analizando: ${eventData.name} | Usuario: ${userId}`);
+            console.log(`Hora Caracas: ${startTime.hour}:${startTime.minute}`);
+            console.log(`Hora UTC calculada: ${fechaEvento.toISOString()}`);
+            console.log(`Diferencia real: ${diffEnHoras} horas`);
+
             if (diffEnHoras > 0 && diffEnHoras <= 24) {
-                // 5. Creamos un ID único para no repetir esta notificación
                 const notifId = `${userId}_${eventId}_24h`;
                 const notifRef = db.collection("notifications").doc(notifId);
 
-                // Usamos set() con merge: true. Si el documento ya existe (ya le avisamos antes), no hace nada malo.
                 batch.set(notifRef, {
                     userId: userId,
                     eventId: eventId,
@@ -117,11 +121,10 @@ export const checkUpcomingEvents = onSchedule("every 1 hours", async (event) => 
             }
         }
 
-        // 6. Ejecutamos todas las escrituras
         await batch.commit();
         console.log("✅ Revisión de eventos próximos completada.");
 
     } catch (error) {
-        console.error("❌ Error en el cron job de eventos próximos:", error);
+        console.error("❌ Error en el cron job:", error);
     }
 });

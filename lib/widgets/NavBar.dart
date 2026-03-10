@@ -74,7 +74,7 @@ class Navbar extends StatelessWidget {
               _item(
                 context,
                 Icons.explore,
-                'Explorar eventos',
+                'Explorar',
                 const PublicEventsScreen(),
               ),
               _item(context, Icons.map, 'Mapa', const Pagina_Principal()),
