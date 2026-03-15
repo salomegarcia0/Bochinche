@@ -216,15 +216,30 @@ void mostrarDetalles(
                               .get(),
                           builder: (context, snapshot) {
                             if (!snapshot.hasData || !snapshot.data!.exists) {
-                              return Text("Organizador: Desconocido");
+                              return const Text("Organizador: Desconocido");
                             }
 
                             final userData =
                                 snapshot.data!.data() as Map<String, dynamic>;
-                            final String nombreOrg =
-                                userData['nombre'] ?? 'Sin nombre';
+                            
+                            // ==========================================
+                            // NUEVA LÓGICA: EXTRAER USERNAME Y NOMBRE
+                            // ==========================================
+                            final String nombreOrg = userData['nombre'] ?? 'Sin nombre';
+                            final String username = userData['username'] ?? '';
+                            
+                            // Construimos cómo se va a ver
+                            // Si tiene username: @username (Nombre Real)
+                            // Si no tiene: Nombre Real
+                            final String textoAmostrar = username.isNotEmpty 
+                                ? '@$username ($nombreOrg)' 
+                                : nombreOrg;
 
                             return TextButton(
+                              style: TextButton.styleFrom(
+                                padding: EdgeInsets.zero,
+                                alignment: Alignment.centerLeft,
+                              ),
                               onPressed: () {
                                 userToReport = data['id_organizer'];
                                 Navigator.push(
@@ -234,10 +249,32 @@ void mostrarDetalles(
                                   ),
                                 );
                               },
-                              child: Text(
-                                'Organizador: $nombreOrg',
-                                style: Theme.of(context).textTheme.titleMedium,
+                              child: RichText(
                                 overflow: TextOverflow.ellipsis,
+                                text: TextSpan(
+                                  text: 'Organizador: ',
+                                  style: Theme.of(context).textTheme.titleMedium,
+                                  children: [
+                                    if (username.isNotEmpty)
+                                      TextSpan(
+                                        text: '@$username ',
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color: PrimaryPurple, // Destacamos el @
+                                        ),
+                                      ),
+                                    if (username.isNotEmpty)
+                                      TextSpan(
+                                        text: '($nombreOrg)',
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          color: Colors.grey, // Nombre real más discreto
+                                        ),
+                                      ),
+                                    if (username.isEmpty)
+                                      TextSpan(text: nombreOrg),
+                                  ],
+                                ),
                               ),
                             );
                           },

@@ -15,10 +15,11 @@ import 'package:syncfusion_flutter_charts/charts.dart';
 
 class StatisticsScreen extends StatelessWidget {
   const StatisticsScreen({super.key});
+  
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      drawer: Navbar(),
+    return const Scaffold(
+      drawer: Navbar(), // Aquí cargará tu Navbar Camaleónico
       appBar: BochincheAppBar(),
       body: SafeArea(child: StatisticsUi()),
     );
@@ -38,18 +39,27 @@ class _StatisticsUiState extends State<StatisticsUi> {
     return SingleChildScrollView(
       child: Column(
         children: [
-          SizedBox(height: 20),
-          Text(
-            'Analíticas',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          const SizedBox(height: 20),
+          const Text(
+            'Cuartel General',
+            style: TextStyle(
+              fontSize: 28, 
+              fontWeight: FontWeight.w900,
+              color: PrimaryPurple,
+            ),
+          ),
+          const SizedBox(height: 5),
+          const Text(
+            'Panel de Control de Administrador',
+            style: TextStyle(
+              fontSize: 15, 
+              fontWeight: FontWeight.w600,
+              color: Colors.grey,
+            ),
           ),
 
-          Text(
-            'Describa el problema que encontró con el evento seleccionado.',
-            style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-          ),
-
-          Divider(),
+          const Divider(height: 30),
+          
           GridView.count(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
@@ -127,24 +137,25 @@ class _StatisticsUiState extends State<StatisticsUi> {
           Container(
             height: 300,
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: GraficoEventosHorizontal(),
+            child: const GraficoEventosHorizontal(),
           ),
           const SizedBox(height: 50),
           Container(
             height: 300,
             padding: const EdgeInsets.symmetric(horizontal: 3),
-            child: GraficoTiposEventosSync(),
+            child: const GraficoTiposEventosSync(),
           ),
           Container(
             height: 300,
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: RankingUsuariosGrafico(),
+            child: const RankingUsuariosGrafico(),
           ),
           Container(
             height: 300,
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: TopEventosGrafico(),
+            child: const TopEventosGrafico(),
           ),
+          const SizedBox(height: 40), // Espacio al final para que no quede pegado
         ],
       ),
     );
@@ -160,12 +171,13 @@ class _StatisticsUiState extends State<StatisticsUi> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(icon, color: Colors.white, size: 30),
+          const SizedBox(height: 8),
           Text(title, style: const TextStyle(color: Colors.white70)),
           Text(
             val,
             style: const TextStyle(
               color: Colors.white,
-              fontSize: 20,
+              fontSize: 24,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -221,7 +233,10 @@ class GraficoEventosHorizontal extends StatelessWidget {
         }).toList();
 
         return SfCartesianChart(
-          title: ChartTitle(text: 'Eventos por mes'),
+          title: ChartTitle(
+            text: 'Eventos por mes',
+            textStyle: const TextStyle(fontWeight: FontWeight.bold),
+          ),
           isTransposed: false,
           primaryXAxis: CategoryAxis(),
           primaryYAxis: NumericAxis(labelFormat: '{value}'),
@@ -271,7 +286,10 @@ class GraficoTiposEventosSync extends StatelessWidget {
         }).toList();
 
         return SfCircularChart(
-          title: ChartTitle(text: 'Eventos por Categoría'),
+          title: ChartTitle(
+            text: 'Eventos por Categoría',
+            textStyle: const TextStyle(fontWeight: FontWeight.bold),
+          ),
           legend: Legend(
             isVisible: true,
             overflowMode: LegendItemOverflowMode.wrap,
@@ -360,8 +378,7 @@ class RankingUsuariosGrafico extends StatelessWidget {
             isTransposed: false, // Barras horizontales
             plotAreaBorderWidth: 0,
             primaryXAxis: const CategoryAxis(
-              isVisible:
-                  false, // Ocultamos el eje porque los nombres van arriba
+              isVisible: false, // Ocultamos el eje porque los nombres van arriba
               borderWidth: 0,
             ),
             primaryYAxis: const NumericAxis(
@@ -480,11 +497,9 @@ class TopEventosGrafico extends StatelessWidget {
                 dataSource: data,
                 xValueMapper: (Map<String, dynamic> ev, _) => ev['nombre'],
                 yValueMapper: (Map<String, dynamic> ev, _) => ev['cantidad'],
-
                 color: const Color(0xFFFF8585),
                 width: 0.25,
                 borderRadius: const BorderRadius.all(Radius.circular(10)),
-
                 animationDuration: 1500,
               ),
             ],

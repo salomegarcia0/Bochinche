@@ -17,6 +17,7 @@ class SignUpScreen extends StatefulWidget {
 class _SignUpScreenState extends State<SignUpScreen> {
   // --- CONTROLLERS ---
   final TextEditingController nameController = TextEditingController();
+  final TextEditingController usernameController = TextEditingController(); 
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController cedulaController = TextEditingController();
@@ -35,6 +36,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     if (mounted && draft != null) {
       setState(() {
         nameController.text = draft['name'] ?? '';
+        usernameController.text = draft['username'] ?? ''; 
         emailController.text = draft['email'] ?? '';
         tipoDocumento =
             (draft['docType'] != null && draft['docType']!.isNotEmpty)
@@ -55,6 +57,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   void _saveLocalDraft() {
     DraftManager.saveSignUpDraft({
       'name': nameController.text,
+      'username': usernameController.text, 
       'email': emailController.text,
       'docType': tipoDocumento,
       'cedula': cedulaController.text,
@@ -66,13 +69,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   // --- VALIDACIÓN ---
   Timer? _debounce;
+  String? _nameError;
+  String? _usernameError; 
   String? _emailError;
   String? _phoneError;
   String? _cedulaError;
   String? _passwordError;
-  String? _nameError;
   String? _docTypeError;
   String? _phonePrefixError;
+  
   // --- ESTADOS ---
   bool cargando = false;
   bool showPassword = false;
@@ -96,6 +101,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   void dispose() {
     _debounce?.cancel();
     nameController.dispose();
+    usernameController.dispose(); 
     emailController.dispose();
     passwordController.dispose();
     cedulaController.dispose();
@@ -104,6 +110,49 @@ class _SignUpScreenState extends State<SignUpScreen> {
   }
 
   // --- LÓGICA DE VALIDACIÓN ---
+  void _onNameChanged(String value) {
+    _saveLocalDraft();
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    _debounce = Timer(const Duration(milliseconds: 500), () {
+      _validateName(value);
+    });
+  }
+
+  void _validateName(String name) {
+    setState(() {
+      if (name.trim().isEmpty) {
+        _nameError = "El nombre es requerido";
+      } else {
+        _nameError = null;
+      }
+    });
+  }
+
+  // <-- NUEVA LÓGICA DE VALIDACIÓN PARA EL USERNAME -->
+  void _onUsernameChanged(String value) {
+    _saveLocalDraft();
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    _debounce = Timer(const Duration(milliseconds: 500), () {
+      _validateUsername(value);
+    });
+  }
+
+  void _validateUsername(String username) {
+    final RegExp usernameExp = RegExp(r'^[a-zA-Z0-9_]{3,15}$');
+    
+    setState(() {
+      if (username.trim().isEmpty) {
+        _usernameError = "El usuario es requerido";
+      } else if (username.contains(' ')) {
+        _usernameError = "No puede contener espacios";
+      } else if (!usernameExp.hasMatch(username)) {
+        _usernameError = "De 3 a 15 caracteres (solo letras, números y _)";
+      } else {
+        _usernameError = null;
+      }
+    });
+  }
+
   void _onEmailChanged(String value) {
     _saveLocalDraft();
     if (_debounce?.isActive ?? false) _debounce!.cancel();
@@ -188,26 +237,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
     });
   }
 
-  void _onNameChanged(String value) {
-    _saveLocalDraft();
-    if (_debounce?.isActive ?? false) _debounce!.cancel();
-    _debounce = Timer(const Duration(milliseconds: 500), () {
-      _validateName(value);
-    });
-  }
-
-  void _validateName(String name) {
-    setState(() {
-      if (name.trim().isEmpty) {
-        _nameError = "El nombre es requerido";
-      } else {
-        _nameError = null;
-      }
-    });
-  }
-
   bool _validateAll() {
     _validateName(nameController.text);
+    _validateUsername(usernameController.text); 
     _validateEmail(emailController.text);
     _validateCedula(cedulaController.text);
     _validatePhone(phoneController.text);
@@ -219,6 +251,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     });
 
     return _nameError == null &&
+        _usernameError == null && 
         _emailError == null &&
         _cedulaError == null &&
         _phoneError == null &&
@@ -250,6 +283,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
         email: emailController.text.trim(),
         password: passwordController.text.trim(),
         name: nameController.text.trim(),
+        username: usernameController.text.trim(), 
         rol: 'organizador',
         cedula: identificacionCompleta,
         phone: telefonoCompleto,
@@ -343,6 +377,26 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 errorText: _nameError,
                 errorStyle: const TextStyle(color: Colors.red),
               ),
+            ),
+            const SizedBox(height: 15),
+
+            // <-- NUEVO CAMPO DE USERNAME -->
+            TextField(
+              controller: usernameController,
+              onChanged: _onUsernameChanged,
+              decoration: InputDecoration(
+                filled: true,
+                fillColor: SecondaryPurple,
+                labelText: "Usuario (@bochinchero)",
+                prefixIcon: const Icon(Icons.alternate_email),
+                border: const OutlineInputBorder(),
+                errorText: _usernameError,
+                errorStyle: const TextStyle(color: Colors.red),
+              ),
+              keyboardType: TextInputType.text,
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9_]')),
+              ],
             ),
             const SizedBox(height: 15),
 

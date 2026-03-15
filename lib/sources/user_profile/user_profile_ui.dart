@@ -1,5 +1,6 @@
 import 'package:bochinche_app/sources/reports/reports_logic.dart';
 import 'package:bochinche_app/sources/user_profile/user_profile_logic.dart';
+import 'package:bochinche_app/sources/reports/reports_ui.dart'; // <-- IMPORTANTE: Necesario para navegar a ReportUser()
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:bochinche_app/widgets/NavBar.dart';
@@ -32,12 +33,92 @@ class _OrgProfileViewState extends State<OrgProfileView> {
 
   @override
   Widget build(BuildContext context) {
+    // Variable para saber si el que mira es dueño del perfil
+    final bool isMyOwnProfile = 
+        FirebaseAuth.instance.currentUser?.uid == userToReport;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text(
           "Perfil del usuario",
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
+        // ========================================================
+        // NUEVO: BOTÓN DE REPORTAR (Solo visible si no es tu perfil)
+        // ========================================================
+        actions: [
+          if (!isMyOwnProfile)
+            PopupMenuButton<String>(
+              icon: const Icon(Icons.more_vert),
+              onSelected: (value) {
+                if (value == 'reportar') {
+                  showDialog(
+                    context: context,
+                    builder: (context) {
+                      return AlertDialog(
+                        title: const Text(
+                          'Reportar usuario',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        content: const Text(
+                          '¿Deseas reportar este perfil por incumplimiento de las normas?',
+                        ),
+                        actions: [
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.grey[200],
+                              foregroundColor: Colors.black87,
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text('Cancelar'),
+                          ),
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.redAccent,
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            onPressed: () {
+                              Navigator.pop(context); // Cierra el diálogo
+                              // La variable userToReport ya tiene el ID correcto, 
+                              // así que solo mandamos a la pantalla.
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const ReportUser(),
+                                ),
+                              );
+                            },
+                            child: const Text('Reportar'),
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                }
+              },
+              itemBuilder: (context) => [
+                const PopupMenuItem(
+                  value: 'reportar',
+                  child: Row(
+                    children: [
+                      Icon(Icons.flag_outlined, color: Colors.red, size: 20),
+                      SizedBox(width: 8),
+                      Text('Reportar perfil', style: TextStyle(color: Colors.red)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+        ],
+        // ========================================================
       ),
       body: FutureBuilder<List<dynamic>>(
         future: Future.wait([
@@ -82,6 +163,8 @@ class _OrgProfileViewState extends State<OrgProfileView> {
                     : null,
               ),
               const SizedBox(height: 10),
+              
+              // Aquí ya podrías en el futuro poner el @username también si quisieras
               Text(
                 userData['nombre'] ?? 'Usuario',
                 style: const TextStyle(
@@ -93,7 +176,7 @@ class _OrgProfileViewState extends State<OrgProfileView> {
               Text(userData['telefono'] ?? ''),
               const SizedBox(height: 10),
               Visibility(
-                visible: FirebaseAuth.instance.currentUser!.uid != userToReport,
+                visible: !isMyOwnProfile,
                 child: ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: isFollowing!

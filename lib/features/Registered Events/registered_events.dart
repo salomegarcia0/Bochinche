@@ -137,9 +137,10 @@ class _registered_events extends State<registered_events> {
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                const Text(
-                                  "1. Detalles de la Reserva",
-                                  style: TextStyle(
+                                // AQUI ESTÁ LA MAGIA 👇
+                                Text(
+                                  "${index + 1}. Detalles de la Reserva",
+                                  style: const TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w600,
                                     color: PrimaryPurple,
