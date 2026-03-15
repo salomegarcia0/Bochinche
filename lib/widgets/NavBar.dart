@@ -7,6 +7,7 @@ import 'package:bochinche_app/sources/events/events_ui.dart';
 import 'package:bochinche_app/sources/events/events_logic.dart';
 import 'package:bochinche_app/sources/reports/reports_ui.dart';
 import 'package:bochinche_app/features/Registered Events/registered_events.dart';
+import 'package:bochinche_app/sources/statistics/statistics_ui.dart';
 import 'package:bochinche_app/styles/Color.dart';
 
 class Navbar extends StatelessWidget {
@@ -116,6 +117,12 @@ class Navbar extends StatelessWidget {
                   Icons.dashboard,
                   'Panel de control',
                   const ControlPanelEvent(),
+                ),
+                _item(
+                  context,
+                  Icons.query_stats,
+                  'Estadisticas',
+                  StatisticsScreen(),
                 ),
               ],
 
