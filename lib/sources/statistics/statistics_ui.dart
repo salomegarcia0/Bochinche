@@ -378,11 +378,19 @@ class RankingUsuariosGrafico extends StatelessWidget {
             isTransposed: false, // Barras horizontales
             plotAreaBorderWidth: 0,
             primaryXAxis: const CategoryAxis(
-              isVisible: false, // Ocultamos el eje porque los nombres van arriba
-              borderWidth: 0,
+              isVisible: true,
+              axisLine: AxisLine(width: 0),
+              majorGridLines: MajorGridLines(width: 0),
+              majorTickLines: MajorTickLines(size: 0),
+              labelStyle: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: Colors.indigo,
+                fontSize: 12,
+              ),
+              maximumLabelWidth: 100,
             ),
             primaryYAxis: const NumericAxis(
-              isVisible: false, // Ocultamos el eje de valores
+              isVisible: false,
             ),
             series: <CartesianSeries<Map<String, dynamic>, String>>[
               BarSeries<Map<String, dynamic>, String>(
@@ -390,27 +398,20 @@ class RankingUsuariosGrafico extends StatelessWidget {
                 xValueMapper: (Map<String, dynamic> data, _) => data['nombre'],
                 yValueMapper: (Map<String, dynamic> data, _) =>
                     data['totalEventos'],
-
-                // Estilo de la barra igual a tu imagen
-                color: const Color(0xFFFF7B7B), // Color coral/rosado
-                width: 0.3, // Grosor de la barra
+                color: const Color(0xFFFF7B7B),
+                width: 0.3,
                 borderRadius: BorderRadius.circular(10),
-
-                // CONFIGURACIÓN DE LAS ETIQUETAS (Texto arriba)
                 dataLabelSettings: const DataLabelSettings(
                   isVisible: true,
-                  // Coloca la etiqueta encima de la barra
                   labelPosition: ChartDataLabelPosition.outside,
-                  labelAlignment: ChartDataLabelAlignment.top,
                   textStyle: TextStyle(
-                    fontSize: 13,
+                    fontSize: 12,
                     fontWeight: FontWeight.w500,
                     color: Colors.indigo,
                   ),
                 ),
-
                 dataLabelMapper: (Map<String, dynamic> data, _) {
-                  return '${data['nombre']}                                       ${data['totalEventos']} eventos';
+                  return '${data['totalEventos']}';
                 },
               ),
             ],
@@ -453,54 +454,42 @@ class TopEventosGrafico extends StatelessWidget {
                 fontSize: 18,
               ),
             ),
-            isTransposed: true,
+            isTransposed: false, // Convertido a barras horizontales
             plotAreaBorderWidth: 0,
-            primaryXAxis: const CategoryAxis(isVisible: false),
+            primaryXAxis: const CategoryAxis(
+              isVisible: true,
+              axisLine: AxisLine(width: 0),
+              majorGridLines: MajorGridLines(width: 0),
+              majorTickLines: MajorTickLines(size: 0),
+              labelStyle: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF5E548E),
+                fontSize: 12,
+              ),
+              maximumLabelWidth: 120,
+            ),
             primaryYAxis: const NumericAxis(isVisible: false),
-
-            annotations: data.asMap().entries.map((entry) {
-              int index = entry.key;
-              var item = entry.value;
-
-              return CartesianChartAnnotation(
-                widget: Container(
-                  width: MediaQuery.of(context).size.width * 0.8,
-                  padding: const EdgeInsets.only(bottom: 45),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        item['nombre'],
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF5E548E),
-                          fontSize: 14,
-                        ),
-                      ),
-                      Text(
-                        '${item['cantidad']} asistentes',
-                        style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                      ),
-                    ],
-                  ),
-                ),
-                coordinateUnit: CoordinateUnit.point,
-                x: item['nombre'],
-                y: 0,
-                region: AnnotationRegion.plotArea,
-                horizontalAlignment: ChartAlignment.near,
-              );
-            }).toList(),
-
             series: <CartesianSeries<Map<String, dynamic>, String>>[
               BarSeries<Map<String, dynamic>, String>(
                 dataSource: data,
                 xValueMapper: (Map<String, dynamic> ev, _) => ev['nombre'],
                 yValueMapper: (Map<String, dynamic> ev, _) => ev['cantidad'],
                 color: const Color(0xFFFF8585),
-                width: 0.25,
+                width: 0.3,
                 borderRadius: const BorderRadius.all(Radius.circular(10)),
                 animationDuration: 1500,
+                dataLabelSettings: const DataLabelSettings(
+                  isVisible: true,
+                  labelPosition: ChartDataLabelPosition.outside,
+                  textStyle: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF5E548E),
+                  ),
+                ),
+                dataLabelMapper: (Map<String, dynamic> data, _) {
+                  return '${data['cantidad']}';
+                },
               ),
             ],
           ),
