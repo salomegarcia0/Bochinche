@@ -335,13 +335,13 @@ class _FormCreateEventState extends State<FormCreateEvent> {
   }
 
   //seleccionar imagenes
-Future<void> _seleccionarImagenes() async {
+  Future<void> _seleccionarImagenes() async {
     try {
       final List<XFile> imagenes = await _picker.pickMultiImage();
-      
+
       if (imagenes.isNotEmpty) {
         // Límite de 5 MB por foto
-        final int limiteBytes = 5 * 1024 * 1024; 
+        final int limiteBytes = 5 * 1024 * 1024;
         bool algunaMuyPesada = false;
 
         setState(() {
@@ -350,19 +350,21 @@ Future<void> _seleccionarImagenes() async {
             final int size = file.lengthSync();
 
             if (size > limiteBytes) {
-              algunaMuyPesada = true; 
+              algunaMuyPesada = true;
             } else {
-              _imagenesSeleccionadas.add(file); 
+              _imagenesSeleccionadas.add(file);
             }
           }
-          
-          saveEventDraft(); 
+
+          saveEventDraft();
         });
 
         if (algunaMuyPesada) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Una o más imágenes exceden el límite de 5MB y no fueron añadidas.'),
+              content: Text(
+                'Una o más imágenes exceden el límite de 5MB y no fueron añadidas.',
+              ),
               backgroundColor: Colors.orange,
             ),
           );
@@ -372,6 +374,7 @@ Future<void> _seleccionarImagenes() async {
       print("Error seleccionando imágenes: $e");
     }
   }
+
   void _removerImagen(int index) {
     setState(() {
       _imagenesSeleccionadas.removeAt(index);
@@ -382,27 +385,34 @@ Future<void> _seleccionarImagenes() async {
   Future<List<String>> _subirImagenesASupabase(String eventId) async {
     List<String> imageUrls = [];
     final supabase = Supabase.instance.client;
-  
-    const String bucketName = 'events_images'; 
+
+    const String bucketName = 'events_images';
 
     for (int i = 0; i < _imagenesSeleccionadas.length; i++) {
       final file = _imagenesSeleccionadas[i];
       final fileExt = file.path.split('.').last;
-      final fileName = '${eventId}_${DateTime.now().millisecondsSinceEpoch}_$i.$fileExt';
-      final filePath = '$eventId/$fileName'; 
+      final fileName =
+          '${eventId}_${DateTime.now().millisecondsSinceEpoch}_$i.$fileExt';
+      final filePath = '$eventId/$fileName';
 
       try {
         await supabase.storage.from(bucketName).upload(filePath, file);
-        final imageUrl = supabase.storage.from(bucketName).getPublicUrl(filePath);
+        final imageUrl = supabase.storage
+            .from(bucketName)
+            .getPublicUrl(filePath);
         imageUrls.add(imageUrl);
       } catch (e) {
-        print('Error subiendo imagen $i a Supabase: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error subiendo imagen $i a Supabase: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     }
-    
-    return imageUrls; 
-  }
 
+    return imageUrls;
+  }
 
   final List<String> options = [
     'Concierto',
@@ -567,42 +577,53 @@ Future<void> _seleccionarImagenes() async {
             },
           ),
 
-        const SizedBox(height: 20),
+          const SizedBox(height: 20),
           _buildLabel('Fotos del Evento (Selecciona varias)'),
           const SizedBox(height: 8),
-          
+
           SizedBox(
-            height: 130, 
+            height: 130,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
 
               itemCount: _imagenesSeleccionadas.length + 1,
               itemBuilder: (context, index) {
-                
                 if (index == 0) {
                   return GestureDetector(
-                    onTap: _seleccionarImagenes, 
+                    onTap: _seleccionarImagenes,
                     child: Container(
                       width: 100,
                       margin: const EdgeInsets.only(right: 12),
                       decoration: BoxDecoration(
                         color: Colors.blue[50],
                         borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: PrimaryPurple.withOpacity(0.5)),
+                        border: Border.all(
+                          color: PrimaryPurple.withOpacity(0.5),
+                        ),
                       ),
                       child: const Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.add_photo_alternate, size: 30, color: PrimaryPurple),
+                          Icon(
+                            Icons.add_photo_alternate,
+                            size: 30,
+                            color: PrimaryPurple,
+                          ),
                           SizedBox(height: 5),
-                          Text('Añadir', style: TextStyle(color: PrimaryPurple, fontSize: 12)),
+                          Text(
+                            'Añadir',
+                            style: TextStyle(
+                              color: PrimaryPurple,
+                              fontSize: 12,
+                            ),
+                          ),
                         ],
                       ),
                     ),
                   );
                 }
 
-                final imgIndex = index - 1; 
+                final imgIndex = index - 1;
                 return Container(
                   width: 120,
                   margin: const EdgeInsets.only(right: 12),
@@ -630,7 +651,11 @@ Future<void> _seleccionarImagenes() async {
                               color: Colors.redAccent,
                               shape: BoxShape.circle,
                             ),
-                            child: const Icon(Icons.close, size: 16, color: Colors.white),
+                            child: const Icon(
+                              Icons.close,
+                              size: 16,
+                              color: Colors.white,
+                            ),
                           ),
                         ),
                       ),
@@ -640,7 +665,7 @@ Future<void> _seleccionarImagenes() async {
               },
             ),
           ),
-          
+
           if (_imagenesSeleccionadas.isNotEmpty) ...[
             const SizedBox(height: 5),
             Text(
@@ -1561,8 +1586,7 @@ class FormCreateEvent2 extends StatefulWidget {
 }
 
 class _FormCreateEvent2State extends State<FormCreateEvent2> {
-
-  final ImagePicker _picker = ImagePicker(); 
+  final ImagePicker _picker = ImagePicker();
   List<File> _imagenesSeleccionadas = [];
   List<String> _imagenesExistentes = [];
   bool _cargandoFotos = true;
@@ -1582,22 +1606,23 @@ class _FormCreateEvent2State extends State<FormCreateEvent2> {
   String? _paymentPhoneError;
   String? _ciTypeError;
   String? _paymentCIError;
-  
-  
+
   @override
   void initState() {
     super.initState();
-    _cargarImagenesDesdeFirebase(); 
+    _cargarImagenesDesdeFirebase();
   }
 
   Future<void> _cargarImagenesDesdeFirebase() async {
     try {
+      var doc = await FirebaseFirestore.instance
+          .collection('events')
+          .doc(idmod)
+          .get();
 
-      var doc = await FirebaseFirestore.instance.collection('events').doc(idmod).get();
-      
       if (doc.exists) {
         var data = doc.data() as Map<String, dynamic>;
-        
+
         if (data.containsKey('gallery') && data['gallery'] != null) {
           setState(() {
             _imagenesExistentes = List<String>.from(data['gallery']);
@@ -1606,7 +1631,7 @@ class _FormCreateEvent2State extends State<FormCreateEvent2> {
       }
     } catch (e) {
       print("Error cargando las imágenes de Firebase: \$e");
-    } finally{
+    } finally {
       setState(() {
         _cargandoFotos = false;
       });
@@ -1677,16 +1702,16 @@ class _FormCreateEvent2State extends State<FormCreateEvent2> {
   Future<void> _seleccionarImagenes() async {
     try {
       final List<XFile> imagenes = await _picker.pickMultiImage();
-      
+
       if (imagenes.isNotEmpty) {
-        final int limiteBytes = 5 * 1024 * 1024; 
+        final int limiteBytes = 5 * 1024 * 1024;
         bool algunaMuyPesada = false;
 
         setState(() {
           for (var xfile in imagenes) {
             final file = File(xfile.path);
             if (file.lengthSync() > limiteBytes) {
-              algunaMuyPesada = true; 
+              algunaMuyPesada = true;
             } else {
               _imagenesSeleccionadas.add(file);
             }
@@ -1696,7 +1721,9 @@ class _FormCreateEvent2State extends State<FormCreateEvent2> {
         if (algunaMuyPesada) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Una o más imágenes exceden 5MB y no se añadieron.'),
+              content: Text(
+                'Una o más imágenes exceden 5MB y no se añadieron.',
+              ),
               backgroundColor: Colors.orange,
             ),
           );
@@ -1808,16 +1835,19 @@ class _FormCreateEvent2State extends State<FormCreateEvent2> {
           ),
           const SizedBox(height: 20),
           const Divider(),
-          
+
           //seccion para editar fotos
-          const Text('Fotos del Evento (Selecciona varias)', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+          const Text(
+            'Fotos del Evento (Selecciona varias)',
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+          ),
           const SizedBox(height: 10),
 
-          _cargandoFotos 
+          _cargandoFotos
               ? const Center(
                   child: Padding(
                     padding: EdgeInsets.all(20.0),
-                    child: CircularProgressIndicator(color: Colors.deepPurple), 
+                    child: CircularProgressIndicator(color: Colors.deepPurple),
                   ),
                 )
               : SingleChildScrollView(
@@ -1833,14 +1863,27 @@ class _FormCreateEvent2State extends State<FormCreateEvent2> {
                           decoration: BoxDecoration(
                             color: Colors.grey[200],
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.grey[400]!, width: 1),
+                            border: Border.all(
+                              color: Colors.grey[400]!,
+                              width: 1,
+                            ),
                           ),
                           child: const Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.add_photo_alternate, size: 30, color: Colors.grey),
+                              Icon(
+                                Icons.add_photo_alternate,
+                                size: 30,
+                                color: Colors.grey,
+                              ),
                               SizedBox(height: 5),
-                              Text('Agregar', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                              Text(
+                                'Agregar',
+                                style: TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 12,
+                                ),
+                              ),
                             ],
                           ),
                         ),
@@ -1853,7 +1896,7 @@ class _FormCreateEvent2State extends State<FormCreateEvent2> {
                           imageProvider: NetworkImage(url),
                           onDelete: () {
                             setState(() {
-                              _imagenesExistentes.removeAt(idx); 
+                              _imagenesExistentes.removeAt(idx);
                             });
                           },
                         );
@@ -1866,7 +1909,7 @@ class _FormCreateEvent2State extends State<FormCreateEvent2> {
                           imageProvider: FileImage(file),
                           onDelete: () {
                             setState(() {
-                              _imagenesSeleccionadas.removeAt(idx); 
+                              _imagenesSeleccionadas.removeAt(idx);
                             });
                           },
                         );
@@ -1875,7 +1918,7 @@ class _FormCreateEvent2State extends State<FormCreateEvent2> {
                   ),
                 ),
           const SizedBox(height: 8),
-          
+
           // Contador de fotos abajo
           Text(
             '${_imagenesExistentes.length + _imagenesSeleccionadas.length} foto(s) lista(s)',
@@ -2052,18 +2095,21 @@ class _FormCreateEvent2State extends State<FormCreateEvent2> {
     );
   }
 
-  Widget _buildImageBadge({required ImageProvider imageProvider, required VoidCallback onDelete}) {
+  Widget _buildImageBadge({
+    required ImageProvider imageProvider,
+    required VoidCallback onDelete,
+  }) {
     return Container(
       margin: const EdgeInsets.only(right: 12.0),
       child: Stack(
-        clipBehavior: Clip.none, 
+        clipBehavior: Clip.none,
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(12),
             child: Image(
               image: imageProvider,
               width: 100,
-              height: 120, 
+              height: 120,
               fit: BoxFit.cover,
             ),
           ),
@@ -2074,7 +2120,7 @@ class _FormCreateEvent2State extends State<FormCreateEvent2> {
               onTap: onDelete,
               child: Container(
                 decoration: const BoxDecoration(
-                  color: Color(0xFFFF4C4C), 
+                  color: Color(0xFFFF4C4C),
                   shape: BoxShape.circle,
                 ),
                 padding: const EdgeInsets.all(4),
@@ -2087,8 +2133,6 @@ class _FormCreateEvent2State extends State<FormCreateEvent2> {
     );
   }
 }
-
-  
 
 class DetalleEvento extends StatefulWidget {
   const DetalleEvento({super.key});
@@ -2368,8 +2412,8 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
                   hintText: currentMode == SearchMode.bochincheros
                       ? 'Buscar bochincheros...'
                       : (currentMode == SearchMode.privados
-                          ? 'Ingresa código de acceso...'
-                          : 'Buscar eventos públicos...'),
+                            ? 'Ingresa código de acceso...'
+                            : 'Buscar eventos públicos...'),
                   onTap: () => controller.openView(),
                   onChanged: (_) => controller.openView(),
                   leading: const Icon(Icons.search, color: PrimaryPurple),
@@ -2410,12 +2454,15 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
                   // NUEVO: Definimos los campos según el origen. Ahora priorizamos el username.
                   final String title =
                       (currentMode == SearchMode.bochincheros
-                          ? (item['username'] != null ? '@${item['username']}' : (item['nombre'] ?? 'Sin nombre'))
+                          ? (item['username'] != null
+                                ? '@${item['username']}'
+                                : (item['nombre'] ?? 'Sin nombre'))
                           : item['name']) ??
                       '';
 
                   final IconData icon = currentMode == SearchMode.bochincheros
-                      ? Icons.alternate_email // Cambiado a un @ para que se vea más cool
+                      ? Icons
+                            .alternate_email // Cambiado a un @ para que se vea más cool
                       : Icons.calendar_today_outlined;
 
                   return ListTile(
@@ -2545,7 +2592,9 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
                                 title: Text(item['nombre'] ?? 'Sin nombre'),
                                 // NUEVO: Quitamos la cédula y mostramos el @username
                                 subtitle: Text(
-                                  item['username'] != null ? "@${item['username']}" : "Usuario sin @",
+                                  item['username'] != null
+                                      ? "@${item['username']}"
+                                      : "Usuario sin @",
                                   style: const TextStyle(
                                     color: PrimaryPurple,
                                     fontWeight: FontWeight.w600,

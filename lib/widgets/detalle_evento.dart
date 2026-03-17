@@ -481,7 +481,27 @@ void mostrarDetalles(
                       if (imagenes.isEmpty) {
                         return SizedBox(
                           height: 220,
-                          child: Text('No hay imágenes disponibles'),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(15),
+                            child: Container(
+                              color: Colors.grey[200],
+                              child: Image.network(
+                                'https://camarasal.com/wp-content/uploads/2020/08/default-image-5-1.jpg',
+                                fit: BoxFit.cover,
+                                width: double.infinity,
+
+                                loadingBuilder:
+                                    (context, child, loadingProgress) {
+                                      if (loadingProgress == null) return child;
+                                      return const Center(
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                        ),
+                                      );
+                                    },
+                              ),
+                            ),
+                          ),
                         );
                       }
                       return SizedBox(
