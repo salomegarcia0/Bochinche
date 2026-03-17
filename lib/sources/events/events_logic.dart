@@ -1,9 +1,16 @@
+import 'dart:io';
+import 'dart:math';
+import 'package:bochinche_app/sources/events/events_ui.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:math';
 import 'package:bochinche_app/sources/events/events_ui.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:bochinche_app/core/utils/draft_manager.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 Future<void> saveEventDraft() async {
   final Map<String, dynamic> data = {
@@ -45,7 +52,7 @@ Future<void> loadEventDraft() async {
   aforoController.text = data['capacity'] ?? '';
   typeC = data['type'];
   if (typeC != null && typeC!.isEmpty) typeC = null;
-
+  
   isPrivateC = data['isPrivate'] ?? false;
   isPayedC = data['isPayed'] ?? false;
   latitudC = data['lat'] ?? 10.0;
@@ -56,7 +63,7 @@ Future<void> loadEventDraft() async {
     fecha1 = DateTime.parse(d1);
     fecha1C.text = d1.split('T')[0];
   }
-
+  
   final d2 = data['date2'];
   if (d2 != null) {
     fecha2 = DateTime.parse(d2);
@@ -74,19 +81,18 @@ Future<void> loadEventDraft() async {
 
   selectedBank = data['bank'];
   if (selectedBank != null && selectedBank!.isEmpty) selectedBank = null;
-
+  
   selectedPhonePrefix = data['phonePrefix'];
-  if (selectedPhonePrefix != null && selectedPhonePrefix!.isEmpty)
-    selectedPhonePrefix = null;
-
+  if (selectedPhonePrefix != null && selectedPhonePrefix!.isEmpty) selectedPhonePrefix = null;
+  
   paymentPhoneNumberController.text = data['phoneNum'] ?? '';
-
+  
   selectedCIType = data['ciType'];
   if (selectedCIType != null && selectedCIType!.isEmpty) selectedCIType = null;
-
+  
   paymentCINumberController.text = data['ciNum'] ?? '';
   priceController.text = data['price'] ?? '';
-
+  
   print("Draft loaded from DraftManager");
 }
 
@@ -176,6 +182,7 @@ bool isPayedC = false;
 double latitudC = 0.0;
 double longitudC = 0.0;
 bool isPrivate = false;
+List<String> urlsImagenesEvento = [];
 
 String? validateName(String? r) {
   if (r != '' || r!.isNotEmpty) {
@@ -231,7 +238,7 @@ DateTime? validateDate(DateTime date1, DateTime date2) {
   }
 }
 
-Future<void> createEvent(BuildContext context) async {
+Future<void> createEvent(BuildContext context, List<File> imagenesSeleccionadas) async {
   print(latitudC);
   print(longitudC);
   print(aforoController.text);
@@ -261,29 +268,37 @@ Future<void> createEvent(BuildContext context) async {
   } else {
     try {
       final newEventRef = FirebaseFirestore.instance.collection('events').doc();
+      final eventId = newEventRef.id;
+
+      List<String> urlsImagenesEvento = [];
+      if (imagenesSeleccionadas.isNotEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Subiendo imágenes, por favor espera...')),
+        );
+        urlsImagenesEvento = await subirImagenesASupabase(eventId, imagenesSeleccionadas);
+      }
+
       await newEventRef.set({
-        'id': newEventRef.id,
+        'id': eventId,
         'name': nombreEventoController.text,
         'address': direccionController.text,
         'contact': contactoController.text,
         'type': typeC,
         'state': 'Proximo',
         'id_organizer': FirebaseAuth.instance.currentUser!.uid,
-        'description': descripcionController.text.trim(),
+        'description': descripcionController.text.trim(), // <--- Fix: Adiós código muerto
         'capacity': aforoController.text,
         'startDate': fecha1!.toIso8601String(),
         'endDate': fecha2!.toIso8601String(),
-        'startTime': {
-          'hour': firstTimeHour.hour,
-          'minute': firstTimeHour.minute,
-        },
+        'startTime': {'hour': firstTimeHour.hour, 'minute': firstTimeHour.minute},
         'endTime': {'hour': lastTimeHour.hour, 'minute': lastTimeHour.minute},
         'location': GeoPoint(latitudC, longitudC),
         'createdAt': FieldValue.serverTimestamp(),
         'stars': 0,
         'total_review': 0,
-        'isPrivate': isPrivateC,
+        'isPrivate': isPrivateC, 
         'isPayed': isPayedC,
+        'gallery': urlsImagenesEvento,
       });
       if (isPayedC) {
         await newEventRef.update({
@@ -291,66 +306,18 @@ Future<void> createEvent(BuildContext context) async {
             'bank': selectedBank ?? '',
             'phone':
                 selectedPhonePrefix != null &&
-                        paymentPhoneNumberController.text.isNotEmpty
-                    ? '$selectedPhonePrefix-${paymentPhoneNumberController.text}'
-                    : '',
+                    paymentPhoneNumberController.text.isNotEmpty
+                ? '$selectedPhonePrefix-${paymentPhoneNumberController.text}'
+                : '',
             'ci':
                 selectedCIType != null &&
-                        paymentCINumberController.text.isNotEmpty
-                    ? '$selectedCIType-${paymentCINumberController.text}'
-                    : '',
+                    paymentCINumberController.text.isNotEmpty
+                ? '$selectedCIType-${paymentCINumberController.text}'
+                : '',
             'price': double.tryParse(priceController.text) ?? 0.0,
           },
         });
       }
-
-      // =====================================================================
-      // LÓGICA DE NOTIFICACIONES
-      // =====================================================================
-      try {
-        String orgId = FirebaseAuth.instance.currentUser!.uid;
-        DocumentSnapshot userDoc = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(orgId)
-            .get();
-
-        String orgName = userDoc.get('nombre') ?? 'Un organizador';
-
-        // 1. Buscamos a todos los usuarios que siguen a este organizador
-        QuerySnapshot followersSnapshot = await FirebaseFirestore.instance
-            .collection('users')
-            .where('following', arrayContains: orgId)
-            .get();
-
-        if (followersSnapshot.docs.isNotEmpty) {
-          WriteBatch batch = FirebaseFirestore.instance.batch();
-
-          // 2. Creamos una notificación in-app para cada seguidor
-          for (var followerDoc in followersSnapshot.docs) {
-            String followerId = followerDoc.id;
-            DocumentReference notifRef = FirebaseFirestore.instance.collection('notifications').doc();
-
-            batch.set(notifRef, {
-              'id_not': notifRef.id,
-              'userId': followerId,
-              'eventId': newEventRef.id,
-              'titulo': '¡Nuevo Evento Creado!',
-              'mensaje': '$orgName ha creado un nuevo evento: ${nombreEventoController.text.trim()}',
-              'timestamp': FieldValue.serverTimestamp(),
-              'type': 'new_event',
-              'read': false,
-            });
-          }
-
-          // 3. Ejecutamos el guardado masivo
-          await batch.commit();
-          debugPrint("✅ Notificaciones guardadas para ${followersSnapshot.docs.length} seguidores.");
-        }
-      } catch (e) {
-        debugPrint("❌ Error guardando notificaciones in-app: $e");
-      }
-      // =====================================================================
-
       // Mostrar mensaje de éxito
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -358,7 +325,7 @@ Future<void> createEvent(BuildContext context) async {
           backgroundColor: Colors.green,
         ),
       );
-      
+
       clearAllFields();
     } catch (e) {
       ScaffoldMessenger.of(
@@ -369,30 +336,6 @@ Future<void> createEvent(BuildContext context) async {
 }
 
 // --- FUNCIÓN PARA LIMPIAR EL FORMULARIO ---
-void clearAllFields2() {
-  nombreEventoController.clear();
-  direccionController.clear();
-  contactoController.clear();
-  descripcionController.clear();
-  aforoController.clear();
-  isPrivate = false;
-  fecha1C.clear();
-  fecha2C.clear();
-  paymentPhoneNumberController.clear();
-  paymentCINumberController.clear();
-  priceController.clear();
-  selectedBank = null;
-  selectedPhonePrefix = null;
-  selectedCIType = null;
-  typeC = null;
-  isPrivateC = false;
-  latitudC = 10.0;
-  longitudC = -60.0;
-  firstTimeHour = TimeOfDay(hour: 0, minute: 0);
-  lastTimeHour = TimeOfDay(hour: 23, minute: 59);
-  clearEventDraft();
-}
-
 void clearAllFields() {
   nombreEventoController.clear();
   direccionController.clear();
@@ -414,7 +357,31 @@ void clearAllFields() {
   longitudC = -60.0;
   firstTimeHour = TimeOfDay(hour: 0, minute: 0);
   lastTimeHour = TimeOfDay(hour: 23, minute: 59);
+  urlsImagenesEvento.clear();
   clearEventDraft();
+}
+
+//funcion para cargar imagenes del evento 
+Future<List<String>> subirImagenesASupabase(String eventId, List<File> imagenes) async {
+  List<String> imageUrls = [];
+  final supabase = Supabase.instance.client;
+  const String bucketName = 'events_images'; 
+
+  for (int i = 0; i < imagenes.length; i++) {
+    final file = imagenes[i];
+    final fileExt = file.path.split('.').last;
+    final fileName = '${eventId}_${DateTime.now().millisecondsSinceEpoch}_$i.$fileExt';
+    final filePath = '$eventId/$fileName';
+
+    try {
+      await supabase.storage.from(bucketName).upload(filePath, file);
+      final imageUrl = supabase.storage.from(bucketName).getPublicUrl(filePath);
+      imageUrls.add(imageUrl);
+    } catch (e) {
+      print('Error subiendo imagen a Supabase: $e');
+    }
+  }
+  return imageUrls;
 }
 
 // --- FUNCIÓN PARA CARGAR EVENTOS (Para el Panel de Control) ---
@@ -491,7 +458,7 @@ Future<void> cargarDatosEvento(String idDocumento) async {
   }
 }
 
-Future<void> modifyEvent(BuildContext context, String id) async {
+Future<void> modifyEvent(BuildContext context, String id, List<File> nuevasImagenes) async {
   if (nombreEventoController.text.isEmpty ||
       latitudC == 0.0 ||
       validateAforo(aforoController.text) == null ||
@@ -519,7 +486,24 @@ Future<void> modifyEvent(BuildContext context, String id) async {
       var docSnapshot = await newEventRef.get();
 
       if (docSnapshot.exists) {
+
         var pagado = docSnapshot['isPayed'] ?? false;
+        
+        List<dynamic> fotosActuales = docSnapshot['gallery'] ?? []; 
+        List<String> linksNuevos = [];
+
+        if (nuevasImagenes.isNotEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Subiendo nuevas imágenes, por favor espera...')),
+          );
+          linksNuevos = await subirImagenesASupabase(id, nuevasImagenes);
+        }
+
+        List<String> galeriaFinal = [
+          ...fotosActuales.map((e) => e.toString()), 
+          ...linksNuevos
+        ];
+
 
         await newEventRef.update({
           'name': nombreEventoController.text,
@@ -529,6 +513,7 @@ Future<void> modifyEvent(BuildContext context, String id) async {
           'description': descripcionController.text,
           'capacity': aforoController.text,
           'isPrivate': isPrivateC,
+          'gallery': galeriaFinal,
         });
         if (pagado) {
           await newEventRef.update({
@@ -561,7 +546,7 @@ Future<void> modifyEvent(BuildContext context, String id) async {
       }
 
       // LIMPIAR TODOS LOS CAMPOS
-      clearAllFields2();
+      clearAllFields();
     } catch (e) {
       ScaffoldMessenger.of(
         context,
@@ -771,7 +756,11 @@ Stream<List<Map<String, dynamic>>> chargeFilteredEvents({
         .where('nombre', isGreaterThanOrEqualTo: safeSearch)
         .where('nombre', isLessThanOrEqualTo: '$safeSearch\uf8ff')
         .snapshots()
-        .map((snap) => snap.docs.map((doc) => doc.data()).toList());
+        .map(
+          (snap) => snap.docs
+              .map((doc) => doc.data())
+              .toList(),
+        );
   }
 
   // --- CASO 2: BÚSQUEDA DE EVENTOS ---
@@ -886,46 +875,58 @@ Future<List<Map<String, dynamic>>> getEventPredictions(String input) async {
   return snap.docs.map((doc) => {...doc.data(), 'id': doc.id}).toList();
 }
 
-Future<void> registrarUsuarioEnEvento(
-  BuildContext context,
-  Map<String, dynamic> data,
-  String eventoId,
-) async {
+Future<void> registrarUsuarioEnEvento(BuildContext context, Map<String, dynamic> data, String eventoId) async {
   final user = FirebaseAuth.instance.currentUser;
 
   if (user == null) {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Debes iniciar sesión para reservar tu entrada.'),
-      ),
+      const SnackBar(content: Text('Debes iniciar sesión para reservar tu entrada.')),
     );
     return;
   }
 
   try {
     DocumentReference eventRef = FirebaseFirestore.instance.collection('events').doc(eventoId);
-    DocumentReference userRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
     
-    // CREAMOS LA REFERENCIA A LA SUBCOLECCIÓN 'tickets'
-    // Usamos el eventoId como nombre del documento para evitar reservas duplicadas
-    DocumentReference ticketRef = userRef.collection('tickets').doc(eventoId);
+    // --- 1. VERIFICACIÓN: Revisamos si ya reservó ---
+    DocumentSnapshot eventDoc = await eventRef.get();
+    if (eventDoc.exists) {
+      Map<String, dynamic> eventData = eventDoc.data() as Map<String, dynamic>;
+      List<dynamic> attendees = eventData['attendees'] ?? [];
+      
+      if (attendees.contains(user.uid)) {
+        // Si ya está en la lista, mostramos mensaje y CORTAMOS la función
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('¡Ya tienes tu entrada reservada para este evento! 😉'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+        return; 
+      }
+    }
+    // -------------------------------------------------
 
+    DocumentReference userRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
     WriteBatch batch = FirebaseFirestore.instance.batch();
 
-    // 1. Actualizamos el evento
+    // 2. Actualizamos el evento (Sumamos 1 y guardamos ID)
     batch.update(eventRef, {
       'ticketsSold': FieldValue.increment(1),
-      'attendees': FieldValue.arrayUnion([user.uid]),
+      'attendees': FieldValue.arrayUnion([user.uid]), 
     });
 
-    // 2. Guardamos el ticket en la subcolección correcta
-    batch.set(ticketRef, {
-      'eventId': eventoId, 
-      'reservedAt': FieldValue.serverTimestamp(),
-    });
+    // 3. Actualizamos al usuario
+    batch.set(userRef, {
+      'mis_reservas': FieldValue.arrayUnion([eventoId]),
+    }, SetOptions(merge: true)); 
 
+    // Ejecutamos todo de un golpe
     await batch.commit();
 
+    // 4. Éxito
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -934,6 +935,7 @@ Future<void> registrarUsuarioEnEvento(
         ),
       );
     }
+
   } catch (e) {
     print("Error al reservar la entrada: $e");
     if (context.mounted) {
@@ -944,29 +946,5 @@ Future<void> registrarUsuarioEnEvento(
         ),
       );
     }
-  }
-}
-
-Map<String, dynamic> getCategoryData(String? type) {
-  switch (type) {
-    case 'Concierto':
-      return {'icon': Icons.music_note_rounded, 'color': Colors.purple};
-    case 'Teatro':
-      return {'icon': Icons.theater_comedy_rounded, 'color': Colors.orange};
-    case 'Cine':
-      return {'icon': Icons.movie_filter_rounded, 'color': Colors.indigo};
-    case 'Restaurante':
-      return {'icon': Icons.restaurant_rounded, 'color': Colors.green};
-    case 'Stand Up':
-      return {
-        'icon': Icons.mic_external_on_rounded,
-        'color': Colors.deepOrange,
-      };
-    case 'Fiesta':
-      return {'icon': Icons.celebration_rounded, 'color': Colors.pinkAccent};
-    case 'Conferencia':
-      return {'icon': Icons.record_voice_over_rounded, 'color': Colors.blue};
-    default:
-      return {'icon': Icons.event_available_rounded, 'color': Colors.blueGrey};
   }
 }

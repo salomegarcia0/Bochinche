@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:bochinche_app/sources/reports/reports_logic.dart';
 import 'package:bochinche_app/sources/user_profile/user_profile_ui.dart';
 import 'package:bochinche_app/styles/BochincheAppBar.dart';
@@ -9,11 +10,13 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:bochinche_app/widgets/NavBar.dart';
 import 'package:bochinche_app/sources/events/events_logic.dart';
 import 'package:bochinche_app/features/map/selector_ubicacion.dart';
 import 'package:bochinche_app/sources/events/comments_section.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 bool botonVerEventos = true;
 bool modPayed = false;
@@ -103,6 +106,10 @@ class _FormCreateEventState extends State<FormCreateEvent> {
   String? _ciTypeError;
   String? _paymentCIError;
   String? _priceError;
+
+  //IMAGENES DE LOS EVENTOS
+  List<File> _imagenesSeleccionadas = [];
+  final ImagePicker _picker = ImagePicker();
 
   @override
   void dispose() {
@@ -327,6 +334,76 @@ class _FormCreateEventState extends State<FormCreateEvent> {
     }
   }
 
+  //seleccionar imagenes
+Future<void> _seleccionarImagenes() async {
+    try {
+      final List<XFile> imagenes = await _picker.pickMultiImage();
+      
+      if (imagenes.isNotEmpty) {
+        // Límite de 5 MB por foto
+        final int limiteBytes = 5 * 1024 * 1024; 
+        bool algunaMuyPesada = false;
+
+        setState(() {
+          for (var xfile in imagenes) {
+            final file = File(xfile.path);
+            final int size = file.lengthSync();
+
+            if (size > limiteBytes) {
+              algunaMuyPesada = true; 
+            } else {
+              _imagenesSeleccionadas.add(file); 
+            }
+          }
+          
+          saveEventDraft(); 
+        });
+
+        if (algunaMuyPesada) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Una o más imágenes exceden el límite de 5MB y no fueron añadidas.'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      print("Error seleccionando imágenes: $e");
+    }
+  }
+  void _removerImagen(int index) {
+    setState(() {
+      _imagenesSeleccionadas.removeAt(index);
+      saveEventDraft();
+    });
+  }
+
+  Future<List<String>> _subirImagenesASupabase(String eventId) async {
+    List<String> imageUrls = [];
+    final supabase = Supabase.instance.client;
+  
+    const String bucketName = 'events_images'; 
+
+    for (int i = 0; i < _imagenesSeleccionadas.length; i++) {
+      final file = _imagenesSeleccionadas[i];
+      final fileExt = file.path.split('.').last;
+      final fileName = '${eventId}_${DateTime.now().millisecondsSinceEpoch}_$i.$fileExt';
+      final filePath = '$eventId/$fileName'; 
+
+      try {
+        await supabase.storage.from(bucketName).upload(filePath, file);
+        final imageUrl = supabase.storage.from(bucketName).getPublicUrl(filePath);
+        imageUrls.add(imageUrl);
+      } catch (e) {
+        print('Error subiendo imagen $i a Supabase: $e');
+      }
+    }
+    
+    return imageUrls; 
+  }
+
+
   final List<String> options = [
     'Concierto',
     'Conferencias',
@@ -489,6 +566,89 @@ class _FormCreateEventState extends State<FormCreateEvent> {
               fechaselect2(context);
             },
           ),
+
+        const SizedBox(height: 20),
+          _buildLabel('Fotos del Evento (Selecciona varias)'),
+          const SizedBox(height: 8),
+          
+          SizedBox(
+            height: 130, 
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+
+              itemCount: _imagenesSeleccionadas.length + 1,
+              itemBuilder: (context, index) {
+                
+                if (index == 0) {
+                  return GestureDetector(
+                    onTap: _seleccionarImagenes, 
+                    child: Container(
+                      width: 100,
+                      margin: const EdgeInsets.only(right: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.blue[50],
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: PrimaryPurple.withOpacity(0.5)),
+                      ),
+                      child: const Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.add_photo_alternate, size: 30, color: PrimaryPurple),
+                          SizedBox(height: 5),
+                          Text('Añadir', style: TextStyle(color: PrimaryPurple, fontSize: 12)),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+
+                final imgIndex = index - 1; 
+                return Container(
+                  width: 120,
+                  margin: const EdgeInsets.only(right: 12),
+                  child: Stack(
+                    children: [
+                      // La imagen
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: Image.file(
+                          _imagenesSeleccionadas[imgIndex],
+                          width: 120,
+                          height: 130,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+
+                      Positioned(
+                        top: 5,
+                        right: 5,
+                        child: GestureDetector(
+                          onTap: () => _removerImagen(imgIndex),
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: const BoxDecoration(
+                              color: Colors.redAccent,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.close, size: 16, color: Colors.white),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+          
+          if (_imagenesSeleccionadas.isNotEmpty) ...[
+            const SizedBox(height: 5),
+            Text(
+              '${_imagenesSeleccionadas.length} foto(s) lista(s)',
+              style: const TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+          ],
+          const SizedBox(height: 20),
 
           const SizedBox(height: 20),
           _buildLabel('Ubicación en el Mapa'),
@@ -912,7 +1072,7 @@ class _FormCreateEventState extends State<FormCreateEvent> {
                   ),
                   onPressed: () {
                     if (_validateAll()) {
-                      createEvent(context);
+                      createEvent(context, _imagenesSeleccionadas);
                       Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -1401,6 +1561,12 @@ class FormCreateEvent2 extends StatefulWidget {
 }
 
 class _FormCreateEvent2State extends State<FormCreateEvent2> {
+
+  final ImagePicker _picker = ImagePicker(); 
+  List<File> _imagenesSeleccionadas = [];
+  List<String> _imagenesExistentes = [];
+  bool _cargandoFotos = true;
+
   String? selectedValue;
   LatLng? ubicacionTemporal;
   String? selectedValue2;
@@ -1416,7 +1582,36 @@ class _FormCreateEvent2State extends State<FormCreateEvent2> {
   String? _paymentPhoneError;
   String? _ciTypeError;
   String? _paymentCIError;
-  String? _priceError;
+  
+  
+  @override
+  void initState() {
+    super.initState();
+    _cargarImagenesDesdeFirebase(); 
+  }
+
+  Future<void> _cargarImagenesDesdeFirebase() async {
+    try {
+
+      var doc = await FirebaseFirestore.instance.collection('events').doc(idmod).get();
+      
+      if (doc.exists) {
+        var data = doc.data() as Map<String, dynamic>;
+        
+        if (data.containsKey('gallery') && data['gallery'] != null) {
+          setState(() {
+            _imagenesExistentes = List<String>.from(data['gallery']);
+          });
+        }
+      }
+    } catch (e) {
+      print("Error cargando las imágenes de Firebase: \$e");
+    } finally{
+      setState(() {
+        _cargandoFotos = false;
+      });
+    }
+  }
 
   Future<void> fechaselect2(BuildContext context) async {
     DateTime? date = await showDatePicker(
@@ -1476,6 +1671,39 @@ class _FormCreateEvent2State extends State<FormCreateEvent2> {
         fecha1C.text = date.toString().split(" ")[0];
         fecha1 = date;
       });
+    }
+  }
+
+  Future<void> _seleccionarImagenes() async {
+    try {
+      final List<XFile> imagenes = await _picker.pickMultiImage();
+      
+      if (imagenes.isNotEmpty) {
+        final int limiteBytes = 5 * 1024 * 1024; 
+        bool algunaMuyPesada = false;
+
+        setState(() {
+          for (var xfile in imagenes) {
+            final file = File(xfile.path);
+            if (file.lengthSync() > limiteBytes) {
+              algunaMuyPesada = true; 
+            } else {
+              _imagenesSeleccionadas.add(file);
+            }
+          }
+        });
+
+        if (algunaMuyPesada) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Una o más imágenes exceden 5MB y no se añadieron.'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      print("Error seleccionando imágenes: $e");
     }
   }
 
@@ -1580,6 +1808,80 @@ class _FormCreateEvent2State extends State<FormCreateEvent2> {
           ),
           const SizedBox(height: 20),
           const Divider(),
+          
+          //seccion para editar fotos
+          const Text('Fotos del Evento (Selecciona varias)', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 10),
+
+          _cargandoFotos 
+              ? const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(20.0),
+                    child: CircularProgressIndicator(color: Colors.deepPurple), 
+                  ),
+                )
+              : SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      GestureDetector(
+                        onTap: _seleccionarImagenes,
+                        child: Container(
+                          width: 100,
+                          height: 120,
+                          margin: const EdgeInsets.only(right: 12.0),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[200],
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.grey[400]!, width: 1),
+                          ),
+                          child: const Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.add_photo_alternate, size: 30, color: Colors.grey),
+                              SizedBox(height: 5),
+                              Text('Agregar', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      ..._imagenesExistentes.asMap().entries.map((entry) {
+                        int idx = entry.key;
+                        String url = entry.value;
+                        return _buildImageBadge(
+                          imageProvider: NetworkImage(url),
+                          onDelete: () {
+                            setState(() {
+                              _imagenesExistentes.removeAt(idx); 
+                            });
+                          },
+                        );
+                      }),
+
+                      ..._imagenesSeleccionadas.asMap().entries.map((entry) {
+                        int idx = entry.key;
+                        File file = entry.value;
+                        return _buildImageBadge(
+                          imageProvider: FileImage(file),
+                          onDelete: () {
+                            setState(() {
+                              _imagenesSeleccionadas.removeAt(idx); 
+                            });
+                          },
+                        );
+                      }),
+                    ],
+                  ),
+                ),
+          const SizedBox(height: 8),
+          
+          // Contador de fotos abajo
+          Text(
+            '${_imagenesExistentes.length + _imagenesSeleccionadas.length} foto(s) lista(s)',
+            style: const TextStyle(color: Colors.grey, fontSize: 12),
+          ),
+          const SizedBox(height: 20),
 
           // --- DATOS DE PAGO ---
           _buildLabel('Datos de Pago (Pago Móvil)'),
@@ -1725,7 +2027,7 @@ class _FormCreateEvent2State extends State<FormCreateEvent2> {
                   foregroundColor: SecondaryPurple,
                 ),
                 onPressed: () {
-                  modifyEvent(context, idmod);
+                  modifyEvent(context, idmod, _imagenesSeleccionadas);
                   Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -1749,7 +2051,44 @@ class _FormCreateEvent2State extends State<FormCreateEvent2> {
       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
     );
   }
+
+  Widget _buildImageBadge({required ImageProvider imageProvider, required VoidCallback onDelete}) {
+    return Container(
+      margin: const EdgeInsets.only(right: 12.0),
+      child: Stack(
+        clipBehavior: Clip.none, 
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Image(
+              image: imageProvider,
+              width: 100,
+              height: 120, 
+              fit: BoxFit.cover,
+            ),
+          ),
+          Positioned(
+            right: -5,
+            top: -5,
+            child: GestureDetector(
+              onTap: onDelete,
+              child: Container(
+                decoration: const BoxDecoration(
+                  color: Color(0xFFFF4C4C), 
+                  shape: BoxShape.circle,
+                ),
+                padding: const EdgeInsets.all(4),
+                child: const Icon(Icons.close, color: Colors.white, size: 16),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
+
+  
 
 class DetalleEvento extends StatefulWidget {
   const DetalleEvento({super.key});
