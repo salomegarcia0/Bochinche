@@ -627,7 +627,7 @@ class _AdminReportsViewState extends State<AdminReportsView> {
               } else if (snapshot.hasError) {
                 return Text('Error al cargar los reportes');
               } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                return Text('No has realizado ningún reporte aún.');
+                return Text('No hay reportes pendientes.');
               } else {
                 List<Map<String, dynamic>> reportes = snapshot.data!;
                 return ListView.builder(
@@ -733,6 +733,44 @@ class _AdminReportsViewState extends State<AdminReportsView> {
                                 ),
                               ],
                             ),
+                            
+                            // ========================================================
+                            // NUEVO: MOSTRAR AL ADMIN QUIÉN REPORTÓ (MODO NINJA)
+                            // ========================================================
+                            SizedBox(height: 8),
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.grey[100],
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: Colors.grey[300]!),
+                              ),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Icon(Icons.visibility, size: 16, color: Colors.grey[700]),
+                                  const SizedBox(width: 6),
+                                  Expanded(
+                                    child: RichText(
+                                      text: TextSpan(
+                                        style: TextStyle(color: Colors.grey[800], fontSize: 13),
+                                        children: [
+                                          const TextSpan(text: 'Reportado por: ', style: TextStyle(fontWeight: FontWeight.bold)),
+                                          TextSpan(
+                                            text: j['reporterUsername'] != 'sin_usuario' && j['reporterUsername'] != null 
+                                                ? '@${j['reporterUsername']}' 
+                                                : 'Usuario sin @',
+                                            style: const TextStyle(color: PrimaryPurple, fontWeight: FontWeight.bold),
+                                          ),
+                                          TextSpan(text: ' (${j['reporterName'] ?? 'Desconocido'})'),
+                                        ]
+                                      )
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            // ========================================================
 
                             SizedBox(height: 8),
                             Wrap(
@@ -790,8 +828,8 @@ class _AdminReportsViewState extends State<AdminReportsView> {
                                                     Colors.grey[600],
                                                 padding:
                                                     const EdgeInsets.symmetric(
-                                                      vertical: 12,
-                                                    ),
+                                                  vertical: 12,
+                                                ),
                                                 shape: RoundedRectangleBorder(
                                                   borderRadius:
                                                       BorderRadius.circular(10),
@@ -831,8 +869,8 @@ class _AdminReportsViewState extends State<AdminReportsView> {
                                                 foregroundColor: Colors.white,
                                                 padding:
                                                     const EdgeInsets.symmetric(
-                                                      vertical: 12,
-                                                    ),
+                                                  vertical: 12,
+                                                ),
                                                 shape: RoundedRectangleBorder(
                                                   borderRadius:
                                                       BorderRadius.circular(10),
@@ -847,8 +885,8 @@ class _AdminReportsViewState extends State<AdminReportsView> {
                                                 ),
                                                 padding:
                                                     const EdgeInsets.symmetric(
-                                                      vertical: 12,
-                                                    ),
+                                                  vertical: 12,
+                                                ),
                                                 shape: RoundedRectangleBorder(
                                                   borderRadius:
                                                       BorderRadius.circular(10),

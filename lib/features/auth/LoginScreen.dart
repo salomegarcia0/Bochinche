@@ -8,6 +8,7 @@ import 'package:bochinche_app/data/auth_service.dart';
 import 'package:bochinche_app/styles/Color.dart';
 import 'package:bochinche_app/sources/events/events_logic.dart';
 import 'package:bochinche_app/core/utils/draft_manager.dart';
+import 'package:bochinche_app/sources/statistics/statistics_ui.dart'; 
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -54,18 +55,27 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   // --- LÓGICA DE VALIDACIÓN ---
-  void _validateEmail(String email) {
-    final bool emailValid = RegExp(
-            r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+")
-        .hasMatch(email);
-
+  void _validateInput(String input) {
     setState(() {
-      if (email.isEmpty) {
-        _emailError = "El correo es requerido";
-      } else if (!emailValid) {
-        _emailError = "El correo no es válido";
+      if (input.isEmpty) {
+        _emailError = "El campo es requerido";
+      } else if (!input.contains('@')) {
+        // Si no tiene @, asumimos que es un username. Verificamos tamaño básico.
+        if (input.length < 3) {
+          _emailError = "Mínimo 3 caracteres para usuario";
+        } else {
+          _emailError = null;
+        }
       } else {
-        _emailError = null;
+        // Si tiene @, usamos la validación estricta de correo
+        final bool emailValid = RegExp(
+                r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+")
+            .hasMatch(input);
+        if (!emailValid) {
+          _emailError = "El correo no es válido";
+        } else {
+          _emailError = null;
+        }
       }
     });
   }
@@ -83,7 +93,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   bool _validateAll() {
-    _validateEmail(emailController.text);
+    _validateInput(emailController.text.trim());
     _validatePassword(passwordController.text);
 
     return _emailError == null && _passwordError == null;
@@ -103,7 +113,7 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => cargando = true);
 
     try {
-      // 1. Iniciar sesión en Authentication
+      // 1. Iniciar sesión en Authentication (Pasando el correo O el username)
       User? user = await _authService.signInWithEmailAndPassword(
         emailController.text.trim(),
         passwordController.text.trim(),
@@ -139,6 +149,7 @@ class _LoginScreenState extends State<LoginScreen> {
             }
           }
 
+          // Obtenemos el rol del usuario (Ej: 'organizador','admin')
           String? rol = await _authService.getUserRol(user.uid);
 
           if (rol != null && user.emailVerified == true) {
@@ -151,10 +162,25 @@ class _LoginScreenState extends State<LoginScreen> {
             );
             updateEventStatusOnLogin();
             DraftManager.clearLoginDraft();
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => const Pagina_Principal()),
-            );
+
+            // ========================================================
+            // LÓGICA DE DESVÍO DE RUTAS SEGÚN ROL
+            // ========================================================
+            if (rol == 'admin') {
+              // El Admin va directo a las estadísticas.
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const StatisticsScreen()),
+              );
+            } else {
+              // Si es usuario u organizador normal, va al mapa de Bochinche
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const Pagina_Principal()),
+              );
+            }
+            // ========================================================
+
           } else {
             if (rol != null && user.emailVerified == false) {
               if (mounted) {
@@ -278,7 +304,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   color: PrimaryBackGroundPurple,
                 ),
               ),
-              // Campo de Email
+              // Campo de Email o Username
               TextField(
                 controller: emailController,
                 keyboardType: TextInputType.emailAddress,
@@ -289,14 +315,14 @@ class _LoginScreenState extends State<LoginScreen> {
                   });
                   if (_debounce?.isActive ?? false) _debounce!.cancel();
                   _debounce = Timer(const Duration(milliseconds: 500), () {
-                    _validateEmail(value);
+                    _validateInput(value.trim()); // Validamos el input
                   });
                 },
                 decoration: InputDecoration(
                   filled: true,
                   fillColor: SecondaryPurple,
-                  labelText: "Correo Electrónico",
-                  prefixIcon: const Icon(Icons.email_outlined),
+                  labelText: "Correo Electrónico o Usuario (@)",
+                  prefixIcon: const Icon(Icons.account_circle_outlined),
                   border: const OutlineInputBorder(),
                   errorText: _emailError,
                   errorStyle: const TextStyle(color: Colors.red),

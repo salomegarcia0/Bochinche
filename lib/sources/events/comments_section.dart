@@ -21,8 +21,8 @@ class _CommentsSectionState extends State<CommentsSection> {
   final TextEditingController _commentController = TextEditingController();
   int _rating = 5;
   String get _currentUid => FirebaseAuth.instance.currentUser?.uid ?? '';
-  String get _currentName =>
-      FirebaseAuth.instance.currentUser?.displayName ?? 'Bochinchero';
+  
+  // Eliminamos _currentName porque ahora buscaremos el username en Firebase
 
   @override
   Widget build(BuildContext context) {
@@ -48,8 +48,8 @@ class _CommentsSectionState extends State<CommentsSection> {
                   final int rating = (c['rating'] is int)
                       ? c['rating'] as int
                       : (c['rating'] is double
-                            ? (c['rating'] as double).toInt()
-                            : 0);
+                          ? (c['rating'] as double).toInt()
+                          : 0);
                   return ListTile(
                     title: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -59,18 +59,37 @@ class _CommentsSectionState extends State<CommentsSection> {
                           child: Row(
                             children: [
                               Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(c['nombre'] ?? 'Usuario'),
-                                  if (c['usuarioUid'] != null) ...[
-                                    const SizedBox(width: 4),
-                                    VerificationBadge(
-                                      uid: c['usuarioUid'],
-                                      size: 16,
-                                    ),
-                                  ],
-                                ],
-                              ),
+  // Volvemos a min para no pelear con el ListView
+  mainAxisSize: MainAxisSize.min, 
+  children: [
+    // Usamos Flexible en lugar de Expanded para evitar el error de "hasSize"
+    Flexible(
+      child: Text(
+        // Verificamos nulos antes de hacer cualquier cosa
+        (c['nombre'] != null)
+            ? (c['nombre'].toString().startsWith('@') 
+                ? c['nombre'] 
+                : '@${c['nombre']}')
+            : '@usuario',
+        style: const TextStyle(
+          fontWeight: FontWeight.bold,
+          color: PrimaryPurple,
+          fontSize: 14,
+        ),
+        overflow: TextOverflow.ellipsis,
+        maxLines: 1,
+      ),
+    ),
+    // Verificamos que el UID no sea nulo antes de mostrar la medalla
+    if (c['usuarioUid'] != null) ...[
+      const SizedBox(width: 4),
+      VerificationBadge(
+        uid: c['usuarioUid'],
+        size: 16,
+      ),
+    ],
+  ],
+),
                               PopupMenuButton<String>(
                                 icon: const Icon(
                                   Icons.more_vert,
@@ -109,24 +128,24 @@ class _CommentsSectionState extends State<CommentsSection> {
                                                 style: ElevatedButton.styleFrom(
                                                   backgroundColor:
                                                       const Color.fromARGB(
-                                                        129,
-                                                        238,
-                                                        238,
-                                                        238,
-                                                      ),
+                                                    129,
+                                                    238,
+                                                    238,
+                                                    238,
+                                                  ),
                                                   foregroundColor:
                                                       Colors.black87,
                                                   elevation: 0,
                                                   padding:
                                                       const EdgeInsets.symmetric(
-                                                        horizontal: 24,
-                                                        vertical: 12,
-                                                      ),
+                                                    horizontal: 24,
+                                                    vertical: 12,
+                                                  ),
                                                   shape: RoundedRectangleBorder(
                                                     borderRadius:
                                                         BorderRadius.circular(
-                                                          12,
-                                                        ),
+                                                      12,
+                                                    ),
                                                   ),
                                                 ),
                                                 onPressed: () =>
@@ -142,14 +161,14 @@ class _CommentsSectionState extends State<CommentsSection> {
                                                       0, // Plano se ve más moderno
                                                   padding:
                                                       const EdgeInsets.symmetric(
-                                                        horizontal: 24,
-                                                        vertical: 12,
-                                                      ),
+                                                    horizontal: 24,
+                                                    vertical: 12,
+                                                  ),
                                                   shape: RoundedRectangleBorder(
                                                     borderRadius:
                                                         BorderRadius.circular(
-                                                          12,
-                                                        ), // Bordes suaves
+                                                      12,
+                                                    ), // Bordes suaves
                                                   ),
                                                 ),
                                                 onPressed: () {
@@ -262,13 +281,35 @@ class _CommentsSectionState extends State<CommentsSection> {
                 final texto = _commentController.text.trim();
                 if (texto.isEmpty) return;
                 try {
+                  // ==========================================
+                  // NUEVA LÓGICA: GUARDAR CON USERNAME
+                  // ==========================================
+                  // 1. Buscamos el username del usuario actual en Firestore
+                  DocumentSnapshot userDoc = await FirebaseFirestore.instance
+                      .collection('users')
+                      .doc(_currentUid)
+                      .get();
+                      
+                  String nombreParaGuardar = 'Bochinchero';
+                  
+                  if (userDoc.exists) {
+                    final data = userDoc.data() as Map<String, dynamic>;
+                    if (data.containsKey('username') && data['username'].toString().isNotEmpty) {
+                      nombreParaGuardar = '@${data['username']}'; // Guardamos con el @ incluido
+                    } else {
+                      nombreParaGuardar = data['nombre'] ?? 'Bochinchero'; // Respaldo viejo
+                    }
+                  }
+
+                  // 2. Guardamos el comentario
                   await agregarComentario(
                     eventoId: widget.eventoId,
                     texto: texto,
-                    usuarioNombre: _currentName,
+                    usuarioNombre: nombreParaGuardar, // Ahora pasa el @username
                     usuarioUid: _currentUid,
                     rating: _rating,
                   );
+                  
                   await agregarValoracion(
                     eventoId: widget.eventoId,
                     rating: _rating,

@@ -22,6 +22,7 @@ TextEditingController feedbackController = TextEditingController();
 Future<void> reportEvent(BuildContext context) async {
   List<String> selectedReasons = [];
   String reportDetails = ": ${reportDetailsController.text.trim()}";
+  
   if (locationError == false &&
       montoError == false &&
       incumplimientoLey == false &&
@@ -29,10 +30,6 @@ Future<void> reportEvent(BuildContext context) async {
       otherError == false) {
     print('No se ha seleccionado ningún error para reportar.');
   } else {
-    print('Reporte enviado:');
-    print('Evento ID: $eventToReport');
-    print('Usuario ID: $userToReport');
-    print('Errores:');
     if (locationError == true) selectedReasons.add('Localización Incorrecta');
     if (montoError == true) selectedReasons.add('Monto Incorrecto');
     if (incumplimientoLey == true)
@@ -48,19 +45,43 @@ Future<void> reportEvent(BuildContext context) async {
     }
 
     try {
+      final currentUser = FirebaseAuth.instance.currentUser;
+      String reporterName = 'Desconocido';
+      String reporterUsername = 'sin_usuario';
+
+      // ========================================================
+      // MODO NINJA: Buscamos los datos reales del que reporta
+      // ========================================================
+      if (currentUser != null) {
+        final userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(currentUser.uid)
+            .get();
+            
+        if (userDoc.exists) {
+          final data = userDoc.data() as Map<String, dynamic>;
+          reporterName = data['nombre'] ?? 'Desconocido';
+          reporterUsername = data['username'] ?? 'sin_usuario';
+        }
+      }
+
       final newReportRef = FirebaseFirestore.instance
           .collection('reports')
           .doc();
+          
       await newReportRef.set({
         'reportId': newReportRef.id,
         'eventId': eventToReport,
-        'reporterId': FirebaseAuth.instance.currentUser?.uid,
+        'reporterId': currentUser?.uid,
+        'reporterName': reporterName,           // Para el Admin
+        'reporterUsername': reporterUsername,   // Para el Admin
         'reason': selectedReasons,
         'status': 'Pendiente',
         'feedback': 'Ninguno',
         'timestamp': FieldValue.serverTimestamp(),
         'evento': true,
       });
+      print('✅ Reporte de evento enviado con Modo Ninja.');
     } catch (e) {
       print('Error al enviar el reporte: $e');
     }
@@ -145,30 +166,51 @@ Future<void> reportUser(BuildContext context) async {
       isInappropriateContent == false) {
     print('No se ha seleccionado ningún error para reportar.');
   } else {
-    print('Reporte enviado:');
-    print('Evento ID: $eventToReport');
-    print('Usuario ID: $userToReport');
-    print('Errores:');
     if (isHate == true) selectedReasons.add('Odio');
     if (isHarassment == true) selectedReasons.add('Abuso y acoso');
     if (isViolentDiscourse == true) selectedReasons.add('Discurso violento');
     if (isSpam == true) selectedReasons.add('Spam');
     if (isInappropriateContent == true)
       selectedReasons.add('Comportamientos ilegales');
+      
     try {
+      final currentUser = FirebaseAuth.instance.currentUser;
+      String reporterName = 'Desconocido';
+      String reporterUsername = 'sin_usuario';
+
+      // ========================================================
+      // MODO NINJA: Buscamos los datos reales del que reporta
+      // ========================================================
+      if (currentUser != null) {
+        final userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(currentUser.uid)
+            .get();
+            
+        if (userDoc.exists) {
+          final data = userDoc.data() as Map<String, dynamic>;
+          reporterName = data['nombre'] ?? 'Desconocido';
+          reporterUsername = data['username'] ?? 'sin_usuario';
+        }
+      }
+
       final newReportRef = FirebaseFirestore.instance
           .collection('reports')
           .doc();
+          
       await newReportRef.set({
         'reportId': newReportRef.id,
         'userId': userToReport,
-        'reporterId': FirebaseAuth.instance.currentUser?.uid,
+        'reporterId': currentUser?.uid,
+        'reporterName': reporterName,           // Para el Admin
+        'reporterUsername': reporterUsername,   // Para el Admin
         'reason': selectedReasons,
         'status': 'Pendiente',
         'feedback': 'Ninguno',
         'timestamp': FieldValue.serverTimestamp(),
         'evento': false,
       });
+      print('✅ Reporte de usuario enviado con Modo Ninja.');
     } catch (e) {
       print('Error al enviar el reporte: $e');
     }
@@ -221,11 +263,14 @@ Future<String> getEventName(String reportId) async {
         .doc(reportId)
         .get();
     if (doc.exists) {
-      doc['eventId'] ?? 'Evento sin nombre';
+      final eventId = doc['eventId'];
+      if (eventId == null) return 'Evento sin ID';
+      
       DocumentSnapshot eventDoc = await FirebaseFirestore.instance
           .collection('events')
-          .doc(doc['eventId'])
+          .doc(eventId)
           .get();
+          
       if (eventDoc.exists) {
         return eventDoc['name'] ?? 'Evento sin nombre';
       } else {
@@ -246,14 +291,29 @@ Future<String> getUserName(String reportId) async {
         .collection('reports')
         .doc(reportId)
         .get();
+        
     if (doc.exists) {
-      doc['userId'] ?? 'Usuario sin nombre';
+      final reportedUserId = doc['userId'];
+      if (reportedUserId == null) return 'Usuario sin ID';
+      
       DocumentSnapshot userDoc = await FirebaseFirestore.instance
           .collection('users')
-          .doc(doc['userId'])
+          .doc(reportedUserId)
           .get();
+          
       if (userDoc.exists) {
-        return userDoc['nombre'] ?? 'Usuario sin nombre';
+        final userData = userDoc.data() as Map<String, dynamic>;
+        final nombre = userData['nombre'] ?? 'Usuario sin nombre';
+        final username = userData['username'] ?? '';
+        
+        // ========================================================
+        // MOSTRAR EL @USERNAME AL ADMIN
+        // ========================================================
+        if (username.isNotEmpty) {
+          return '@$username ($nombre)';
+        }
+        return nombre;
+        
       } else {
         return 'Usuario no encontrado';
       }

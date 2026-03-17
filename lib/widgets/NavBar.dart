@@ -34,8 +34,12 @@ class Navbar extends StatelessWidget {
         future: _getUserRole(),
         builder: (context, snapshot) {
           final role = snapshot.data ?? 'usuario';
-          // Si el rol es organizador o admin, habilitamos la creación
-          final bool isCreator = role == 'organizador' || role == 'admin';
+          
+          // ========================================================
+          // SEPARAMOS LOS ROLES PARA EL NAVBAR
+          // ========================================================
+          final bool isAdmin = role == 'admin';
+          final bool isOrganizer = role == 'organizador';
 
           return ListView(
             padding: EdgeInsets.zero,
@@ -72,27 +76,15 @@ class Navbar extends StatelessWidget {
                   ],
                 ),
               ),
-              _item(
-                context,
-                Icons.explore,
-                'Explorar',
-                const PublicEventsScreen(),
-              ),
-              _item(context, Icons.map, 'Mapa', const Pagina_Principal()),
-              _item(
-                context,
-                Icons.local_activity,
-                'Mis Entradas',
-                const registered_events(),
-              ),
-              _item(context, Icons.report, 'Mis Reportes', const MyReports()),
 
-              if (isCreator) ...[
-                const Divider(),
+              // ========================================================
+              // VISTA EXCLUSIVA PARA EL ADMIN
+              // ========================================================
+              if (isAdmin) ...[
                 const Padding(
                   padding: EdgeInsets.only(left: 16, top: 10, bottom: 5),
                   child: Text(
-                    "GESTIÓN",
+                    "CUARTEL GENERAL",
                     style: TextStyle(
                       color: Colors.grey,
                       fontWeight: FontWeight.bold,
@@ -102,30 +94,68 @@ class Navbar extends StatelessWidget {
                 ),
                 _item(
                   context,
+                  Icons.query_stats,
+                  'Estadísticas',
+                  const StatisticsScreen(),
+                ),
+                _item(
+                  context,
                   Icons.report_problem,
                   'Administrar reportes',
                   const AdminReports(),
                 ),
+              ] 
+              // ========================================================
+              // VISTA PARA USUARIOS Y ORGANIZADORES
+              // ========================================================
+              else ...[
                 _item(
                   context,
-                  Icons.add_circle,
-                  'Crear eventos',
-                  const EventosCreate(),
+                  Icons.explore,
+                  'Explorar',
+                  const PublicEventsScreen(),
                 ),
+                _item(context, Icons.map, 'Mapa', const Pagina_Principal()),
                 _item(
                   context,
-                  Icons.dashboard,
-                  'Panel de control',
-                  const ControlPanelEvent(),
+                  Icons.local_activity,
+                  'Mis Entradas',
+                  const registered_events(),
                 ),
-                _item(
-                  context,
-                  Icons.query_stats,
-                  'Estadisticas',
-                  StatisticsScreen(),
-                ),
+                _item(context, Icons.report, 'Mis Reportes', const MyReports()),
+
+                // Bloque extra solo si es Organizador
+                if (isOrganizer) ...[
+                  const Divider(),
+                  const Padding(
+                    padding: EdgeInsets.only(left: 16, top: 10, bottom: 5),
+                    child: Text(
+                      "GESTIÓN",
+                      style: TextStyle(
+                        color: Colors.grey,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                  _item(
+                    context,
+                    Icons.add_circle,
+                    'Crear eventos',
+                    const EventosCreate(),
+                  ),
+                  _item(
+                    context,
+                    Icons.dashboard,
+                    'Panel de control',
+                    const ControlPanelEvent(),
+                  ),
+                ],
               ],
 
+              // ========================================================
+              // BOTÓN CERRAR SESIÓN (Común para todos)
+              // ========================================================
               const Divider(),
               ListTile(
                 leading: const Icon(Icons.logout, color: Colors.red),

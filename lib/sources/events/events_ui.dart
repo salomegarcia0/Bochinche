@@ -2295,6 +2295,9 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
     super.initState();
     selectedCategory = userPreferredFilters['category'];
     selectedPreferences = List<String>.from(userPreferredFilters['tags']);
+    if (selectedPreferences.isEmpty) {
+      selectedPreferences.add('Eventos');
+    }
   }
 
   Future<void> _fakeLoading() async {
@@ -2365,8 +2368,8 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
                   hintText: currentMode == SearchMode.bochincheros
                       ? 'Buscar bochincheros...'
                       : (currentMode == SearchMode.privados
-                            ? 'Ingresa código de acceso...'
-                            : 'Buscar eventos públicos...'),
+                          ? 'Ingresa código de acceso...'
+                          : 'Buscar eventos públicos...'),
                   onTap: () => controller.openView(),
                   onChanged: (_) => controller.openView(),
                   leading: const Icon(Icons.search, color: PrimaryPurple),
@@ -2404,15 +2407,15 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
                 }
 
                 return predictions.map((item) {
-                  // Definimos los campos según el origen
+                  // NUEVO: Definimos los campos según el origen. Ahora priorizamos el username.
                   final String title =
                       (currentMode == SearchMode.bochincheros
-                          ? item['nombre']
+                          ? (item['username'] != null ? '@${item['username']}' : (item['nombre'] ?? 'Sin nombre'))
                           : item['name']) ??
                       '';
 
                   final IconData icon = currentMode == SearchMode.bochincheros
-                      ? Icons.person_outline
+                      ? Icons.alternate_email // Cambiado a un @ para que se vea más cool
                       : Icons.calendar_today_outlined;
 
                   return ListTile(
@@ -2491,7 +2494,7 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
                               if (s) {
                                 selectedPreferences.add(pref);
                               } else {
-                                selectedPreferences.add('Todos');
+                                selectedPreferences.add('Eventos');
                               }
 
                               selectedCategory = 'Todos';
@@ -2540,8 +2543,13 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
                                   child: Icon(Icons.person),
                                 ),
                                 title: Text(item['nombre'] ?? 'Sin nombre'),
+                                // NUEVO: Quitamos la cédula y mostramos el @username
                                 subtitle: Text(
-                                  "ID: ${item['cedula'] ?? 'N/A'}",
+                                  item['username'] != null ? "@${item['username']}" : "Usuario sin @",
+                                  style: const TextStyle(
+                                    color: PrimaryPurple,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                                 onTap: () {
                                   userToReport = item['uid'];

@@ -521,14 +521,14 @@ Future<void> modifyEvent(BuildContext context, String id, List<File> nuevasImage
               'bank': selectedBank ?? '',
               'phone':
                   selectedPhonePrefix != null &&
-                      paymentPhoneNumberController.text.isNotEmpty
-                  ? '$selectedPhonePrefix-${paymentPhoneNumberController.text}'
-                  : '',
+                          paymentPhoneNumberController.text.isNotEmpty
+                      ? '$selectedPhonePrefix-${paymentPhoneNumberController.text}'
+                      : '',
               'ci':
                   selectedCIType != null &&
-                      paymentCINumberController.text.isNotEmpty
-                  ? '$selectedCIType-${paymentCINumberController.text}'
-                  : '',
+                          paymentCINumberController.text.isNotEmpty
+                      ? '$selectedCIType-${paymentCINumberController.text}'
+                      : '',
               'price': double.tryParse(priceController.text) ?? 0.0,
             },
           });
@@ -560,6 +560,7 @@ Future<void> updateEventStatusOnLogin() async {
   final eventsRef = FirebaseFirestore.instance.collection('events');
 
   try {
+    // Buscamos los que no han terminado todavía
     final snapshot = await eventsRef
         .where('state', whereIn: ['Ocurriendo', 'Proximo'])
         .get();
@@ -573,27 +574,37 @@ Future<void> updateEventStatusOnLogin() async {
       final data = doc.data();
       if (data['startDate'] == null) continue;
 
-      // Conversión de fecha (ajusta si usas Timestamp o String)
       DateTime startDate = DateTime.parse(data['startDate']);
-      final difference = startDate.difference(now).inDays;
       String currentState = data['state'];
-      String? newState;
-      if (difference < 0 && currentState != 'Ocurriendo') {
-        newState = 'Ocurriendo';
+      
+      // Definimos cuándo se considera que terminó (Ej: 12 horas después de empezar)
+      final DateTime fechaFinEstimada = startDate.add(const Duration(hours: 12));
+
+      Map<String, dynamic> updates = {};
+
+      // CASO 1: El evento ya terminó (pasaron más de 12h desde el inicio)
+      if (now.isAfter(fechaFinEstimada)) {
+        updates['state'] = 'Finalizado';
+        updates['isFinalizado'] = true; // <--- AQUÍ ESTÁ EL CANDADO QUE FALTABA
+      } 
+      // CASO 2: El evento ya empezó pero no ha terminado
+      else if (now.isAfter(startDate) && currentState != 'Ocurriendo') {
+        updates['state'] = 'Ocurriendo';
+        updates['isFinalizado'] = false;
       }
 
-      if (newState != null) {
-        batch.update(doc.reference, {'state': newState});
+      if (updates.isNotEmpty) {
+        batch.update(doc.reference, updates);
         hasChanges = true;
       }
     }
 
     if (hasChanges) {
       await batch.commit();
-      print("Sincronización de estados completada tras login.");
+      print("✅ Sincronización completa: Eventos viejos finalizados y base de datos limpia.");
     }
   } catch (e) {
-    print("Error sincronizando estados: $e");
+    print("❌ Error sincronizando estados: $e");
   }
 }
 
@@ -685,7 +696,7 @@ Future<void> agregarValoracion({
 
 Map<String, dynamic> userPreferredFilters = {
   'category': 'Todos',
-  'tags': <String>[],
+  'tags': <String>['Eventos'],
 };
 
 void saveFiltersLocally(String category, List<String> tags) {
@@ -721,6 +732,9 @@ Stream<List<Map<String, dynamic>>> chargeFilteredEvents({
 
   // --- CASO 1: BÚSQUEDA DE BOCHINCHEROS (USUARIOS) ---
   if (mode == SearchMode.bochincheros) {
+    // NUEVO: Convertimos la búsqueda a minúsculas una sola vez
+    final String lowerSearch = safeSearch.toLowerCase(); 
+
     if (category == 'Seguidos') {
       if (currentUserUid == null) return Stream.value([]);
       return FirebaseFirestore.instance
@@ -740,21 +754,21 @@ Stream<List<Map<String, dynamic>>> chargeFilteredEvents({
                 .map((doc) => doc.data() as Map<String, dynamic>)
                 .where((userData) {
                   final String id = userData['uid'] ?? '';
-                  final String nombre = (userData['nombre'] ?? '')
-                      .toString()
-                      .toLowerCase();
+                  // NUEVO: Ahora comparamos contra username_lowercase en vez de nombre
+                  final String usernameLower = (userData['username_lowercase'] ?? '')
+                      .toString();
                   return followingIds.contains(id) &&
-                      nombre.contains(safeSearch.toLowerCase());
+                      usernameLower.contains(lowerSearch);
                 })
                 .toList();
           });
     }
 
-    // Búsqueda normal de usuarios
+    // NUEVO: Búsqueda normal de usuarios (Por username_lowercase directo en Firebase)
     return FirebaseFirestore.instance
         .collection('users')
-        .where('nombre', isGreaterThanOrEqualTo: safeSearch)
-        .where('nombre', isLessThanOrEqualTo: '$safeSearch\uf8ff')
+        .where('username_lowercase', isGreaterThanOrEqualTo: lowerSearch)
+        .where('username_lowercase', isLessThanOrEqualTo: '$lowerSearch\uf8ff')
         .snapshots()
         .map(
           (snap) => snap.docs
@@ -851,10 +865,14 @@ Stream<List<Map<String, dynamic>>> chargeFilteredEvents({
 
 Future<List<Map<String, dynamic>>> getUserPredictions(String input) async {
   if (input.isEmpty) return [];
+  // NUEVO: Transformamos el input a minúsculas
+  final String lowerInput = input.toLowerCase();
+
+  // NUEVO: Buscamos por username_lowercase en vez de nombre
   final snap = await FirebaseFirestore.instance
       .collection('users')
-      .where('nombre', isGreaterThanOrEqualTo: input)
-      .where('nombre', isLessThanOrEqualTo: '$input\uf8ff')
+      .where('username_lowercase', isGreaterThanOrEqualTo: lowerInput)
+      .where('username_lowercase', isLessThanOrEqualTo: '$lowerInput\uf8ff')
       .limit(5)
       .get();
 
