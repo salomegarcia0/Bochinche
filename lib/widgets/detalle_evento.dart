@@ -10,6 +10,7 @@ import 'package:bochinche_app/sources/reports/reports_logic.dart';
 import 'package:bochinche_app/sources/user_profile/user_profile_ui.dart';
 import 'package:bochinche_app/sources/events/comments_section.dart';
 import 'package:bochinche_app/widgets/verification_badge.dart';
+import 'package:bochinche_app/sources/events/images_logic.dart';
 
 void mostrarDetalles(
   BuildContext context,
@@ -221,18 +222,19 @@ void mostrarDetalles(
 
                             final userData =
                                 snapshot.data!.data() as Map<String, dynamic>;
-                            
+
                             // ==========================================
                             // NUEVA LÓGICA: EXTRAER USERNAME Y NOMBRE
                             // ==========================================
-                            final String nombreOrg = userData['nombre'] ?? 'Sin nombre';
+                            final String nombreOrg =
+                                userData['nombre'] ?? 'Sin nombre';
                             final String username = userData['username'] ?? '';
-                            
+
                             // Construimos cómo se va a ver
                             // Si tiene username: @username (Nombre Real)
                             // Si no tiene: Nombre Real
-                            final String textoAmostrar = username.isNotEmpty 
-                                ? '@$username ($nombreOrg)' 
+                            final String textoAmostrar = username.isNotEmpty
+                                ? '@$username ($nombreOrg)'
                                 : nombreOrg;
 
                             return TextButton(
@@ -253,14 +255,17 @@ void mostrarDetalles(
                                 overflow: TextOverflow.ellipsis,
                                 text: TextSpan(
                                   text: 'Organizador: ',
-                                  style: Theme.of(context).textTheme.titleMedium,
+                                  style: Theme.of(
+                                    context,
+                                  ).textTheme.titleMedium,
                                   children: [
                                     if (username.isNotEmpty)
                                       TextSpan(
                                         text: '@$username ',
                                         style: const TextStyle(
                                           fontWeight: FontWeight.bold,
-                                          color: PrimaryPurple, // Destacamos el @
+                                          color:
+                                              PrimaryPurple, // Destacamos el @
                                         ),
                                       ),
                                     if (username.isNotEmpty)
@@ -268,7 +273,8 @@ void mostrarDetalles(
                                         text: '($nombreOrg)',
                                         style: const TextStyle(
                                           fontSize: 14,
-                                          color: Colors.grey, // Nombre real más discreto
+                                          color: Colors
+                                              .grey, // Nombre real más discreto
                                         ),
                                       ),
                                     if (username.isEmpty)
@@ -303,6 +309,8 @@ void mostrarDetalles(
                     'Fecha de finalización: ${DateTime.parse(data['endDate']).day}/${DateTime.parse(data['endDate']).month}/${DateTime.parse(data['endDate']).year} a las ${data['endTime']['hour'].toString().padLeft(2, '0')}:${data['endTime']['minute'].toString().padLeft(2, '0')}',
                   ),
                   const SizedBox(height: 1),
+
+                  // --- INICIO DEL CARRUSEL ---
 
                   // ========================================================
                   // 2. TEXTO DEL ESTADO CON COLOR ROJO SI ESTÁ FINALIZADO
@@ -447,6 +455,74 @@ void mostrarDetalles(
                         },
                       ),
                     ],
+                  ),
+                  const Text(
+                    'Galería',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: Color.fromARGB(255, 0, 0, 0),
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+
+                  FutureBuilder<List<String>>(
+                    future: obtenerImagenes(data['id'] ?? 'ID_NO_ENCONTRADO'),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const SizedBox(
+                          height: 220,
+                          child: Center(child: CircularProgressIndicator()),
+                        );
+                      }
+
+                      final imagenes = snapshot.data ?? [];
+
+                      if (imagenes.isEmpty) {
+                        return SizedBox(
+                          height: 220,
+                          child: Text('No hay imágenes disponibles'),
+                        );
+                      }
+                      return SizedBox(
+                        height: 220,
+                        child: PageView.builder(
+                          controller: PageController(viewportFraction: 0.92),
+                          itemCount: imagenes.length,
+                          itemBuilder: (context, index) {
+                            final String url = imagenes[index];
+
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6.0,
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(15),
+                                child: Container(
+                                  color: Colors.grey[200],
+                                  child: Image.network(
+                                    url,
+                                    fit: BoxFit.cover,
+                                    width: double.infinity,
+
+                                    loadingBuilder:
+                                        (context, child, loadingProgress) {
+                                          if (loadingProgress == null)
+                                            return child;
+                                          return const Center(
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                            ),
+                                          );
+                                        },
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      );
+                    },
                   ),
 
                   const SizedBox(height: 2),
