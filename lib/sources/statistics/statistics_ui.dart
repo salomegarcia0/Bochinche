@@ -1,21 +1,14 @@
-import 'package:bochinche_app/sources/reports/reports_ui.dart';
 import 'package:bochinche_app/styles/BochincheAppBar.dart';
 import 'package:bochinche_app/widgets/NavBar.dart';
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter_svg/flutter_svg.dart';
-import 'package:bochinche_app/features/auth/LoginScreen.dart';
-import 'package:bochinche_app/widgets/verification_badge.dart';
-import 'package:bochinche_app/sources/reports/reports_logic.dart';
 import 'package:bochinche_app/styles/Color.dart';
-import 'package:fl_chart/fl_chart.dart';
 import 'package:bochinche_app/sources/statistics/statistics_logic.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 
 class StatisticsScreen extends StatelessWidget {
   const StatisticsScreen({super.key});
-  
+
   @override
   Widget build(BuildContext context) {
     return const Scaffold(
@@ -41,9 +34,9 @@ class _StatisticsUiState extends State<StatisticsUi> {
         children: [
           const SizedBox(height: 20),
           const Text(
-            'Cuartel General',
+            'Analiticas de Datos',
             style: TextStyle(
-              fontSize: 28, 
+              fontSize: 28,
               fontWeight: FontWeight.w900,
               color: PrimaryPurple,
             ),
@@ -52,14 +45,14 @@ class _StatisticsUiState extends State<StatisticsUi> {
           const Text(
             'Panel de Control de Administrador',
             style: TextStyle(
-              fontSize: 15, 
+              fontSize: 15,
               fontWeight: FontWeight.w600,
               color: Colors.grey,
             ),
           ),
 
           const Divider(height: 30),
-          
+
           GridView.count(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
@@ -80,7 +73,7 @@ class _StatisticsUiState extends State<StatisticsUi> {
                     "Eventos totales",
                     valorMostrar,
                     Icons.event,
-                    Colors.green,
+                    PrimaryPurple,
                   );
                 },
               ),
@@ -139,23 +132,16 @@ class _StatisticsUiState extends State<StatisticsUi> {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: const GraficoEventosHorizontal(),
           ),
-          const SizedBox(height: 50),
+          const SizedBox(height: 10),
           Container(
             height: 300,
             padding: const EdgeInsets.symmetric(horizontal: 3),
             child: const GraficoTiposEventosSync(),
           ),
-          Container(
-            height: 300,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: const RankingUsuariosGrafico(),
-          ),
-          Container(
-            height: 300,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: const TopEventosGrafico(),
-          ),
-          const SizedBox(height: 40), // Espacio al final para que no quede pegado
+          const SizedBox(height: 10),
+          RankingUsuariosGrafico(),
+          const SizedBox(height: 10),
+          TopEventosGrafico(),
         ],
       ),
     );
@@ -235,7 +221,11 @@ class GraficoEventosHorizontal extends StatelessWidget {
         return SfCartesianChart(
           title: ChartTitle(
             text: 'Eventos por mes',
-            textStyle: const TextStyle(fontWeight: FontWeight.bold),
+            textStyle: const TextStyle(
+              fontWeight: FontWeight.bold,
+              color: const Color.fromARGB(255, 0, 0, 0),
+            ),
+            alignment: ChartAlignment.near,
           ),
           isTransposed: false,
           primaryXAxis: CategoryAxis(),
@@ -288,7 +278,11 @@ class GraficoTiposEventosSync extends StatelessWidget {
         return SfCircularChart(
           title: ChartTitle(
             text: 'Eventos por Categoría',
-            textStyle: const TextStyle(fontWeight: FontWeight.bold),
+            textStyle: const TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Color.fromARGB(255, 0, 0, 0),
+            ),
+            alignment: ChartAlignment.near,
           ),
           legend: Legend(
             isVisible: true,
@@ -339,6 +333,7 @@ class ChartData {
 
 class RankingUsuariosGrafico extends StatelessWidget {
   const RankingUsuariosGrafico({super.key});
+
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<List<Map<String, dynamic>>>(
@@ -347,72 +342,87 @@ class RankingUsuariosGrafico extends StatelessWidget {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
-
         if (!snapshot.hasData || snapshot.data!.isEmpty) {
           return const Center(child: Text("No hay datos"));
         }
 
-        // Invertimos la lista para que el Top 1 aparezca arriba
-        final List<Map<String, dynamic>> top5 = snapshot.data!
-            .take(5)
-            .toList()
-            .reversed
-            .toList();
+        final List<Map<String, dynamic>> top5 = snapshot.data!.take(5).toList();
+
+        final double maxEventos = (top5.first['totalEventos'] as num)
+            .toDouble();
 
         return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 20),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(15),
-          ),
-          child: SfCartesianChart(
-            title: ChartTitle(
-              text: 'Ranking de Usuarios',
-              alignment: ChartAlignment.near,
-              textStyle: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
-                color: Colors.indigo,
-              ),
-            ),
-            isTransposed: false, // Barras horizontales
-            plotAreaBorderWidth: 0,
-            primaryXAxis: const CategoryAxis(
-              isVisible: false, // Ocultamos el eje porque los nombres van arriba
-              borderWidth: 0,
-            ),
-            primaryYAxis: const NumericAxis(
-              isVisible: false, // Ocultamos el eje de valores
-            ),
-            series: <CartesianSeries<Map<String, dynamic>, String>>[
-              BarSeries<Map<String, dynamic>, String>(
-                dataSource: top5,
-                xValueMapper: (Map<String, dynamic> data, _) => data['nombre'],
-                yValueMapper: (Map<String, dynamic> data, _) =>
-                    data['totalEventos'],
-
-                // Estilo de la barra igual a tu imagen
-                color: const Color(0xFFFF7B7B), // Color coral/rosado
-                width: 0.3, // Grosor de la barra
-                borderRadius: BorderRadius.circular(10),
-
-                // CONFIGURACIÓN DE LAS ETIQUETAS (Texto arriba)
-                dataLabelSettings: const DataLabelSettings(
-                  isVisible: true,
-                  // Coloca la etiqueta encima de la barra
-                  labelPosition: ChartDataLabelPosition.outside,
-                  labelAlignment: ChartDataLabelAlignment.top,
-                  textStyle: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.indigo,
-                  ),
+          padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
+          decoration: BoxDecoration(borderRadius: BorderRadius.circular(15)),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                ' Top 5 Organizadores',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  color: Color.fromARGB(255, 0, 0, 0),
                 ),
-
-                dataLabelMapper: (Map<String, dynamic> data, _) {
-                  return '${data['nombre']}                                       ${data['totalEventos']} eventos';
-                },
               ),
+              const SizedBox(height: 12),
+
+              ...top5.map((usuario) {
+                final double eventos = (usuario['totalEventos'] as num)
+                    .toDouble();
+
+                final double porcentaje = maxEventos > 0
+                    ? (eventos / maxEventos)
+                    : 0;
+
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              usuario['nombre'],
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                color: Color.fromARGB(255, 0, 0, 0),
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          Text(
+                            '${eventos.toInt()} eventos',
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                              color: Color.fromARGB(255, 0, 0, 0),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 6),
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          return Container(
+                            width: constraints.maxWidth * porcentaje,
+                            height: 14,
+                            decoration: BoxDecoration(
+                              color: PrimaryPurple,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                );
+              }),
             ],
           ),
         );
@@ -423,14 +433,13 @@ class RankingUsuariosGrafico extends StatelessWidget {
 
 class TopEventosGrafico extends StatelessWidget {
   const TopEventosGrafico({super.key});
+
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<List<Map<String, dynamic>>>(
       future: obtenerTop5Eventos(),
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
+        if (snapshot.connectionState == ConnectionState.waiting) {}
 
         if (!snapshot.hasData || snapshot.data!.isEmpty) {
           return const Center(child: Text("No hay datos disponibles"));
@@ -438,70 +447,83 @@ class TopEventosGrafico extends StatelessWidget {
 
         final data = snapshot.data!;
 
+        final double maxCantidad = data
+            .map((e) => (e['cantidad'] as num).toDouble())
+            .reduce((a, b) => a > b ? a : b);
+
         return Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 25),
           decoration: BoxDecoration(
-            color: const Color(0xFFFDFBFF), // Fondo sutilmente lila/blanco
+            color: const Color(0xFFFDFBFF),
             borderRadius: BorderRadius.circular(20),
           ),
-          child: SfCartesianChart(
-            title: ChartTitle(
-              text: 'Eventos más atendidos',
-              alignment: ChartAlignment.near,
-              textStyle: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Eventos más atendidos',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  color: Color.fromARGB(255, 0, 0, 0),
+                ),
               ),
-            ),
-            isTransposed: true,
-            plotAreaBorderWidth: 0,
-            primaryXAxis: const CategoryAxis(isVisible: false),
-            primaryYAxis: const NumericAxis(isVisible: false),
+              const SizedBox(height: 15),
 
-            annotations: data.asMap().entries.map((entry) {
-              int index = entry.key;
-              var item = entry.value;
+              ...data.map((item) {
+                final double cantidad = (item['cantidad'] as num).toDouble();
+                final double porcentaje = maxCantidad > 0
+                    ? (cantidad / maxCantidad)
+                    : 0;
 
-              return CartesianChartAnnotation(
-                widget: Container(
-                  width: MediaQuery.of(context).size.width * 0.8,
-                  padding: const EdgeInsets.only(bottom: 45),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        item['nombre'],
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF5E548E),
-                          fontSize: 14,
-                        ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              item['nombre'],
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                                color: Color.fromARGB(255, 0, 0, 0),
+                                fontSize: 14,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          Text(
+                            '${cantidad.toInt()} asistentes',
+                            style: TextStyle(
+                              color: const Color.fromARGB(255, 0, 0, 0),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
                       ),
-                      Text(
-                        '${item['cantidad']} asistentes',
-                        style: TextStyle(color: Colors.grey[600], fontSize: 12),
+
+                      const SizedBox(height: 3),
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          return Container(
+                            width: constraints.maxWidth * porcentaje,
+                            height: 14,
+                            decoration: BoxDecoration(
+                              color: PrimaryBackGroundPurple,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          );
+                        },
                       ),
                     ],
                   ),
-                ),
-                coordinateUnit: CoordinateUnit.point,
-                x: item['nombre'],
-                y: 0,
-                region: AnnotationRegion.plotArea,
-                horizontalAlignment: ChartAlignment.near,
-              );
-            }).toList(),
-
-            series: <CartesianSeries<Map<String, dynamic>, String>>[
-              BarSeries<Map<String, dynamic>, String>(
-                dataSource: data,
-                xValueMapper: (Map<String, dynamic> ev, _) => ev['nombre'],
-                yValueMapper: (Map<String, dynamic> ev, _) => ev['cantidad'],
-                color: const Color(0xFFFF8585),
-                width: 0.25,
-                borderRadius: const BorderRadius.all(Radius.circular(10)),
-                animationDuration: 1500,
-              ),
+                );
+              }),
             ],
           ),
         );
