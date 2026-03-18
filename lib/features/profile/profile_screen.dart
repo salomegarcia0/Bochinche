@@ -17,15 +17,15 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen>
     with SingleTickerProviderStateMixin {
-  UserModel? _usuario;
-  bool _cargando = true;
-  late TabController _tabController;
+  UserModel? usuario;
+  bool cargando = true;
+  late TabController tabController;
 
   @override
   void initState() {
     super.initState();
-    // CAMBIO: Ahora son 3 pestañas (Por Realizar, Realizados, Privados)
-    _tabController = TabController(length: 3, vsync: this);
+    // Javier: Inicializamos el controlador para 3 pestañas
+    tabController = TabController(length: 3, vsync: this);
     _cargarUsuario();
   }
 
@@ -39,16 +39,16 @@ class _ProfileScreenState extends State<ProfileScreen>
             .get();
         if (doc.exists) {
           setState(() {
-            _usuario = UserModel.fromMap(
+            usuario = UserModel.fromMap(
               doc.data() as Map<String, dynamic>,
               currentUser.uid,
             );
-            _cargando = false;
+            cargando = false;
           });
         }
       } catch (e) {
         debugPrint("Error al obtener datos: $e");
-        if (mounted) setState(() => _cargando = false);
+        if (mounted) setState(() => cargando = false);
       }
     }
   }
@@ -64,177 +64,10 @@ class _ProfileScreenState extends State<ProfileScreen>
     }
   }
 
-  // ----------------------------------------------------------------------
-  // LÓGICA DE ESTADOS Y FECHAS
-  // ----------------------------------------------------------------------
-
-  DateTime _getFechaExacta(Map<String, dynamic> data) {
-    try {
-      String? fechaString = data['startDate'];
-      DateTime fechaBase = fechaString != null
-          ? DateTime.parse(fechaString)
-          : DateTime.now();
-
-      if (data['startTime'] != null && data['startTime'] is Map) {
-        int hora = data['startTime']['hour'] ?? 0;
-        int minuto = data['startTime']['minute'] ?? 0;
-        return DateTime(
-          fechaBase.year,
-          fechaBase.month,
-          fechaBase.day,
-          hora,
-          minuto,
-        );
-      }
-      return fechaBase;
-    } catch (e) {
-      return DateTime.now();
-    }
-  }
-
-  // Calcula si está Finalizado o Próximo según la hora actual
-  String _calcularEstado(Map<String, dynamic> data) {
-    DateTime inicio = _getFechaExacta(data);
-    DateTime ahora = DateTime.now();
-
-    if (ahora.isAfter(inicio)) {
-      return "Finalizado";
-    } else {
-      return "Próximo";
-    }
-  }
-
-  Color _colorEstado(String estado) {
-    if (estado == "Finalizado") return Colors.grey;
-    return const Color.fromARGB(255, 88, 24, 100); // Próximo
-  }
-
-  // ----------------------------------------------------------------------
-  // MODAL DE DETALLES
-  // ----------------------------------------------------------------------
-  void _mostrarDetalleEvento(Map<String, dynamic> data) {
-    // Calculamos estado al momento de abrir
-    String estadoReal = _calcularEstado(data);
-    Color colorEstado = _colorEstado(estadoReal);
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(25.0)),
-      ),
-      builder: (context) {
-        return DraggableScrollableSheet(
-          initialChildSize: 0.5,
-          minChildSize: 0.3,
-          maxChildSize: 0.9,
-          expand: false,
-          builder: (context, scrollController) {
-            return SingleChildScrollView(
-              controller: scrollController,
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 50,
-                      height: 5,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[300],
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  // Título
-                  Text(
-                    data['name'] ?? "Evento sin nombre",
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: PrimaryPurple,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  // Imagen grande
-                  if (data['image_url'] != null)
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(15),
-                      child: Image.network(
-                        data['image_url'],
-                        width: double.infinity,
-                        height: 200,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                  const SizedBox(height: 20),
-
-                  // Detalles
-                  _infoRow(
-                    Icons.description,
-                    "Descripción",
-                    data['description'] ?? "Sin descripción",
-                  ),
-                  _infoRow(
-                    Icons.location_on,
-                    "Ubicación",
-                    data['address'] ?? "No especificada",
-                  ),
-                  _infoRow(
-                    Icons.people,
-                    "Aforo",
-                    "${data['capacity'] ?? '?'} personas",
-                  ),
-                  _infoRow(
-                    Icons.phone,
-                    "Contacto",
-                    data['contact'] ?? "No disponible",
-                  ),
-                  _infoRow(Icons.category, "Tipo", data['type'] ?? "General"),
-
-                  // Estado del evento (CALCULADO)
-                  const SizedBox(height: 20),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: colorEstado.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      "Estado: $estadoReal",
-                      style: TextStyle(
-                        color: colorEstado,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  // ----------------------------------------------------------------------
-  // FORMULARIO DE VERIFICACIÓN (TIPO INSTAGRAM/TWITTER/BINANCE)
-  // ----------------------------------------------------------------------
   void _mostrarFormularioVerificacion(String uid) {
-    final _formKey = GlobalKey<FormState>();
-    final _domicilioCtrl = TextEditingController();
-    final _edadCtrl = TextEditingController();
-    final _justificacionCtrl = TextEditingController();
-    final _cantidadEventosCtrl = TextEditingController();
-    final _tiempoEventosCtrl = TextEditingController();
-
-    String _sexoSeleccionado = 'Prefiero no decirlo';
-    bool _enviando = false;
+    final formKey = GlobalKey<FormState>();
+    final justificacionCtrl = TextEditingController();
+    bool enviando = false;
 
     showModalBottomSheet(
       context: context,
@@ -255,19 +88,16 @@ class _ProfileScreenState extends State<ProfileScreen>
               ),
               child: SingleChildScrollView(
                 child: Form(
-                  key: _formKey,
+                  key: formKey,
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Center(
-                        child: Container(
-                          width: 50,
-                          height: 5,
-                          decoration: BoxDecoration(
-                            color: Colors.grey[300],
-                            borderRadius: BorderRadius.circular(10),
-                          ),
+                      Container(
+                        width: 50,
+                        height: 5,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[300],
+                          borderRadius: BorderRadius.circular(10),
                         ),
                       ),
                       const SizedBox(height: 20),
@@ -279,117 +109,17 @@ class _ProfileScreenState extends State<ProfileScreen>
                           color: PrimaryPurple,
                         ),
                       ),
-                      const Text(
-                        "Completa estos datos para evaluar tu perfil como organizador de eventos.",
-                        style: TextStyle(color: Colors.grey),
-                      ),
                       const SizedBox(height: 20),
-
-                      // 2. Domicilio Fiscal
                       TextFormField(
-                        controller: _domicilioCtrl,
-                        decoration: const InputDecoration(
-                          labelText: 'Domicilio Fiscal',
-                          border: OutlineInputBorder(),
-                        ),
-                        validator: (v) => v!.isEmpty ? 'Requerido' : null,
-                      ),
-                      const SizedBox(height: 12),
-
-                      // 3. Edad y Sexo
-                      Row(
-                        children: [
-                          Expanded(
-                            flex: 1,
-                            child: TextFormField(
-                              controller: _edadCtrl,
-                              keyboardType: TextInputType.number,
-                              decoration: const InputDecoration(
-                                labelText: 'Edad',
-                                border: OutlineInputBorder(),
-                              ),
-                              validator: (v) => v!.isEmpty ? 'Requerido' : null,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            flex: 2,
-                            child: DropdownButtonFormField<String>(
-                              value: _sexoSeleccionado,
-                              decoration: const InputDecoration(
-                                labelText: 'Sexo',
-                                border: OutlineInputBorder(),
-                              ),
-                              items:
-                                  [
-                                        'Masculino',
-                                        'Femenino',
-                                        'Otro',
-                                        'Prefiero no decirlo',
-                                      ]
-                                      .map(
-                                        (s) => DropdownMenuItem(
-                                          value: s,
-                                          child: Text(s),
-                                        ),
-                                      )
-                                      .toList(),
-                              onChanged: (val) =>
-                                  setModalState(() => _sexoSeleccionado = val!),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-
-                      // 4. Experiencia
-                      const Text(
-                        "Experiencia haciendo eventos",
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: TextFormField(
-                              controller: _cantidadEventosCtrl,
-                              keyboardType: TextInputType.number,
-                              decoration: const InputDecoration(
-                                labelText: 'Cantidad aprox.',
-                                border: OutlineInputBorder(),
-                              ),
-                              validator: (v) => v!.isEmpty ? 'Requerido' : null,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: TextFormField(
-                              controller: _tiempoEventosCtrl,
-                              decoration: const InputDecoration(
-                                labelText: 'Tiempo (ej. 2 años)',
-                                border: OutlineInputBorder(),
-                              ),
-                              validator: (v) => v!.isEmpty ? 'Requerido' : null,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-
-                      // 5. Justificación
-                      TextFormField(
-                        controller: _justificacionCtrl,
+                        controller: justificacionCtrl,
                         maxLines: 3,
                         decoration: const InputDecoration(
-                          labelText:
-                              '¿Por qué deberíamos darte la verificación?',
+                          labelText: '¿Por qué quieres la insignia?',
                           border: OutlineInputBorder(),
                         ),
                         validator: (v) => v!.isEmpty ? 'Requerido' : null,
                       ),
                       const SizedBox(height: 20),
-
-                      // Botón Enviar
                       SizedBox(
                         width: double.infinity,
                         height: 50,
@@ -397,76 +127,33 @@ class _ProfileScreenState extends State<ProfileScreen>
                           style: ElevatedButton.styleFrom(
                             backgroundColor: SecondaryPurple,
                           ),
-                          onPressed: _enviando
+                          onPressed: enviando
                               ? null
                               : () async {
-                                  if (_formKey.currentState!.validate()) {
-                                    setModalState(() => _enviando = true);
+                                  if (formKey.currentState!.validate()) {
+                                    setModalState(() => enviando = true);
                                     try {
-                                      Map<String, dynamic> formData = {
-                                        'domicilio_fiscal': _domicilioCtrl.text
-                                            .trim(),
-                                        'edad':
-                                            int.tryParse(
-                                              _edadCtrl.text.trim(),
-                                            ) ??
-                                            0,
-                                        'sexo': _sexoSeleccionado,
-                                        'experiencia_cantidad':
-                                            int.tryParse(
-                                              _cantidadEventosCtrl.text.trim(),
-                                            ) ??
-                                            0,
-                                        'experiencia_tiempo': _tiempoEventosCtrl
-                                            .text
-                                            .trim(),
-                                        'justificacion': _justificacionCtrl.text
-                                            .trim(),
-                                        'fecha_solicitud':
-                                            FieldValue.serverTimestamp(),
-                                      };
-
                                       await AuthService().solicitarVerificacion(
                                         uid,
-                                        formData,
+                                        {
+                                          'justificacion':
+                                              justificacionCtrl.text,
+                                        },
                                       );
-
-                                      if (context.mounted) {
+                                      if (context.mounted)
                                         Navigator.pop(context);
-                                        ScaffoldMessenger.of(
-                                          context,
-                                        ).showSnackBar(
-                                          const SnackBar(
-                                            content: Text(
-                                              "Solicitud enviada para revisión",
-                                            ),
-                                            backgroundColor: Colors.green,
-                                          ),
-                                        );
-                                      }
                                     } catch (e) {
-                                      setModalState(() => _enviando = false);
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        SnackBar(
-                                          content: Text(e.toString()),
-                                          backgroundColor: Colors.red,
-                                        ),
-                                      );
+                                      setModalState(() => enviando = false);
                                     }
                                   }
                                 },
-                          child: _enviando
+                          child: enviando
                               ? const CircularProgressIndicator(
                                   color: Colors.white,
                                 )
                               : const Text(
                                   "Enviar Solicitud",
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 16,
-                                  ),
+                                  style: TextStyle(color: Colors.white),
                                 ),
                         ),
                       ),
@@ -479,34 +166,6 @@ class _ProfileScreenState extends State<ProfileScreen>
           },
         );
       },
-    );
-  }
-
-  Widget _infoRow(IconData icon, String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, color: SecondaryPurple, size: 20),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black54,
-                  ),
-                ),
-                Text(value, style: const TextStyle(fontSize: 16)),
-              ],
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -533,27 +192,25 @@ class _ProfileScreenState extends State<ProfileScreen>
               IconButton(
                 icon: const Icon(Icons.logout),
                 onPressed: _cerrarSesion,
-                tooltip: "Cerrar Sesión",
               ),
             ],
           ),
-          body: _cargando
+          body: cargando
               ? const Center(
                   child: CircularProgressIndicator(color: SecondaryPurple),
                 )
-              : _usuario == null
+              : usuario == null
               ? const Center(child: Text("Error al cargar perfil"))
               : Column(
                   children: [
                     const SizedBox(height: 20),
-                    // --- FOTO Y NOMBRE ---
                     CircleAvatar(
                       radius: 50,
                       backgroundColor: SecondaryPurple,
-                      backgroundImage: _usuario!.profileImageUrl != null
-                          ? NetworkImage(_usuario!.profileImageUrl!)
+                      backgroundImage: usuario!.profileImageUrl != null
+                          ? NetworkImage(usuario!.profileImageUrl!)
                           : null,
-                      child: _usuario!.profileImageUrl == null
+                      child: usuario!.profileImageUrl == null
                           ? const Icon(
                               Icons.person,
                               size: 50,
@@ -562,31 +219,29 @@ class _ProfileScreenState extends State<ProfileScreen>
                           : null,
                     ),
                     const SizedBox(height: 10),
-                    // --- SISTEMA DE VERIFICACIÓN EN CASCADA (ID -> INSIGNIA) ---
+
                     StreamBuilder<DocumentSnapshot>(
                       stream: FirebaseFirestore.instance
                           .collection('users')
-                          .doc(_usuario!.uid)
+                          .doc(usuario!.uid)
                           .snapshots(),
                       builder: (context, snapshot) {
                         if (!snapshot.hasData) return const SizedBox();
-                        
-                        var data = snapshot.data!.data() as Map<String, dynamic>;
-                        
-                        // Estados de Cédula
-                        String idState = data['idProcessState'] ?? 'none'; 
-                        
-                        // Estados de Insignia Azul
-                        String vStatus = data['verificationStatus'] ?? 'unverified';
+                        var data =
+                            snapshot.data!.data() as Map<String, dynamic>;
+                        String idState = data['idProcessState'] ?? 'none';
+                        String vStatus =
+                            data['verificationStatus'] ?? 'unverified';
+                        bool isPremium = data['isPremium'] ?? false;
+                        String planType = data['planType'] ?? 'Gold';
 
                         return Column(
                           children: [
-                            // 1. NOMBRE Y CHECK AZUL (Solo si ya es 'verified')
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Text(
-                                  _usuario!.nombre,
+                                  usuario!.nombre,
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 22,
@@ -595,79 +250,122 @@ class _ProfileScreenState extends State<ProfileScreen>
                                 ),
                                 if (vStatus == 'verified') ...[
                                   const SizedBox(width: 5),
-                                  const Icon(Icons.verified, color: Colors.blue, size: 24),
+                                  const Icon(
+                                    Icons.verified,
+                                    color: Colors.blue,
+                                    size: 24,
+                                  ),
                                 ],
                               ],
                             ),
-                            const SizedBox(height: 15),
 
-                            // 2. SECCIÓN CÉDULA (Solo se muestra si no está aprobada ni en espera)
-                            if (vStatus != 'verified' && idState == 'none')
+                            const SizedBox(height: 10),
+                            if (!isPremium)
                               Padding(
-                                padding: const EdgeInsets.only(bottom: 10),
-                                child: OutlinedButton.icon(
-                                  onPressed: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(builder: (context) => const Authetication_steps()),
-                                    );
-                                  },
-                                  icon: const Icon(Icons.badge_outlined, color: Colors.orange),
-                                  label: const Text("Verificar Cédula (ID)", style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold)),
-                                  style: OutlinedButton.styleFrom(
-                                    backgroundColor: Colors.white,
-                                    side: const BorderSide(color: Colors.orange, width: 2),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 40,
+                                ),
+                                child: ElevatedButton.icon(
+                                  onPressed: () =>
+                                      Navigator.pushNamed(context, '/premium'),
+                                  icon: const Icon(
+                                    Icons.stars,
+                                    color: Colors.white,
+                                  ),
+                                  label: const Text(
+                                    "¡HAZTE PREMIUM!",
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.amber[800],
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
                                   ),
                                 ),
                               )
-                            else if (idState == 'waiting' && vStatus != 'verified')
-                              const Padding(
-                                padding: EdgeInsets.only(bottom: 15),
-                                child: Text("Cédula en revisión ⏳", style: TextStyle(color: Colors.orangeAccent, fontWeight: FontWeight.bold)),
+                            else
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    planType.contains("DIAMOND")
+                                        ? Icons.diamond
+                                        : Icons.workspace_premium,
+                                    color: Colors.amber,
+                                    size: 20,
+                                  ),
+                                  const SizedBox(width: 5),
+                                  Text(
+                                    "Socio Premium $planType",
+                                    style: const TextStyle(
+                                      color: Colors.amber,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
                               ),
 
-                            // 3. SECCIÓN INSIGNIA (Solo se habilita si la Cédula ya es 'approved')
-                            if (idState == 'approved') ...[
-                              if (vStatus == 'unverified')
-                                ElevatedButton.icon(
-                                  onPressed: () => _mostrarFormularioVerificacion(_usuario!.uid),
-                                  icon: const Icon(Icons.verified_user, size: 16, color: Colors.white),
-                                  label: const Text("Solicitar Insignia Oficial", style: TextStyle(color: Colors.white)),
-                                  style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
-                                )
-                              else if (vStatus == 'pending')
-                                const Text(
-                                  "Solicitud de Insignia en revisión ⏳",
-                                  style: TextStyle(color: Colors.blueAccent, fontWeight: FontWeight.bold, fontSize: 16),
+                            const SizedBox(height: 15),
+
+                            if (vStatus != 'verified' && idState == 'none')
+                              OutlinedButton.icon(
+                                onPressed: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        const Authetication_steps(),
+                                  ),
                                 ),
-                            ] else if (vStatus != 'verified') ...[
-                              // Mensaje informativo opcional mientras no esté aprobada la ID
-                              const Text(
-                                "Debes validar tu ID para solicitar la insignia oficial",
-                                style: TextStyle(color: Colors.white38, fontSize: 12, fontStyle: FontStyle.italic),
+                                icon: const Icon(
+                                  Icons.badge_outlined,
+                                  color: Colors.orange,
+                                ),
+                                label: const Text(
+                                  "Verificar Cédula (ID)",
+                                  style: TextStyle(color: Colors.orange),
+                                ),
+                                style: OutlinedButton.styleFrom(
+                                  backgroundColor: Colors.white,
+                                  side: const BorderSide(color: Colors.orange),
+                                ),
                               ),
-                            ],
-                            
+
+                            if (idState == 'approved' &&
+                                vStatus == 'unverified')
+                              ElevatedButton.icon(
+                                onPressed: () => _mostrarFormularioVerificacion(
+                                  usuario!.uid,
+                                ),
+                                icon: const Icon(
+                                  Icons.verified_user,
+                                  color: Colors.white,
+                                ),
+                                label: const Text("Solicitar Insignia Oficial"),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.blue,
+                                ),
+                              ),
+
                             const SizedBox(height: 10),
                           ],
                         );
                       },
                     ),
 
-                    // --- BOTÓN EDITAR ---
                     ElevatedButton.icon(
                       onPressed: () async {
-                        if (_usuario != null) {
-                          final result = await Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  EditProfileScreen(usuario: _usuario!),
-                            ),
-                          );
-                          if (result == true) _cargarUsuario();
-                        }
+                        final result = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                EditProfileScreen(usuario: usuario!),
+                          ),
+                        );
+                        if (result == true) _cargarUsuario();
                       },
                       icon: const Icon(
                         Icons.edit,
@@ -684,9 +382,9 @@ class _ProfileScreenState extends State<ProfileScreen>
                     ),
                     const SizedBox(height: 20),
 
-                    // --- PESTAÑAS (3 TABS) ---
+                    // JAVIER: Títulos de las pestañas
                     TabBar(
-                      controller: _tabController,
+                      controller: tabController,
                       labelColor: SecondaryPurple,
                       unselectedLabelColor: Colors.white60,
                       indicatorColor: SecondaryPurple,
@@ -697,14 +395,30 @@ class _ProfileScreenState extends State<ProfileScreen>
                       ],
                     ),
 
-                    // --- LISTAS ---
+                    // JAVIER: Contenido de las pestañas (CORREGIDO AQUÍ)
                     Expanded(
                       child: TabBarView(
-                        controller: _tabController,
-                        children: [
-                          _buildEventList("proximos"),
-                          _buildEventList("pasados"),
-                          _buildEventList("privados"),
+                        controller:
+                            tabController, // <--- ESTA ES LA LÍNEA QUE FALTABA
+                        children: const [
+                          Center(
+                            child: Text(
+                              "Eventos Próximos",
+                              style: TextStyle(color: Colors.white),
+                            ),
+                          ),
+                          Center(
+                            child: Text(
+                              "Eventos Pasados",
+                              style: TextStyle(color: Colors.white),
+                            ),
+                          ),
+                          Center(
+                            child: Text(
+                              "Eventos Privados",
+                              style: TextStyle(color: Colors.white),
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -712,176 +426,6 @@ class _ProfileScreenState extends State<ProfileScreen>
                 ),
         ),
       ],
-    );
-  }
-
-  // ----------------------------------------------------------------------
-  // CONSTRUCCIÓN DE LA LISTA INTELIGENTE
-  // ----------------------------------------------------------------------
-  Widget _buildEventList(String tipo) {
-    if (_usuario == null) return const SizedBox();
-
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('events')
-          .where('id_organizer', isEqualTo: _usuario!.uid)
-          .snapshots(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        final docs = snapshot.data?.docs ?? [];
-        if (docs.isEmpty) {
-          return const Center(
-            child: Text(
-              "No has creado eventos",
-              style: TextStyle(color: Colors.white54),
-            ),
-          );
-        }
-
-        // --- FILTRADO EN EL CLIENTE ---
-        final eventosFiltrados = docs.where((doc) {
-          final data = doc.data() as Map<String, dynamic>;
-
-          DateTime fechaEvento = _getFechaExacta(data);
-          DateTime ahora = DateTime.now();
-          bool esPrivado = data['isPrivate'] ?? false;
-
-          // Lógica de Pestañas:
-          if (tipo == "privados") {
-            // Pestaña Privados: SOLO muestra privados (futuros o pasados)
-            return esPrivado;
-          } else {
-            // Pestañas Públicas: NO mostrar privados
-            if (esPrivado) return false;
-
-            // Filtro de tiempo para públicos
-            if (tipo == "proximos") {
-              return fechaEvento.isAfter(ahora);
-            } else if (tipo == "pasados") {
-              return fechaEvento.isBefore(ahora);
-            }
-          }
-          return false;
-        }).toList();
-
-        // --- ORDENAMIENTO ---
-        eventosFiltrados.sort((a, b) {
-          DateTime fechaA = _getFechaExacta(a.data() as Map<String, dynamic>);
-          DateTime fechaB = _getFechaExacta(b.data() as Map<String, dynamic>);
-
-          if (tipo == "proximos") {
-            return fechaA.compareTo(fechaB); // Ascendente (más cercano primero)
-          } else {
-            return fechaB.compareTo(
-              fechaA,
-            ); // Descendente (más reciente primero)
-          }
-        });
-
-        if (eventosFiltrados.isEmpty) {
-          return const Center(
-            child: Text(
-              "Sin eventos en esta lista",
-              style: TextStyle(color: Colors.white54),
-            ),
-          );
-        }
-
-        return ListView.builder(
-          itemCount: eventosFiltrados.length,
-          padding: const EdgeInsets.all(10),
-          itemBuilder: (context, index) {
-            final doc = eventosFiltrados[index];
-            final data = doc.data() as Map<String, dynamic>;
-            final String? imagenUrl = data['image_url'];
-
-            DateTime fechaExacta = _getFechaExacta(data);
-            String fechaTexto =
-                "${fechaExacta.day}/${fechaExacta.month}/${fechaExacta.year}";
-            String horaTexto =
-                "${fechaExacta.hour}:${fechaExacta.minute.toString().padLeft(2, '0')}";
-
-            // Estado visual calculado
-            String estadoReal = _calcularEstado(data);
-            Color colorEstado = _colorEstado(estadoReal);
-            bool esPrivado = data['isPrivate'] ?? false;
-
-            return Card(
-              color: Colors.white.withOpacity(0.95),
-              margin: const EdgeInsets.only(bottom: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(15),
-              ),
-              child: ListTile(
-                contentPadding: const EdgeInsets.all(10),
-                onTap: () => _mostrarDetalleEvento(data),
-                leading: ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: imagenUrl != null && imagenUrl.isNotEmpty
-                      ? Image.network(
-                          imagenUrl,
-                          width: 60,
-                          height: 60,
-                          fit: BoxFit.cover,
-                        )
-                      : Container(
-                          width: 60,
-                          height: 60,
-                          color: PrimaryPurple,
-                          child: Icon(
-                            esPrivado ? Icons.lock : Icons.event,
-                            color: Colors.white,
-                          ),
-                        ),
-                ),
-                title: Text(
-                  data['name'] ?? "Evento sin nombre",
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                subtitle: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "$fechaTexto - $horaTexto",
-                      style: const TextStyle(color: Colors.black54),
-                    ),
-                    Row(
-                      children: [
-                        Text(
-                          "Estado: $estadoReal",
-                          style: TextStyle(
-                            color: colorEstado,
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        if (data['type'] == 'Privado')
-                          const Text(
-                            "• PRIVADO",
-                            style: TextStyle(
-                              color: Colors.red,
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
     );
   }
 }
