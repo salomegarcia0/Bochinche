@@ -46,6 +46,10 @@ class _LoginScreenState extends State<LoginScreen> {
   bool cargando = false;
   bool showPassword = false;
 
+  bool show2FAWidget = false;
+  User? _tempUser;
+  String? _tempRol;
+
   @override
   void dispose() {
     _debounce?.cancel();
@@ -163,23 +167,25 @@ class _LoginScreenState extends State<LoginScreen> {
             updateEventStatusOnLogin();
             DraftManager.clearLoginDraft();
 
-            // ========================================================
-            // LÓGICA DE DESVÍO DE RUTAS SEGÚN ROL
-            // ========================================================
-            if (rol == 'admin') {
-              // El Admin va directo a las estadísticas.
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const StatisticsScreen()),
-              );
+            bool is2FAEnabled = data['is2FAEnabled'] ?? false;
+
+            if (is2FAEnabled) {
+              // Lanzar widget de 2FA antes de completar el inicio de sesión
+              if (mounted) {
+                setState(() {
+                  _tempUser = user;
+                  _tempRol = rol;
+                  show2FAWidget = true;
+                  cargando = false;
+                });
+                await _send2FAVerificationEmail();
+              }
+              return; // No completamos la navegación aún
             } else {
-              // Si es usuario u organizador normal, va al mapa de Bochinche
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const Pagina_Principal()),
-              );
+              // Completar login directo
+              _completeLogin(rol);
+              return;
             }
-            // ========================================================
 
           } else {
             if (rol != null && user.emailVerified == false) {
@@ -212,6 +218,66 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     } finally {
       if (mounted) setState(() => cargando = false);
+    }
+  }
+
+  Future<void> _send2FAVerificationEmail() async {
+    if (_tempUser == null) return;
+    try {
+      await _tempUser!.sendEmailVerification();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Correo de verificación enviado. Revisa tu bandeja de entrada."),
+            backgroundColor: Colors.blue,
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint("Error enviando correo de verificación 2FA: $e");
+    }
+  }
+
+  Future<void> _checkEmailVerified() async {
+    if (_tempUser == null) return;
+    setState(() => cargando = true);
+    try {
+      // Forzar recarga del token para obtener el estado más reciente
+      await _tempUser!.reload();
+      final updatedUser = FirebaseAuth.instance.currentUser;
+      if (updatedUser != null && updatedUser.emailVerified) {
+        // Sincronizar Firestore igual que en el login normal
+        await FirebaseFirestore.instance.collection('users').doc(updatedUser.uid).update({
+          'email_verified': true,
+        });
+        if (mounted) _completeLogin(_tempRol);
+      } else {
+        if (mounted) {
+          setState(() => cargando = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Correo aún no verificado. Revisa tu bandeja y vuelve a intentarlo."),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) setState(() => cargando = false);
+    }
+  }
+
+  void _completeLogin(String? rol) {
+    if (rol == 'admin') {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const StatisticsScreen()),
+      );
+    } else {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const Pagina_Principal()),
+      );
     }
   }
 
@@ -304,8 +370,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   color: PrimaryBackGroundPurple,
                 ),
               ),
-              // Campo de Email o Username
-              TextField(
+              if (!show2FAWidget) ...[
+                // Campo de Email o Username
+                TextField(
                 controller: emailController,
                 keyboardType: TextInputType.emailAddress,
                 onChanged: (value) {
@@ -411,6 +478,71 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ],
               ),
+              ] else ...[
+                // Widget de Verificación 2FA (via link de correo)
+                const Icon(Icons.mark_email_unread_outlined, size: 70, color: PrimaryBackGroundPurple),
+                const SizedBox(height: 16),
+                const Text(
+                  "Verificación en 2 Pasos",
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: PrimaryBackGroundPurple,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                const Text(
+                  "Te enviamos un enlace de verificación a tu correo electrónico.\nHaz clic en el enlace y luego vuelve aquí.",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: PrimaryBackGroundPurple),
+                ),
+                const SizedBox(height: 28),
+                cargando
+                    ? const CircularProgressIndicator()
+                    : ElevatedButton.icon(
+                        onPressed: _checkEmailVerified,
+                        icon: const Icon(Icons.check_circle_outline),
+                        label: const Text(
+                          "YA VERIFIQUÉ MI CORREO",
+                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: PrimaryBackGroundPurple,
+                          foregroundColor: Colors.white,
+                          minimumSize: const Size(double.infinity, 55),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                      ),
+                const SizedBox(height: 12),
+                TextButton.icon(
+                  onPressed: _send2FAVerificationEmail,
+                  icon: const Icon(Icons.refresh, color: PrimaryBackGroundPurple),
+                  label: const Text(
+                    "Reenviar correo",
+                    style: TextStyle(
+                      color: PrimaryBackGroundPurple,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () {
+                    setState(() {
+                      show2FAWidget = false;
+                      _tempUser = null;
+                      _tempRol = null;
+                    });
+                  },
+                  child: const Text(
+                    "Volver al inicio de sesión",
+                    style: TextStyle(
+                      color: PrimaryBackGroundPurple,
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
         ),

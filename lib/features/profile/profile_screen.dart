@@ -21,12 +21,64 @@ class _ProfileScreenState extends State<ProfileScreen>
   bool cargando = true;
   late TabController tabController;
 
+  bool is2FAEnabled = false;
+
   @override
   void initState() {
     super.initState();
     // Javier: Inicializamos el controlador para 3 pestañas
     tabController = TabController(length: 3, vsync: this);
     _cargarUsuario();
+    _fetch2FAStatus();
+  }
+
+  Future<void> _fetch2FAStatus() async {
+    User? currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser != null) {
+      try {
+        DocumentSnapshot doc = await FirebaseFirestore.instance.collection('users').doc(currentUser.uid).get();
+        if (doc.exists) {
+          final data = doc.data() as Map<String, dynamic>;
+          if (mounted) {
+            setState(() {
+              is2FAEnabled = data['is2FAEnabled'] ?? false;
+            });
+          }
+        }
+      } catch (e) {
+        debugPrint("Error obteniendo estado 2FA: $e");
+      }
+    }
+  }
+
+  Future<void> _toggle2FA(bool value) async {
+    if (usuario == null) return;
+    try {
+      await FirebaseFirestore.instance.collection('users').doc(usuario!.uid).update({
+        'is2FAEnabled': value,
+      });
+      if (mounted) {
+        setState(() {
+          is2FAEnabled = value;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(value ? "Verificación en 2 pasos activada" : "Verificación en 2 pasos desactivada"),
+            backgroundColor: value ? Colors.green : Colors.grey,
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint("Error actualizando estado 2FA: $e");
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Error al intentar cambiar estado 2FA"),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _cargarUsuario() async {
@@ -378,6 +430,31 @@ class _ProfileScreenState extends State<ProfileScreen>
                       ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: SecondaryPurple,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+
+                    // Elemento de UI para Activar/Desactivar 2FA
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        child: SwitchListTile(
+                          title: const Text(
+                            "Verificación en 2 Pasos (Email)",
+                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                          ),
+                          subtitle: const Text(
+                            "Protege tu cuenta con un código enviado a tu correo.",
+                            style: TextStyle(color: Colors.white70, fontSize: 12),
+                          ),
+                          activeColor: SecondaryPurple,
+                          value: is2FAEnabled,
+                          onChanged: _toggle2FA,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 20),
