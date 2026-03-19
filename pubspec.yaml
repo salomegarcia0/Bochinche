@@ -25,6 +25,7 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_map: ^8.2.2
+  geocoding: ^4.0.0
   latlong2: ^0.9.1
   flutter_map_location_marker: ^10.2.0
   cupertino_icons: ^1.0.8
@@ -43,7 +44,7 @@ dependencies:
   firebase_messaging: ^16.1.2
   flutter_local_notifications: ^21.0.0
   fl_chart: ^1.2.0
-  syncfusion_flutter_charts: ^32.2.9
+  syncfusion_flutter_charts: ^33.1.44
 
 dev_dependencies:
   flutter_test:

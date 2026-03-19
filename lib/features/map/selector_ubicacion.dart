@@ -1,7 +1,10 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:geocoding/geocoding.dart';
 
 class SelectorUbicacion extends StatefulWidget {
   final bool esSelector;
@@ -19,6 +22,90 @@ class SelectorUbicacion extends StatefulWidget {
 
 class _SelectorUbicacionState extends State<SelectorUbicacion> {
   LatLng? puntoSeleccionado;
+  String? direccionSeleccionada;
+  final MapController mapController = MapController();
+  final TextEditingController _searchController = TextEditingController();
+  bool _buscando = false;
+
+  Future<String> _obtenerDireccion(LatLng point) async {
+    final url = Uri.parse(
+        'https://nominatim.openstreetmap.org/reverse?format=json&lat=${point.latitude}&lon=${point.longitude}&zoom=18&addressdetails=1');
+
+    try {
+      final response = await http.get(
+        url,
+        headers: {
+          'User-Agent': 'BochincheApp/1.0 (contacto@bochinche.app)',
+        },
+      ).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        final decodedData = json.decode(response.body);
+
+        if (decodedData != null && decodedData['address'] != null) {
+          final address = decodedData['address'];
+          final street = address['road'] ??
+              address['pedestrian'] ??
+              address['path'] ??
+              address['footway'] ??
+              address['suburb'] ??
+              address['neighbourhood'] ??
+              'Calle desconocida';
+          final city = address['city'] ??
+              address['town'] ??
+              address['village'] ??
+              address['municipality'] ??
+              address['county'] ??
+              address['state'] ??
+              'Ciudad desconocida';
+          return '$street, $city';
+        } else {
+          return 'Dirección no encontrada';
+        }
+      } else {
+        return 'Error al obtener la dirección';
+      }
+    } catch (e) {
+      return 'Error de conexión';
+    }
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    mapController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _buscarUbicacion() async {
+    final query = _searchController.text.trim();
+    if (query.isEmpty) return;
+    
+    setState(() => _buscando = true);
+    try {
+      List<Location> locations = await locationFromAddress(query);
+      if (locations.isNotEmpty) {
+        final loc = locations.first;
+        final newPoint = LatLng(loc.latitude, loc.longitude);
+        mapController.move(newPoint, 16.0);
+        if (widget.esSelector) {
+          setState(() {
+            puntoSeleccionado = newPoint;
+          });
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No se encontró la ubicación')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Ubicación no encontrada')),
+      );
+    } finally {
+      if (mounted) setState(() => _buscando = false);
+    }
+  }
 
   IconData getIconoPin(String tipo) {
     switch (tipo) {
@@ -81,51 +168,107 @@ class _SelectorUbicacionState extends State<SelectorUbicacion> {
             ),
         ],
       ),
-      body: FlutterMap(
-        options: MapOptions(
-          initialCenter: const LatLng(10.4806, -66.8983), 
-          initialZoom: 16, 
-          onTap: (tapPos, point) {
-            if (widget.esSelector) {
-              setState(() => puntoSeleccionado = point);
-            }
-          },
-        ),
+      body: Stack(
         children: [
-          TileLayer(
-            urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-            userAgentPackageName: 'com.example.bochinche_app',
-          ),
-          
-          CurrentLocationLayer(
-            alignPositionOnUpdate: AlignOnUpdate.once, 
-            style: const LocationMarkerStyle(
-              marker: DefaultLocationMarker(
-                    child: Icon(
-                      Icons.my_location,
-                      color: Colors.blue,
-                      size: 30,
-                    ),
-                  ),
-              markerSize: Size(30, 30),
-              markerDirection: MarkerDirection.heading,
+          FlutterMap(
+            mapController: mapController,
+            options: MapOptions(
+              initialCenter: const LatLng(10.4806, -66.8983), 
+              initialZoom: 16, 
+              onTap: (tapPos, point) async {
+                if (widget.esSelector) {
+                  setState(() {
+                    puntoSeleccionado = point;
+                    direccionSeleccionada = 'Cargando dirección...';
+                  });
+
+                  final address = await _obtenerDireccion(point);
+
+                  if (mounted) {
+                    setState(() {
+                      direccionSeleccionada = address;
+                    });
+                    
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(direccionSeleccionada!),
+                        duration: const Duration(seconds: 2),
+                      ),
+                    );
+                  }
+                }
+              },
             ),
-          ),
-          if (puntoSeleccionado != null)
-            MarkerLayer(
-              markers: [
-                Marker(
-                  point: puntoSeleccionado!,
-                  width: 50,
-                  height: 50,
-                  child: Icon(
-                    getIconoPin(widget.tipoEvento),
-                    color: getColorPin(widget.tipoEvento),
-                    size: 45,
-                  ),
+            children: [
+              TileLayer(
+                urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+                userAgentPackageName: 'com.example.bochinche_app',
+              ),
+              
+              CurrentLocationLayer(
+                alignPositionOnUpdate: AlignOnUpdate.once, 
+                style: const LocationMarkerStyle(
+                  marker: DefaultLocationMarker(
+                        child: Icon(
+                          Icons.my_location,
+                          color: Colors.blue,
+                          size: 30,
+                        ),
+                      ),
+                  markerSize: Size(30, 30),
+                  markerDirection: MarkerDirection.heading,
                 ),
-              ],
+              ),
+              if (puntoSeleccionado != null)
+                MarkerLayer(
+                  markers: [
+                    Marker(
+                      point: puntoSeleccionado!,
+                      width: 50,
+                      height: 50,
+                      child: Icon(
+                        getIconoPin(widget.tipoEvento),
+                        color: getColorPin(widget.tipoEvento),
+                        size: 45,
+                      ),
+                    ),
+                  ],
+                ),
+            ],
+          ),
+          Positioned(
+            top: 20,
+            left: 20,
+            right: 20,
+            child: Material(
+              elevation: 4,
+              borderRadius: BorderRadius.circular(10),
+              color: Colors.white,
+              child: TextField(
+                controller: _searchController,
+                decoration: InputDecoration(
+                  hintText: 'Buscar ubicación (Ej: Caracas)',
+                  border: InputBorder.none,
+                  prefixIcon: const Icon(Icons.search),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
+                  suffixIcon: _buscando
+                      ? const Padding(
+                          padding: EdgeInsets.all(12.0),
+                          child: SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                        )
+                      : IconButton(
+                          icon: const Icon(Icons.send, color: Colors.blue),
+                          onPressed: _buscarUbicacion,
+                        ),
+                ),
+                onSubmitted: (_) => _buscarUbicacion(),
+              ),
             ),
+          ),
         ],
       ),
     );

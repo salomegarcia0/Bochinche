@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:geocoding/geocoding.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:bochinche_app/widgets/NavBar.dart';
 import 'package:bochinche_app/sources/events/events_logic.dart';
@@ -260,7 +261,6 @@ class _FormCreateEventState extends State<FormCreateEvent> {
 
   bool _validateAll() {
     _validateNombre(nombreEventoController.text);
-    _validateDireccion(direccionController.text);
     _validateAforo(aforoController.text);
     _validateTipo(selectedValue);
     _validateFechas();
@@ -269,7 +269,6 @@ class _FormCreateEventState extends State<FormCreateEvent> {
 
     bool isValid =
         _nombreError == null &&
-        _direccionError == null &&
         _aforoError == null &&
         _tipoError == null &&
         _fecha1Error == null &&
@@ -449,24 +448,7 @@ class _FormCreateEventState extends State<FormCreateEvent> {
               errorText: _nombreError,
             ),
           ),
-          const SizedBox(height: 12),
-          TextFormField(
-            controller: direccionController,
-            onChanged: (value) {
-              if (_debounce?.isActive ?? false) _debounce!.cancel();
-              _debounce = Timer(const Duration(milliseconds: 500), () {
-                _validateDireccion(value);
-                saveEventDraft();
-              });
-            },
-            decoration: InputDecoration(
-              labelText: 'Dirección Física',
-              prefixIcon: const Icon(Icons.pin_drop),
-              border: const OutlineInputBorder(),
-              counterText: '',
-              errorText: _direccionError,
-            ),
-          ),
+
           const SizedBox(height: 12),
           TextFormField(
             controller: contactoController,
@@ -688,6 +670,14 @@ class _FormCreateEventState extends State<FormCreateEvent> {
                   ? "Toca para abrir el mapa"
                   : "Punto fijado",
             ),
+            subtitle: ubicacionTemporal != null
+                ? Text(
+                    direccionController.text.isNotEmpty
+                        ? direccionController.text
+                        : "Ubicación seleccionada",
+                    style: const TextStyle(fontSize: 12, color: Colors.black54),
+                  )
+                : null,
             onTap: () async {
               final LatLng? resultado = await Navigator.push(
                 context,
@@ -699,6 +689,25 @@ class _FormCreateEventState extends State<FormCreateEvent> {
                 ),
               );
               if (resultado != null) {
+                try {
+                  List<Placemark> placemarks = await placemarkFromCoordinates(
+                      resultado.latitude, resultado.longitude);
+                  if (placemarks.isNotEmpty) {
+                    Placemark place = placemarks[0];
+                    String pointName = place.name ?? '';
+                    String street = place.street ?? '';
+                    String address = '';
+                    if (pointName.isNotEmpty && pointName != street && !street.contains(pointName)) {
+                      address += '$pointName, ';
+                    }
+                    address += '$street, ${place.subLocality ?? ''}, ${place.locality ?? ''}, ${place.country ?? ''}';
+                    address = address.replaceAll(RegExp(r',\s*,'), ',').replaceAll(RegExp(r'(^,\s*)|(\s*,$)'), '').trim();
+                    if (address.isEmpty) address = 'Dirección desconocida';
+                    direccionController.text = address;
+                  }
+                } catch (e) {
+                   direccionController.text = '${resultado.latitude}, ${resultado.longitude}';
+                }
                 setState(() {
                   ubicacionTemporal = resultado;
                   latitudC = resultado.latitude;
@@ -1769,17 +1778,7 @@ class _FormCreateEvent2State extends State<FormCreateEvent2> {
               counterText: '',
             ),
           ),
-          const SizedBox(height: 12),
-          TextFormField(
-            controller: direccionController,
-            validator: validateName,
-            decoration: const InputDecoration(
-              labelText: 'Dirección Física',
-              prefixIcon: Icon(Icons.pin_drop),
-              border: OutlineInputBorder(),
-              counterText: '',
-            ),
-          ),
+
           const SizedBox(height: 12),
           TextFormField(
             controller: contactoController,
