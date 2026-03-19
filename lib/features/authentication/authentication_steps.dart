@@ -49,7 +49,7 @@ class _Authetication_stepsState extends State<Authetication_steps> {
                   padding: const EdgeInsets.all(25.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
+                    children: <Widget> [
                       const Text(
                         "Verificación de Identidad",
                         style: TextStyle(
@@ -157,8 +157,7 @@ class _Authetication_stepsState extends State<Authetication_steps> {
             border: Border.all(color: Colors.grey[300]!),
           ),
           child: Column(
-            children: instructions
-                .map(
+            children: instructions.map<Widget>(
                   (step) => Padding(
                     padding: const EdgeInsets.symmetric(vertical: 4),
                     child: Row(

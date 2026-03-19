@@ -103,6 +103,47 @@ class _LoginScreenState extends State<LoginScreen> {
     return _emailError == null && _passwordError == null;
   }
 
+  void recuperarPassword() async {
+    String email = emailController.text.trim();
+
+    if (email.isEmpty || _emailError != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Ingresa un correo válido en el campo superior para recuperar tu clave"),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    try {
+      // Función oficial de Firebase para el "Olvidé mi contraseña"
+      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text("Correo Enviado"),
+            content: Text("Se ha enviado un enlace de recuperación a:\n$email\n\nRevisa tu bandeja de entrada o spam para cambiar tu contraseña."),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text("Aceptar"),
+              ),
+            ],
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
   void ejecutarLogin() async {
     if (!_validateAll()) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -428,7 +469,23 @@ class _LoginScreenState extends State<LoginScreen> {
                   errorStyle: const TextStyle(color: Colors.red),
                 ),
               ),
-              const SizedBox(height: 30),
+
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: recuperarPassword,
+                  child: const Text(
+                    "¿Olvidaste tu contraseña?",
+                    style: TextStyle(
+                      color: PrimaryBackGroundPurple,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 15),
 
               // Botón de Inicio de Sesión
               cargando
@@ -443,6 +500,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           borderRadius: BorderRadius.circular(10),
                         ),
                       ),
+                      
                       child: const Text(
                         "INICIAR SESIÓN",
                         style: TextStyle(
