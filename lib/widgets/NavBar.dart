@@ -34,7 +34,7 @@ class Navbar extends StatelessWidget {
         future: _getUserRole(),
         builder: (context, snapshot) {
           final role = snapshot.data ?? 'usuario';
-          
+
           // ========================================================
           // SEPARAMOS LOS ROLES PARA EL NAVBAR
           // ========================================================
@@ -104,7 +104,7 @@ class Navbar extends StatelessWidget {
                   'Administrar reportes',
                   const AdminReports(),
                 ),
-              ] 
+              ]
               // ========================================================
               // VISTA PARA USUARIOS Y ORGANIZADORES
               // ========================================================
@@ -149,6 +149,12 @@ class Navbar extends StatelessWidget {
                     Icons.dashboard,
                     'Panel de control',
                     const ControlPanelEvent(),
+                  ),
+                  _item(
+                    context,
+                    Icons.query_stats,
+                    'Estadísticas',
+                    const StatisticsScreen(),
                   ),
                 ],
               ],

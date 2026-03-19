@@ -29,29 +29,34 @@ class _SelectorUbicacionState extends State<SelectorUbicacion> {
 
   Future<String> _obtenerDireccion(LatLng point) async {
     final url = Uri.parse(
-        'https://nominatim.openstreetmap.org/reverse?format=json&lat=${point.latitude}&lon=${point.longitude}&zoom=18&addressdetails=1');
+      'https://nominatim.openstreetmap.org/reverse?format=json&lat=${point.latitude}&lon=${point.longitude}&zoom=18&addressdetails=1',
+    );
 
     try {
-      final response = await http.get(
-        url,
-        headers: {
-          'User-Agent': 'BochincheApp/1.0 (contacto@bochinche.app)',
-        },
-      ).timeout(const Duration(seconds: 10));
+      final response = await http
+          .get(
+            url,
+            headers: {
+              'User-Agent': 'BochincheApp/1.0 (contacto@bochinche.app)',
+            },
+          )
+          .timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         final decodedData = json.decode(response.body);
 
         if (decodedData != null && decodedData['address'] != null) {
           final address = decodedData['address'];
-          final street = address['road'] ??
+          final street =
+              address['road'] ??
               address['pedestrian'] ??
               address['path'] ??
               address['footway'] ??
               address['suburb'] ??
               address['neighbourhood'] ??
               'Calle desconocida';
-          final city = address['city'] ??
+          final city =
+              address['city'] ??
               address['town'] ??
               address['village'] ??
               address['municipality'] ??
@@ -80,18 +85,31 @@ class _SelectorUbicacionState extends State<SelectorUbicacion> {
   Future<void> _buscarUbicacion() async {
     final query = _searchController.text.trim();
     if (query.isEmpty) return;
-    
+
     setState(() => _buscando = true);
     try {
       List<Location> locations = await locationFromAddress(query);
       if (locations.isNotEmpty) {
         final loc = locations.first;
         final newPoint = LatLng(loc.latitude, loc.longitude);
+
         mapController.move(newPoint, 16.0);
+
         if (widget.esSelector) {
-          setState(() {
-            puntoSeleccionado = newPoint;
-          });
+          if (esPuntoEnCaracas(newPoint)) {
+            setState(() {
+              puntoSeleccionado = newPoint;
+            });
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  '⚠️ El lugar buscado está fuera de los límites permitidos',
+                ),
+                backgroundColor: Colors.orange,
+              ),
+            );
+          }
         }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -99,9 +117,9 @@ class _SelectorUbicacionState extends State<SelectorUbicacion> {
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Ubicación no encontrada')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Ubicación no encontrada')));
     } finally {
       if (mounted) setState(() => _buscando = false);
     }
@@ -173,26 +191,38 @@ class _SelectorUbicacionState extends State<SelectorUbicacion> {
           FlutterMap(
             mapController: mapController,
             options: MapOptions(
-              initialCenter: const LatLng(10.4806, -66.8983), 
-              initialZoom: 16, 
+              initialCenter: const LatLng(10.4806, -66.8983),
+              initialZoom: 16,
               onTap: (tapPos, point) async {
                 if (widget.esSelector) {
-                  setState(() {
-                    puntoSeleccionado = point;
-                    direccionSeleccionada = 'Cargando dirección...';
-                  });
-
-                  final address = await _obtenerDireccion(point);
-
-                  if (mounted) {
+                  if (esPuntoEnCaracas(point)) {
                     setState(() {
-                      direccionSeleccionada = address;
+                      puntoSeleccionado = point;
+                      direccionSeleccionada = 'Cargando dirección...';
                     });
-                    
+
+                    final address = await _obtenerDireccion(point);
+
+                    if (mounted) {
+                      setState(() {
+                        direccionSeleccionada = address;
+                      });
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(direccionSeleccionada!),
+                          duration: const Duration(seconds: 2),
+                        ),
+                      );
+                    }
+                  } else {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(direccionSeleccionada!),
-                        duration: const Duration(seconds: 2),
+                      const SnackBar(
+                        content: Text(
+                          "⚠️ Solo puedes seleccionar ubicaciones dentro de Caracas",
+                        ),
+                        backgroundColor: Colors.orange,
+                        duration: Duration(seconds: 2),
                       ),
                     );
                   }
@@ -204,17 +234,17 @@ class _SelectorUbicacionState extends State<SelectorUbicacion> {
                 urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
                 userAgentPackageName: 'com.example.bochinche_app',
               ),
-              
+
               CurrentLocationLayer(
-                alignPositionOnUpdate: AlignOnUpdate.once, 
+                alignPositionOnUpdate: AlignOnUpdate.once,
                 style: const LocationMarkerStyle(
                   marker: DefaultLocationMarker(
-                        child: Icon(
-                          Icons.my_location,
-                          color: Colors.blue,
-                          size: 30,
-                        ),
-                      ),
+                    child: Icon(
+                      Icons.my_location,
+                      color: Colors.blue,
+                      size: 30,
+                    ),
+                  ),
                   markerSize: Size(30, 30),
                   markerDirection: MarkerDirection.heading,
                 ),
@@ -250,7 +280,10 @@ class _SelectorUbicacionState extends State<SelectorUbicacion> {
                   hintText: 'Buscar ubicación (Ej: Caracas)',
                   border: InputBorder.none,
                   prefixIcon: const Icon(Icons.search),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 15,
+                    vertical: 15,
+                  ),
                   suffixIcon: _buscando
                       ? const Padding(
                           padding: EdgeInsets.all(12.0),
@@ -272,5 +305,31 @@ class _SelectorUbicacionState extends State<SelectorUbicacion> {
         ],
       ),
     );
+  }
+
+  bool esPuntoEnCaracas(LatLng punto) {
+    final List<LatLng> limitesCaracas = [
+      const LatLng(10.5190, -66.9600), // Noroeste (Cerca de Catia/Ávila)
+      const LatLng(10.5300, -66.8200), // Noreste (Cerca de Palo Verde/Ávila)
+      const LatLng(10.4200, -66.7800), // Sureste (Cerca de El Hatillo)
+      const LatLng(10.4100, -66.9500), // Suroeste (Cerca de Caricuao)
+    ];
+
+    var intersectCount = 0;
+    for (var j = 0; j < limitesCaracas.length; j++) {
+      var vertJ = limitesCaracas[j];
+      var vertI = limitesCaracas[(j + 1) % limitesCaracas.length];
+
+      if ((vertI.latitude > punto.latitude) !=
+              (vertJ.latitude > punto.latitude) &&
+          (punto.longitude <
+              (vertJ.longitude - vertI.longitude) *
+                      (punto.latitude - vertI.latitude) /
+                      (vertJ.latitude - vertI.latitude) +
+                  vertI.longitude)) {
+        intersectCount++;
+      }
+    }
+    return intersectCount % 2 != 0;
   }
 }
