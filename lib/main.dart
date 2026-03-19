@@ -8,6 +8,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:bochinche_app/widgets/detalle_evento.dart';
+import 'package:bochinche_app/widgets/splash_screen.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 
 // Javier: Importación del módulo Premium (Sprint 4)
@@ -110,7 +111,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       debugShowCheckedModeBanner: false,
-      home: const Pagina_Principal(),
+      home: const SplashScreen(),
 
       // Javier: Ruta registrada para la pantalla de planes premium
       routes: {'/premium': (context) => const PremiumScreen()},

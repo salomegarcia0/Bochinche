@@ -893,58 +893,46 @@ Future<List<Map<String, dynamic>>> getEventPredictions(String input) async {
   return snap.docs.map((doc) => {...doc.data(), 'id': doc.id}).toList();
 }
 
-Future<void> registrarUsuarioEnEvento(BuildContext context, Map<String, dynamic> data, String eventoId) async {
+Future<void> registrarUsuarioEnEvento(
+  BuildContext context,
+  Map<String, dynamic> data,
+  String eventoId,
+) async {
   final user = FirebaseAuth.instance.currentUser;
 
   if (user == null) {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Debes iniciar sesión para reservar tu entrada.')),
+      const SnackBar(
+        content: Text('Debes iniciar sesión para reservar tu entrada.'),
+      ),
     );
     return;
   }
 
   try {
     DocumentReference eventRef = FirebaseFirestore.instance.collection('events').doc(eventoId);
-    
-    // --- 1. VERIFICACIÓN: Revisamos si ya reservó ---
-    DocumentSnapshot eventDoc = await eventRef.get();
-    if (eventDoc.exists) {
-      Map<String, dynamic> eventData = eventDoc.data() as Map<String, dynamic>;
-      List<dynamic> attendees = eventData['attendees'] ?? [];
-      
-      if (attendees.contains(user.uid)) {
-        // Si ya está en la lista, mostramos mensaje y CORTAMOS la función
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('¡Ya tienes tu entrada reservada para este evento! 😉'),
-              backgroundColor: Colors.orange,
-            ),
-          );
-        }
-        return; 
-      }
-    }
-    // -------------------------------------------------
-
     DocumentReference userRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
+    
+    // CREAMOS LA REFERENCIA A LA SUBCOLECCIÓN 'tickets'
+    // Usamos el eventoId como nombre del documento para evitar reservas duplicadas
+    DocumentReference ticketRef = userRef.collection('tickets').doc(eventoId);
+
     WriteBatch batch = FirebaseFirestore.instance.batch();
 
-    // 2. Actualizamos el evento (Sumamos 1 y guardamos ID)
+    // 1. Actualizamos el evento
     batch.update(eventRef, {
       'ticketsSold': FieldValue.increment(1),
-      'attendees': FieldValue.arrayUnion([user.uid]), 
+      'attendees': FieldValue.arrayUnion([user.uid]),
     });
 
-    // 3. Actualizamos al usuario
-    batch.set(userRef, {
-      'mis_reservas': FieldValue.arrayUnion([eventoId]),
-    }, SetOptions(merge: true)); 
+    // 2. Guardamos el ticket en la subcolección correcta
+    batch.set(ticketRef, {
+      'eventId': eventoId, 
+      'reservedAt': FieldValue.serverTimestamp(),
+    });
 
-    // Ejecutamos todo de un golpe
     await batch.commit();
 
-    // 4. Éxito
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -953,7 +941,6 @@ Future<void> registrarUsuarioEnEvento(BuildContext context, Map<String, dynamic>
         ),
       );
     }
-
   } catch (e) {
     print("Error al reservar la entrada: $e");
     if (context.mounted) {

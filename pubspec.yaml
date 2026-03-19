@@ -71,6 +71,7 @@ flutter:
     - assets/svgs/2451996.svg
     - lib/styles/id.png
     - lib/styles/selfie.png
+    - assets/images/logo_bochinche.png
 
   # To add assets to your application, add an assets section, like this:
   # assets:

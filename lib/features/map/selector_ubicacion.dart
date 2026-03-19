@@ -5,6 +5,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geocoding/geocoding.dart';
+import 'package:bochinche_app/widgets/bochinche_marker.dart';
 
 class SelectorUbicacion extends StatefulWidget {
   final bool esSelector;
@@ -256,10 +257,9 @@ class _SelectorUbicacionState extends State<SelectorUbicacion> {
                       point: puntoSeleccionado!,
                       width: 50,
                       height: 50,
-                      child: Icon(
-                        getIconoPin(widget.tipoEvento),
-                        color: getColorPin(widget.tipoEvento),
-                        size: 45,
+                      child: BochincheMarker(
+                        iconContent: getIconoPin(widget.tipoEvento),
+                        size: 50,
                       ),
                     ),
                   ],

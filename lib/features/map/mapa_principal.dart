@@ -4,6 +4,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:bochinche_app/widgets/detalle_evento.dart'; 
+import 'package:bochinche_app/widgets/bochinche_marker.dart';
 
 class MapaPrincipal extends StatefulWidget implements PreferredSizeWidget {
   const MapaPrincipal({super.key});
@@ -72,14 +73,13 @@ class MapaPrincipalState extends State<MapaPrincipal> {
 
             return Marker(
               point: LatLng(punto.latitude, punto.longitude),
-              width: 40,
-              height: 40,
+              width: 50,
+              height: 50,
               child: GestureDetector(
                 onTap: () => mostrarDetalles(context, data, doc.id),
-                child: Icon(
-                  getIconoPin(data['type'] ?? 'Otros'),
-                  color: Colors.red,
-                  size: 30,
+                child: BochincheMarker(
+                  iconContent: getIconoPin(data['type'] ?? 'Otros'),
+                  size: 50,
                 ),
               ),
             );
