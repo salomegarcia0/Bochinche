@@ -42,10 +42,34 @@ void showNotifications(
                   ),
                 ),
                 TextButton(
-                  onPressed: () {},
+                  // ==========================================
+                  // BOTÓN DE LIMPIAR ARREGLADO
+                  // ==========================================
+                  onPressed: () async {
+                    final userId = FirebaseAuth.instance.currentUser?.uid;
+                    if (userId == null) return;
+
+                    final batch = FirebaseFirestore.instance.batch();
+                    
+                    // Buscamos todas las notificaciones de este usuario
+                    final notificationsSnapshot = await FirebaseFirestore.instance
+                        .collection('notifications')
+                        .where('userId', isEqualTo: userId) // CAMBIADO: Antes decía receiverId
+                        .get();
+
+                    if (notificationsSnapshot.docs.isEmpty) return;
+
+                    // Las metemos en la bolsa de basura (borrado en lote)
+                    for (var doc in notificationsSnapshot.docs) {
+                      batch.delete(doc.reference);
+                    }
+
+                    // Tiramos la basura
+                    await batch.commit();
+                  },
                   child: const Text(
                     "Limpiar",
-                    style: TextStyle(color: Colors.grey),
+                    style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold),
                   ),
                 ),
               ],
@@ -55,10 +79,8 @@ void showNotifications(
               child: StreamBuilder<QuerySnapshot>(
                 stream: FirebaseFirestore.instance
                     .collection('notifications')
-                    .where(
-                      'receiverId',
-                      isEqualTo: FirebaseAuth.instance.currentUser?.uid,
-                    )
+                    // CAMBIADO: Usamos 'userId' porque así lo guarda tu backend
+                    .where('userId', isEqualTo: FirebaseAuth.instance.currentUser?.uid)
                     .orderBy('timestamp', descending: true)
                     .snapshots(),
                 builder: (context, snapshot) {
@@ -84,7 +106,7 @@ void showNotifications(
                         ),
                         const SizedBox(height: 10),
                         const Text(
-                          "No hay notificaciones nuevas",
+                          "No hay notificaciones",
                           style: TextStyle(color: Colors.grey, fontSize: 16),
                         ),
                       ],
@@ -93,50 +115,36 @@ void showNotifications(
 
                   return ListView.separated(
                     itemCount: docs.length,
-                    separatorBuilder: (context, index) =>
-                        const SizedBox(height: 12),
+                    separatorBuilder: (context, index) => const SizedBox(height: 12),
                     itemBuilder: (context, index) {
                       final doc = docs[index];
                       final data = doc.data() as Map<String, dynamic>? ?? {};
 
                       final String type = data['type']?.toString() ?? 'general';
-                      final String title =
-                          data['title']?.toString() ?? 'Sin título';
-                      final String message = data['message']?.toString() ?? '';
+                      final String title = data['titulo']?.toString() ?? 'Sin título'; // CAMBIADO a 'titulo' (como en backend)
+                      final String message = data['mensaje']?.toString() ?? ''; // CAMBIADO a 'mensaje' (como en backend)
                       final String eventId = data['eventId']?.toString() ?? '';
-                      final bool isRead = data['read'] == true;
 
                       bool isRecordatorio = type == 'recordatorio_tiempo';
-                      Color iconColor = isRecordatorio
-                          ? Colors.orange
-                          : PrimaryPurple;
-                      Color bgColor = isRead
-                          ? Colors.transparent
-                          : iconColor.withOpacity(0.05);
+                      Color iconColor = isRecordatorio ? Colors.orange : PrimaryPurple;
+                      Color bgColor = iconColor.withOpacity(0.05);
 
                       return InkWell(
                         borderRadius: BorderRadius.circular(15),
-                        // ==========================================
-                        // REDIRECCIÓN AL HACER CLICK
-                        // ==========================================
                         onTap: () async {
-                          doc.reference.update({'read': true});
-
                           if (eventId.isNotEmpty) {
-                            DocumentSnapshot eventDoc = await FirebaseFirestore
-                                .instance
+                            DocumentSnapshot eventDoc = await FirebaseFirestore.instance
                                 .collection('events')
                                 .doc(eventId)
                                 .get();
 
                             if (eventDoc.exists) {
-                              Map<String, dynamic> eventData =
-                                  eventDoc.data() as Map<String, dynamic>;
+                              Map<String, dynamic> eventData = eventDoc.data() as Map<String, dynamic>;
                               eventData['id'] = eventDoc.id;
 
                               if (context.mounted) {
-                                Navigator.pop(context);
-                                onEventSelected(eventData);
+                                Navigator.pop(context); // Cierra el bottom sheet
+                                onEventSelected(eventData); // Abre la rumba
                               }
                             }
                           }
@@ -145,55 +153,35 @@ void showNotifications(
                           decoration: BoxDecoration(
                             color: bgColor,
                             borderRadius: BorderRadius.circular(15),
-                            border: Border.all(
-                              color: isRead
-                                  ? Colors.grey.shade200
-                                  : Colors.transparent,
-                            ),
+                            border: Border.all(color: Colors.transparent),
                           ),
                           child: ListTile(
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 15,
-                              vertical: 8,
-                            ),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
                             leading: CircleAvatar(
                               backgroundColor: iconColor.withOpacity(0.2),
                               child: Icon(
-                                isRecordatorio
-                                    ? Icons.access_alarm
-                                    : Icons.celebration,
+                                isRecordatorio ? Icons.access_alarm : Icons.celebration,
                                 color: iconColor,
                               ),
                             ),
                             title: Text(
                               title,
-                              style: TextStyle(
-                                fontWeight: isRead
-                                    ? FontWeight.normal
-                                    : FontWeight.bold,
-                                fontSize: 15,
-                              ),
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                             ),
                             subtitle: Padding(
                               padding: const EdgeInsets.only(top: 5),
                               child: Text(
                                 message,
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: Colors.grey[700],
-                                ),
+                                style: TextStyle(fontSize: 13, color: Colors.grey[700]),
                               ),
                             ),
-                            trailing: !isRead
-                                ? const CircleAvatar(
-                                    radius: 5,
-                                    backgroundColor: PrimaryPurple,
-                                  )
-                                : const Icon(
-                                    Icons.check,
-                                    color: Colors.green,
-                                    size: 16,
-                                  ),
+                            // El Trailing ahora es una X sutil para borrar solo esa notificación
+                            trailing: IconButton(
+                              icon: const Icon(Icons.close, color: Colors.grey, size: 20),
+                              onPressed: () {
+                                doc.reference.delete(); // Borra solo este documento
+                              },
+                            ),
                           ),
                         ),
                       );

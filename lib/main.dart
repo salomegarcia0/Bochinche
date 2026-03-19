@@ -2,122 +2,98 @@ import 'package:bochinche_app/data/firebase_options.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:bochinche_app/features/map/pagina_inicio.dart';
+import 'features/map/pagina_inicio.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:bochinche_app/widgets/detalle_evento.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+
+// Javier: Importación del módulo Premium (Sprint 4)
+import 'package:bochinche_app/features/premium/premium_screen.dart';
 
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
     FlutterLocalNotificationsPlugin();
-
-const AndroidNotificationChannel channel = AndroidNotificationChannel(
-  'bochinche_alerts',
-  'Alertas de Bochinche',
-  description: 'Canal principal para avisos de rumbas y eventos.',
-  importance: Importance.max,
-);
-
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // 1. Inicialización de Firebase
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  await Supabase.initialize(
-    url: 'https://mnsffmoscncicppdmumh.supabase.co',
-    anonKey: 'TU_ANON_KEY_AQUI',
-  );
+  // 2. JAVIER: Bloqueo de notificaciones para Web (Chrome) para evitar pantalla blanca
+  if (!kIsWeb) {
+    _inicializarNotificacionesMobile();
+  } else {
+    debugPrint(
+      "--- JAVIER: MODO WEB ACTIVO. NOTIFICACIONES OMITIDAS PARA EVITAR CRASH ---",
+    );
+  }
 
-  FirebaseMessaging messaging = FirebaseMessaging.instance;
-  await messaging.requestPermission(alert: true, badge: true, sound: true);
-
-  FirebaseMessaging.instance.onTokenRefresh.listen((newToken) async {
-    String? uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid != null) {
-      await FirebaseFirestore.instance.collection('users').doc(uid).update({
-        'fcmToken': newToken,
-        'lastTokenUpdate': FieldValue.serverTimestamp(),
-      });
-    }
-  });
-
-  const AndroidInitializationSettings initializationSettingsAndroid =
-      AndroidInitializationSettings('@mipmap/ic_launcher');
-
-  const InitializationSettings initializationSettings = InitializationSettings(
-    android: initializationSettingsAndroid,
-  );
-
-  await flutterLocalNotificationsPlugin.initialize(
-    settings: initializationSettings,
-    onDidReceiveNotificationResponse: (NotificationResponse response) {
-      if (response.payload != null) {
-        _navegarAEvento(response.payload!);
-      }
-    },
-  );
-
-  await flutterLocalNotificationsPlugin
-      .resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin
-      >()
-      ?.createNotificationChannel(channel);
-
-  FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-    RemoteNotification? notification = message.notification;
-    AndroidNotification? android = message.notification?.android;
-
-    if (notification != null && android != null) {
-      flutterLocalNotificationsPlugin.show(
-        id: notification.hashCode,
-        title: notification.title,
-        body: notification.body,
-        payload: message.data['eventId'],
-        notificationDetails: NotificationDetails(
-          android: AndroidNotificationDetails(
-            channel.id,
-            channel.name,
-            channelDescription: channel.description,
-            icon: android.smallIcon ?? '@mipmap/ic_launcher',
-          ),
-        ),
-      );
-    }
-  });
-
-  FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-    if (message.data['eventId'] != null) {
-      _navegarAEvento(message.data['eventId']);
-    }
-  });
-
-  RemoteMessage? initialMessage = await FirebaseMessaging.instance
-      .getInitialMessage();
-  if (initialMessage != null && initialMessage.data['eventId'] != null) {
-    _navegarAEvento(initialMessage.data['eventId']);
+  // 3. Inicialización de Supabase con tu AnonKey real
+  try {
+    await Supabase.initialize(
+      url: 'https://mnsffmoscncicppdmumh.supabase.co',
+      anonKey:
+          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1uc2ZmbW9zY25jaWNwcGRtdW1oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEzNTEzNzIsImV4cCI6MjA4NjkyNzM3Mn0.OMfxVszd2T-dKTq-fncwGfvzRNLbtR0JxO2Hm_zjDVE',
+    );
+    debugPrint("Supabase conectado correctamente");
+  } catch (e) {
+    debugPrint("Error al conectar Supabase: $e");
   }
 
   runApp(const MyApp());
 }
 
-Future<void> _navegarAEvento(String eventId) async {
-  final context = navigatorKey.currentContext;
-  if (context == null) return;
+// Javier: Función separada para que el código de Adrián no rompa la web
+void _inicializarNotificacionesMobile() async {
+  try {
+    FirebaseMessaging messaging = FirebaseMessaging.instance;
+    await messaging.requestPermission(alert: true, badge: true, sound: true);
 
+    String? token = await messaging.getToken();
+    if (token != null) {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+          'fcmToken': token,
+          'lastTokenUpdate': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+      }
+    }
+
+    const AndroidInitializationSettings androidSettings =
+        AndroidInitializationSettings('@mipmap/ic_launcher');
+
+    await flutterLocalNotificationsPlugin.initialize(
+      settings: const InitializationSettings(android: androidSettings),
+      onDidReceiveNotificationResponse: (NotificationResponse res) {
+        if (res.payload != null) _navegarAEvento(res.payload!);
+      },
+    );
+  } catch (e) {
+    debugPrint("Error en notificaciones: $e");
+  }
+}
+
+// Javier: Navegación segura para eventos
+Future<void> _navegarAEvento(String eventId) async {
   try {
     DocumentSnapshot doc = await FirebaseFirestore.instance
         .collection('events')
         .doc(eventId)
         .get();
+
     if (doc.exists) {
-      Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-      mostrarDetalles(context, data, eventId);
+      final context = navigatorKey.currentContext;
+      if (context != null && context.mounted) {
+        mostrarDetalles(context, doc.data() as Map<String, dynamic>, eventId);
+      }
     }
   } catch (e) {
-    debugPrint("Error navegando al evento: $e");
+    debugPrint("Javier: Error al navegar al evento: $e");
   }
 }
 
@@ -129,12 +105,15 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       navigatorKey: navigatorKey,
       title: 'Bochinche App',
-      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: const PaginaPrincipal(),
+      debugShowCheckedModeBanner: false,
+      home: const Pagina_Principal(),
+
+      // Javier: Ruta registrada para la pantalla de planes premium
+      routes: {'/premium': (context) => const PremiumScreen()},
     );
   }
 }

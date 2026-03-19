@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:bochinche_app/features/auth/LoginScreen.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:bochinche_app/styles/Color.dart';
 import 'package:flutter/material.dart';
@@ -150,25 +149,33 @@ class _AutheticationState extends State<Authetication> {
   void alerta(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) {
+      barrierDismissible: false, // Obligamos a que use el botón
+      builder: (dialogContext) {
         return AlertDialog(
-          title: const Text("¡Bienvenido a Bochinche!"),
+          title: const Text("¡Verificación Enviada!"),
           content: const Text(
-            "Tu autenticación ha sido exitosa. Ahora puedes disfrutar de todas las funciones de la aplicación.",
+            "Tus documentos han sido cargados correctamente. Nuestro equipo los revisará pronto para habilitar tu insignia de organizador.",
           ),
           actions: [
             ElevatedButton(
               onPressed: () {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => const LoginScreen()),
-                );
+                // 1. Cerramos el diálogo de alerta
+                Navigator.pop(dialogContext);
+                
+                // 2. Cerramos la pantalla actual (Authetication)
+                Navigator.pop(context);
+                
+                // 3. Cerramos la pantalla de instrucciones (Authetication_steps)
+                Navigator.pop(context);
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: PrimaryPurple,
                 foregroundColor: AccentPurple,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
-              child: const Text("Empecemos"),
+              child: const Text("Volver a mi Perfil"),
             ),
           ],
         );
@@ -229,7 +236,7 @@ class _AutheticationState extends State<Authetication> {
       await FirebaseFirestore.instance.collection('users').doc(uid).update({
         'url_selfie': selfieUrl,
         'url_documento': idUrl,
-        'estado_verificacion': 'En revisión',
+        'idProcessState': 'waiting',          
       });
 
       if (!mounted) return;

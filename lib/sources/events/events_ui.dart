@@ -1,287 +1,60 @@
 import 'dart:async';
-import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:latlong2/latlong.dart';
-
-// Importaciones de tu proyecto
-import 'package:bochinche_app/styles/NavBar.dart';
-import 'package:bochinche_app/styles/Color.dart';
+import 'dart:io';
+import 'package:bochinche_app/sources/reports/reports_logic.dart';
+import 'package:bochinche_app/sources/user_profile/user_profile_ui.dart';
 import 'package:bochinche_app/styles/BochincheAppBar.dart';
+import 'package:bochinche_app/styles/Color.dart';
+import 'package:bochinche_app/widgets/detalle_evento.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:geocoding/geocoding.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:bochinche_app/widgets/NavBar.dart';
 import 'package:bochinche_app/sources/events/events_logic.dart';
 import 'package:bochinche_app/features/map/selector_ubicacion.dart';
-import 'package:bochinche_app/sources/user_profile/user_profile_ui.dart';
+import 'package:bochinche_app/sources/events/comments_section.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-// --- PANTALLA: EXPLORAR EVENTOS ---
-class PublicEventsScreen extends StatefulWidget {
-  const PublicEventsScreen({super.key});
-  @override
-  State<PublicEventsScreen> createState() => _PublicEventsScreenState();
-}
+bool botonVerEventos = true;
+bool modPayed = false;
 
-class _PublicEventsScreenState extends State<PublicEventsScreen> {
-  String selectedCategory = 'Todos';
-  String searchQuery = '';
-  List<String> selectedPreferences = ['Eventos'];
-  bool _isLoading = false;
-  final TextEditingController _searchController = TextEditingController();
+enum SearchMode { eventos, privados, bochincheros }
 
-  Future<void> _fakeLoading() async {
-    setState(() => _isLoading = true);
-    await Future.delayed(const Duration(milliseconds: 600));
-    if (mounted) setState(() => _isLoading = false);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    SearchMode currentMode = SearchMode.eventos;
-    if (selectedPreferences.contains('Eventos privados')) {
-      currentMode = SearchMode.privados;
-    }
-    if (selectedPreferences.contains('Bochincheros')) {
-      currentMode = SearchMode.bochincheros;
-    }
-
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
-      appBar: const BochincheAppBar(),
-      drawer: const Navbar(),
-      body: Column(
-        children: [
-          _buildHeader(),
-          _buildSearchBar(currentMode),
-          _buildFilters(),
-          Expanded(
-            child: _isLoading
-                ? const BochincheFilterLoader()
-                : _buildResultsList(currentMode),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHeader() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 10),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          const Text(
-            'Explorar',
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.w900,
-              color: PrimaryPurple,
-            ),
-          ),
-          IconButton(
-            onPressed: () {
-              setState(() {
-                selectedCategory = 'Todos';
-                searchQuery = '';
-                _searchController.clear();
-                selectedPreferences = ['Eventos'];
-              });
-              _fakeLoading();
-            },
-            icon: const Icon(Icons.filter_alt_off, color: Colors.redAccent),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSearchBar(SearchMode mode) {
-    String hint = "Buscar eventos...";
-    if (mode == SearchMode.bochincheros) hint = "Buscar bochincheros...";
-    if (mode == SearchMode.privados) hint = "Ingresa código de acceso...";
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
-      child: TextField(
-        controller: _searchController,
-        decoration: InputDecoration(
-          hintText: hint,
-          prefixIcon: const Icon(Icons.search, color: PrimaryPurple),
-          suffixIcon: IconButton(
-            icon: const Icon(Icons.arrow_forward, color: PrimaryPurple),
-            onPressed: () {
-              setState(() => searchQuery = _searchController.text.trim());
-              _fakeLoading();
-            },
-          ),
-          filled: true,
-          fillColor: Colors.white,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(15),
-            borderSide: BorderSide.none,
-          ),
-        ),
-        onSubmitted: (val) {
-          setState(() => searchQuery = val.trim());
-          _fakeLoading();
-        },
-      ),
-    );
-  }
-
-  Widget _buildFilters() {
-    return Container(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(15),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          DropdownButtonFormField<String>(
-            initialValue: selectedCategory,
-            decoration: const InputDecoration(
-              labelText: 'Categoría',
-              border: InputBorder.none,
-            ),
-            items: [
-              'Todos',
-              'Concierto',
-              'Teatro',
-              'Cine',
-              'Restaurante',
-              'Fiesta',
-              'Conferencia',
-              'Stand Up',
-              'Otros',
-            ].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
-            onChanged: (val) {
-              setState(() => selectedCategory = val!);
-              _fakeLoading();
-            },
-          ),
-          const Divider(),
-          SizedBox(
-            height: 40,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              children: ['Eventos', 'Eventos privados', 'Bochincheros'].map((
-                pref,
-              ) {
-                final isSelected = selectedPreferences.contains(pref);
-                return Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: FilterChip(
-                    label: Text(
-                      pref,
-                      style: TextStyle(
-                        color: isSelected ? Colors.white : Colors.black87,
-                        fontSize: 12,
-                      ),
-                    ),
-                    selected: isSelected,
-                    selectedColor: PrimaryPurple,
-                    checkmarkColor: Colors.white,
-                    onSelected: (s) {
-                      setState(() {
-                        selectedPreferences.clear();
-                        selectedPreferences.add(pref);
-                      });
-                      _fakeLoading();
-                    },
-                  ),
-                );
-              }).toList(),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildResultsList(SearchMode mode) {
-    return StreamBuilder<List<Map<String, dynamic>>>(
-      stream: chargeFilteredEvents(
-        mode: mode,
-        category: selectedCategory,
-        search: searchQuery,
-      ),
-      builder: (context, snap) {
-        if (!snap.hasData) return const BochincheFilterLoader();
-        final items = snap.data!;
-        if (items.isEmpty)
-          return const Center(child: Text("Sin resultados coincidentes"));
-
-        return ListView.builder(
-          padding: const EdgeInsets.only(bottom: 20),
-          itemCount: items.length,
-          itemBuilder: (context, i) {
-            final item = items[i];
-
-            // Obtenemos los datos visuales de la categoría (Icono y Color)
-            final catData = getCategoryData(item['type']);
-
-            return Card(
-              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: ListTile(
-                leading: CircleAvatar(
-                  backgroundColor: (catData['color'] as Color).withValues(
-                    alpha: 0.15,
-                  ),
-                  child: Icon(
-                    mode == SearchMode.bochincheros
-                        ? Icons.person
-                        : catData['icon'],
-                    color: catData['color'],
-                  ),
-                ),
-                title: Text(
-                  item['name'] ?? item['nombre'] ?? 'Sin nombre',
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                subtitle: Text(
-                  "${item['type'] ?? 'General'} • ${item['startDate'] ?? ''}",
-                ),
-                onTap: () {
-                  if (mode == SearchMode.bochincheros) {
-                    userToReport = item['uid'];
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (c) => const OrgProfile()),
-                    );
-                  }
-                },
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-}
-
-// --- PANTALLA: CREAR EVENTO ---
 class EventosCreate extends StatelessWidget {
   const EventosCreate({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const BochincheAppBar(),
       drawer: const Navbar(),
-      body: const SingleChildScrollView(child: FormCreateEvent()),
+      appBar: BochincheAppBar(),
+      body: const SingleChildScrollView(
+        child: Column(
+          children: [
+            Padding(
+              padding: EdgeInsets.all(10),
+              child: Text(
+                'Crea tu evento',
+                style: TextStyle(fontWeight: FontWeight.w900, fontSize: 30),
+              ),
+            ),
+
+            Divider(),
+            SafeArea(child: FormCreateEvent()),
+          ],
+        ),
+      ),
     );
   }
 }
 
 class FormCreateEvent extends StatefulWidget {
   const FormCreateEvent({super.key});
+
   @override
   State<FormCreateEvent> createState() => _FormCreateEventState();
 }
@@ -290,215 +63,2580 @@ class _FormCreateEventState extends State<FormCreateEvent> {
   @override
   void initState() {
     super.initState();
-    loadEventDraft().then((_) => setState(() {}));
+    _initDraft();
   }
+
+  Future<void> _initDraft() async {
+    await loadEventDraft();
+    if (mounted) {
+      setState(() {
+        selectedValue = typeC;
+        ubicacionTemporal =
+            (latitudC != 0.0 && (latitudC != 10.0 || longitudC != -60.0))
+            ? LatLng(latitudC, longitudC)
+            : null;
+        hora1select = firstTimeHour;
+        hora2select = lastTimeHour;
+      });
+    }
+  }
+
+  String? selectedValue;
+  LatLng? ubicacionTemporal;
+  String? selectedValue2;
+  TimeOfDay hora1select = firstTimeHour;
+  TimeOfDay hora2select = lastTimeHour;
+  TimeOfDay hora1 = TimeOfDay.now();
+
+  // --- VALIDACIÓN ---
+  Timer? _debounce;
+  String? _nombreError;
+  String? _direccionError;
+  String? _aforoError;
+  String? _tipoError;
+  String? _fecha1Error;
+  String? _fecha2Error;
+  String? _ubicacionError;
+  String? _hora1Error;
+  String? _hora2Error;
+
+  // --- VALIDACIÓN PAGO ---
+  String? _bankError;
+  String? _phonePrefixError;
+  String? _paymentPhoneError;
+  String? _ciTypeError;
+  String? _paymentCIError;
+  String? _priceError;
+
+  //IMAGENES DE LOS EVENTOS
+  List<File> _imagenesSeleccionadas = [];
+  final ImagePicker _picker = ImagePicker();
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    super.dispose();
+  }
+
+  // --- LÓGICA DE VALIDACIÓN ---
+  void _validateNombre(String value) {
+    setState(() {
+      _nombreError = value.trim().isEmpty ? "El nombre es requerido" : null;
+    });
+  }
+
+  void _validateDireccion(String value) {
+    setState(() {
+      _direccionError = value.trim().isEmpty
+          ? "La dirección es requerida"
+          : null;
+    });
+  }
+
+  void _validateAforo(String value) {
+    setState(() {
+      if (value.isEmpty) {
+        _aforoError = "El aforo es requerido";
+      } else {
+        int? a = int.tryParse(value);
+        if (a == null || a <= 0) {
+          _aforoError = "Número inválido";
+        } else {
+          _aforoError = null;
+        }
+      }
+    });
+  }
+
+  void _validateTipo(String? value) {
+    setState(() {
+      _tipoError = (value == null || value.isEmpty)
+          ? "Selecciona un tipo"
+          : null;
+    });
+  }
+
+  void _validateFechas() {
+    setState(() {
+      if (fecha1C.text.isEmpty) {
+        _fecha1Error = "Requerida";
+      } else {
+        _fecha1Error = null;
+      }
+
+      if (fecha2C.text.isEmpty) {
+        _fecha2Error = "Requerida";
+      } else if (fecha1 != null &&
+          fecha2 != null &&
+          fecha2!.isBefore(fecha1!)) {
+        _fecha2Error = "No puede ser anterior al inicio";
+      } else {
+        _fecha2Error = null;
+      }
+    });
+  }
+
+  void _validateUbicacion() {
+    setState(() {
+      _ubicacionError = ubicacionTemporal == null
+          ? "Selecciona la ubicación"
+          : null;
+    });
+  }
+
+  void _validateHoras() {
+    setState(() {
+      // Por ahora validación básica: que no sean iguales si es el mismo día
+      if (fecha1 != null &&
+          fecha2 != null &&
+          fecha1!.year == fecha2!.year &&
+          fecha1!.month == fecha2!.month &&
+          fecha1!.day == fecha2!.day) {
+        double start = hora1select.hour + hora1select.minute / 60.0;
+        double end = hora2select.hour + hora2select.minute / 60.0;
+
+        if (end <= start) {
+          _hora2Error = "Debe ser posterior al inicio";
+        } else {
+          _hora2Error = null;
+        }
+      } else {
+        _hora2Error = null;
+      }
+    });
+  }
+
+  void _validateBank(String? value) {
+    setState(() {
+      _bankError = (value == null || value.isEmpty)
+          ? "Selecciona un banco"
+          : null;
+    });
+  }
+
+  void _validatePhonePrefix(String? value) {
+    setState(() {
+      _phonePrefixError = (value == null || value.isEmpty) ? "Requerido" : null;
+    });
+  }
+
+  void _validatePaymentPhone(String value) {
+    setState(() {
+      if (value.trim().isEmpty) {
+        _paymentPhoneError = "Requerido";
+      } else if (value.length < 7) {
+        _paymentPhoneError = "Mínimo 7 dígitos";
+      } else {
+        _paymentPhoneError = null;
+      }
+    });
+  }
+
+  void _validateCIType(String? value) {
+    setState(() {
+      _ciTypeError = (value == null || value.isEmpty) ? "Requerido" : null;
+    });
+  }
+
+  void _validatePaymentCI(String value) {
+    setState(() {
+      _paymentCIError = value.trim().isEmpty ? "Requerido" : null;
+    });
+  }
+
+  void _validatePrice(String value) {
+    setState(() {
+      if (value.trim().isEmpty) {
+        _priceError = "Requerido";
+      } else {
+        double? p = double.tryParse(value);
+        if (p == null || p <= 0) {
+          _priceError = "Precio inválido";
+        } else {
+          _priceError = null;
+        }
+      }
+    });
+  }
+
+  bool _validateAll() {
+    _validateNombre(nombreEventoController.text);
+    _validateAforo(aforoController.text);
+    _validateTipo(selectedValue);
+    _validateFechas();
+    _validateUbicacion();
+    _validateHoras();
+
+    bool isValid =
+        _nombreError == null &&
+        _aforoError == null &&
+        _tipoError == null &&
+        _fecha1Error == null &&
+        _fecha2Error == null &&
+        _ubicacionError == null &&
+        _hora2Error == null;
+
+    if (isPayedC) {
+      _validateBank(selectedBank);
+      _validatePhonePrefix(selectedPhonePrefix);
+      _validatePaymentPhone(paymentPhoneNumberController.text);
+      _validateCIType(selectedCIType);
+      _validatePaymentCI(paymentCINumberController.text);
+      _validatePrice(priceController.text);
+
+      isValid =
+          isValid &&
+          _bankError == null &&
+          _phonePrefixError == null &&
+          _paymentPhoneError == null &&
+          _ciTypeError == null &&
+          _paymentCIError == null &&
+          _priceError == null;
+    }
+
+    return isValid;
+  }
+
+  Future<void> fechaselect2(BuildContext context) async {
+    DateTime? date = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime.now(),
+      lastDate: DateTime(2027),
+    );
+
+    if (date != null) {
+      setState(() {
+        fecha2C.text = date.toString().split(" ")[0];
+        fecha2 = date;
+        saveEventDraft();
+      });
+      _validateFechas();
+    }
+  }
+
+  Future<void> fechaselect1(BuildContext context) async {
+    DateTime? date = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime.now(),
+      lastDate: DateTime(2027),
+    );
+
+    if (date != null) {
+      setState(() {
+        fecha1C.text = date.toString().split(" ")[0];
+        fecha1 = date;
+        saveEventDraft();
+      });
+      _validateFechas();
+    }
+  }
+
+  //seleccionar imagenes
+  Future<void> _seleccionarImagenes() async {
+    try {
+      final List<XFile> imagenes = await _picker.pickMultiImage();
+
+      if (imagenes.isNotEmpty) {
+        // Límite de 5 MB por foto
+        final int limiteBytes = 5 * 1024 * 1024;
+        bool algunaMuyPesada = false;
+
+        setState(() {
+          for (var xfile in imagenes) {
+            final file = File(xfile.path);
+            final int size = file.lengthSync();
+
+            if (size > limiteBytes) {
+              algunaMuyPesada = true;
+            } else {
+              _imagenesSeleccionadas.add(file);
+            }
+          }
+
+          saveEventDraft();
+        });
+
+        if (algunaMuyPesada) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Una o más imágenes exceden el límite de 5MB y no fueron añadidas.',
+              ),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      print("Error seleccionando imágenes: $e");
+    }
+  }
+
+  void _removerImagen(int index) {
+    setState(() {
+      _imagenesSeleccionadas.removeAt(index);
+      saveEventDraft();
+    });
+  }
+
+  Future<List<String>> _subirImagenesASupabase(String eventId) async {
+    List<String> imageUrls = [];
+    final supabase = Supabase.instance.client;
+
+    const String bucketName = 'events_images';
+
+    for (int i = 0; i < _imagenesSeleccionadas.length; i++) {
+      final file = _imagenesSeleccionadas[i];
+      final fileExt = file.path.split('.').last;
+      final fileName =
+          '${eventId}_${DateTime.now().millisecondsSinceEpoch}_$i.$fileExt';
+      final filePath = '$eventId/$fileName';
+
+      try {
+        await supabase.storage.from(bucketName).upload(filePath, file);
+        final imageUrl = supabase.storage
+            .from(bucketName)
+            .getPublicUrl(filePath);
+        imageUrls.add(imageUrl);
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error subiendo imagen $i a Supabase: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+
+    return imageUrls;
+  }
+
+  final List<String> options = [
+    'Concierto',
+    'Conferencias',
+    'Stand Up',
+    'Teatro',
+    'Fiestas',
+    'Cine',
+    'Restaurante',
+    'Otros',
+  ];
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10),
+      padding: const EdgeInsets.all(16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _sectionTitle("Información General"),
-          TextField(
+          TextFormField(
             controller: nombreEventoController,
-            decoration: _inputStyle("Nombre del Evento", Icons.title),
-          ),
-          const SizedBox(height: 15),
-          TextField(
-            controller: descripcionController,
-            maxLines: 3,
-            decoration: _inputStyle(
-              "Descripción del evento",
-              Icons.description,
+            onChanged: (value) {
+              if (_debounce?.isActive ?? false) _debounce!.cancel();
+              _debounce = Timer(const Duration(milliseconds: 500), () {
+                _validateNombre(value);
+                saveEventDraft();
+              });
+            },
+            decoration: InputDecoration(
+              labelText: 'Nombre del evento',
+              prefixIcon: const Icon(Icons.event),
+              border: const OutlineInputBorder(),
+              counterText: '',
+              errorText: _nombreError,
             ),
           ),
-          const SizedBox(height: 15),
-          DropdownButtonFormField<String>(
-            initialValue: selectedType,
-            decoration: _inputStyle("Categoría", Icons.category),
-            items: [
-              'Concierto',
-              'Teatro',
-              'Cine',
-              'Restaurante',
-              'Fiesta',
-              'Conferencia',
-              'Stand Up',
-              'Otros',
-            ].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
-            onChanged: (val) => setState(() {
-              selectedType = val;
-              typeC = val;
-            }),
+
+          const SizedBox(height: 12),
+          TextFormField(
+            controller: contactoController,
+            onChanged: (value) {
+              if (_debounce?.isActive ?? false) _debounce!.cancel();
+              _debounce = Timer(const Duration(milliseconds: 500), () {
+                saveEventDraft();
+              });
+            },
+            decoration: const InputDecoration(
+              labelText: 'Contacto o Pagina Web',
+              prefixIcon: Icon(Icons.contact_page),
+              border: OutlineInputBorder(),
+              counterText: '',
+            ),
           ),
-          const SizedBox(height: 25),
-          _sectionTitle("Ubicación y Aforo"),
-          TextField(
-            controller: direccionController,
-            decoration: _inputStyle("Dirección física", Icons.pin_drop),
-          ),
-          const SizedBox(height: 15),
-          TextField(
+          const SizedBox(height: 12),
+          TextFormField(
             controller: aforoController,
-            keyboardType: TextInputType.number,
-            decoration: _inputStyle("Capacidad total", Icons.people),
+            keyboardType: const TextInputType.numberWithOptions(decimal: false),
+            inputFormatters: <TextInputFormatter>[
+              FilteringTextInputFormatter.digitsOnly,
+            ],
+            onChanged: (value) {
+              if (_debounce?.isActive ?? false) _debounce!.cancel();
+              _debounce = Timer(const Duration(milliseconds: 500), () {
+                _validateAforo(value);
+                saveEventDraft();
+              });
+            },
+            decoration: InputDecoration(
+              labelText: 'Aforo',
+              prefixIcon: const Icon(Icons.people),
+              border: const OutlineInputBorder(),
+              counterText: '',
+              errorText: _aforoError,
+            ),
           ),
-          const SizedBox(height: 15),
+          const SizedBox(height: 12),
+          DropdownButtonFormField<String>(
+            decoration: InputDecoration(
+              labelText: 'Tipo de evento',
+              prefixIcon: Icon(Icons.type_specimen),
+              border: OutlineInputBorder(),
+            ),
+            value: selectedValue,
+            isExpanded: true,
+            hint: const Text("Selecciona el tipo"),
+            items: options
+                .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                .toList(),
+            onChanged: (val) {
+              setState(() {
+                selectedValue = val;
+                typeC = val;
+                saveEventDraft();
+              });
+              _validateTipo(val);
+            },
+          ),
+          if (_tipoError != null)
+            Padding(
+              padding: const EdgeInsets.only(left: 12, top: 4),
+              child: Text(
+                _tipoError!,
+                style: const TextStyle(color: Colors.red, fontSize: 12),
+              ),
+            ),
+          SizedBox(height: 12),
+          TextField(
+            controller: fecha1C,
+            decoration: InputDecoration(
+              labelText: 'Fecha de inicio del evento',
+              filled: true,
+              prefixIcon: const Icon(Icons.calendar_view_day_rounded),
+              enabledBorder: const OutlineInputBorder(
+                borderSide: BorderSide(color: Colors.black),
+              ),
+              focusedBorder: const OutlineInputBorder(
+                borderSide: BorderSide(color: Color.fromARGB(255, 3, 3, 3)),
+              ),
+              errorText: _fecha1Error,
+            ),
+            readOnly: true,
+            onTap: () {
+              fechaselect1(context);
+              print(fecha1C);
+            },
+          ),
+          SizedBox(height: 12),
+          TextField(
+            controller: fecha2C,
+            decoration: InputDecoration(
+              labelText: 'Fecha de fin del evento',
+              filled: true,
+              prefixIcon: const Icon(Icons.calendar_view_day_rounded),
+              enabledBorder: const OutlineInputBorder(
+                borderSide: BorderSide(color: Colors.black),
+              ),
+              focusedBorder: const OutlineInputBorder(
+                borderSide: BorderSide(color: Colors.green),
+              ),
+              errorText: _fecha2Error,
+            ),
+            readOnly: true,
+            onTap: () {
+              fechaselect2(context);
+            },
+          ),
+
+          const SizedBox(height: 20),
+          _buildLabel('Fotos del Evento (Selecciona varias)'),
+          const SizedBox(height: 8),
+
+          SizedBox(
+            height: 130,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+
+              itemCount: _imagenesSeleccionadas.length + 1,
+              itemBuilder: (context, index) {
+                if (index == 0) {
+                  return GestureDetector(
+                    onTap: _seleccionarImagenes,
+                    child: Container(
+                      width: 100,
+                      margin: const EdgeInsets.only(right: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.blue[50],
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: PrimaryPurple.withOpacity(0.5),
+                        ),
+                      ),
+                      child: const Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.add_photo_alternate,
+                            size: 30,
+                            color: PrimaryPurple,
+                          ),
+                          SizedBox(height: 5),
+                          Text(
+                            'Añadir',
+                            style: TextStyle(
+                              color: PrimaryPurple,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+
+                final imgIndex = index - 1;
+                return Container(
+                  width: 120,
+                  margin: const EdgeInsets.only(right: 12),
+                  child: Stack(
+                    children: [
+                      // La imagen
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: Image.file(
+                          _imagenesSeleccionadas[imgIndex],
+                          width: 120,
+                          height: 130,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+
+                      Positioned(
+                        top: 5,
+                        right: 5,
+                        child: GestureDetector(
+                          onTap: () => _removerImagen(imgIndex),
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: const BoxDecoration(
+                              color: Colors.redAccent,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.close,
+                              size: 16,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+
+          if (_imagenesSeleccionadas.isNotEmpty) ...[
+            const SizedBox(height: 5),
+            Text(
+              '${_imagenesSeleccionadas.length} foto(s) lista(s)',
+              style: const TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+          ],
+          const SizedBox(height: 20),
+
+          const SizedBox(height: 20),
+          _buildLabel('Ubicación en el Mapa'),
           ListTile(
-            tileColor: PrimaryPurple.withValues(alpha: 0.05),
+            tileColor: Colors.blue[50],
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(15),
-              side: BorderSide(color: PrimaryPurple.withValues(alpha: 0.2)),
+              borderRadius: BorderRadius.circular(10),
             ),
             leading: const Icon(Icons.map, color: PrimaryPurple),
             title: Text(
-              latitudC != 10.4806
-                  ? "📍 Ubicación fijada correctamente"
-                  : "Toca para ubicar en el mapa",
+              ubicacionTemporal == null
+                  ? "Toca para abrir el mapa"
+                  : "Punto fijado",
             ),
+            subtitle: ubicacionTemporal != null
+                ? Text(
+                    direccionController.text.isNotEmpty
+                        ? direccionController.text
+                        : "Ubicación seleccionada",
+                    style: const TextStyle(fontSize: 12, color: Colors.black54),
+                  )
+                : null,
             onTap: () async {
-              final LatLng? res = await Navigator.push(
+              final LatLng? resultado = await Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (c) => const SelectorUbicacion(esSelector: true),
+                  builder: (context) => SelectorUbicacion(
+                    esSelector: true,
+                    tipoEvento: selectedValue ?? 'Otros',
+                  ),
                 ),
               );
-
-              if (res != null) {
+              if (resultado != null) {
+                try {
+                  List<Placemark> placemarks = await placemarkFromCoordinates(
+                      resultado.latitude, resultado.longitude);
+                  if (placemarks.isNotEmpty) {
+                    Placemark place = placemarks[0];
+                    String pointName = place.name ?? '';
+                    String street = place.street ?? '';
+                    String address = '';
+                    if (pointName.isNotEmpty && pointName != street && !street.contains(pointName)) {
+                      address += '$pointName, ';
+                    }
+                    address += '$street, ${place.subLocality ?? ''}, ${place.locality ?? ''}, ${place.country ?? ''}';
+                    address = address.replaceAll(RegExp(r',\s*,'), ',').replaceAll(RegExp(r'(^,\s*)|(\s*,$)'), '').trim();
+                    if (address.isEmpty) address = 'Dirección desconocida';
+                    direccionController.text = address;
+                  }
+                } catch (e) {
+                   direccionController.text = '${resultado.latitude}, ${resultado.longitude}';
+                }
                 setState(() {
-                  latitudC = res.latitude;
-                  longitudC = res.longitude;
+                  ubicacionTemporal = resultado;
+                  latitudC = resultado.latitude;
+                  longitudC = resultado.longitude;
+                  saveEventDraft();
                 });
+                _validateUbicacion();
               }
             },
           ),
-          const SizedBox(height: 25),
-          _sectionTitle("Configuración de Acceso"),
-          SwitchListTile(
-            title: const Text(
-              "Evento Privado",
-              style: TextStyle(fontWeight: FontWeight.bold),
+          if (_ubicacionError != null)
+            Padding(
+              padding: const EdgeInsets.only(left: 12, top: 4),
+              child: Text(
+                _ubicacionError!,
+                style: const TextStyle(color: Colors.red, fontSize: 12),
+              ),
             ),
-            subtitle: const Text("Solo visible mediante código directo"),
+
+          const SizedBox(height: 12),
+
+          Wrap(
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildLabel("Hora de inicio"),
+                  Row(
+                    children: [
+                      Padding(
+                        padding: EdgeInsetsGeometry.all(2),
+                        child: Container(
+                          padding: const EdgeInsets.only(
+                            left: 10,
+                            right: 10,
+                            top: 5,
+                            bottom: 5,
+                          ),
+                          decoration: BoxDecoration(
+                            border: BoxBorder.all(color: Colors.black),
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                          child: Text(
+                            '${hora1select.hour}:${hora1select.minute.toString().padLeft(2, '0')}',
+                            style: TextStyle(color: Colors.black, fontSize: 15),
+                          ),
+                        ),
+                      ),
+                      ElevatedButton(
+                        child: Icon(Icons.punch_clock),
+                        onPressed: () async {
+                          final TimeOfDay? horaFirst = await showTimePicker(
+                            context: context,
+                            initialTime: hora1select,
+                            initialEntryMode: TimePickerEntryMode.dial,
+                          );
+                          if (horaFirst != null) {
+                            setState(() {
+                              hora1select = horaFirst;
+                              firstTimeHour = hora1select;
+                              saveEventDraft();
+                              print(hora1select.hour);
+                              print(hora1select.minute);
+                            });
+                            _validateHoras();
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              SizedBox(width: 40),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildLabel("Hora de cierre"),
+                  Row(
+                    children: [
+                      Padding(
+                        padding: EdgeInsetsGeometry.all(2),
+                        child: Container(
+                          padding: const EdgeInsets.only(
+                            left: 10,
+                            right: 10,
+                            top: 5,
+                            bottom: 5,
+                          ),
+                          decoration: BoxDecoration(
+                            border: BoxBorder.all(color: Colors.black),
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                          child: Text(
+                            '${hora2select.hour}:${hora2select.minute.toString().padLeft(2, '0')} ',
+                            style: TextStyle(color: Colors.black, fontSize: 15),
+                          ),
+                        ),
+                      ),
+                      ElevatedButton(
+                        child: Icon(Icons.punch_clock),
+                        onPressed: () async {
+                          final TimeOfDay? horaLast = await showTimePicker(
+                            context: context,
+                            initialTime: hora2select,
+                            initialEntryMode: TimePickerEntryMode.dial,
+                          );
+                          if (horaLast != null) {
+                            setState(() {
+                              hora2select = horaLast;
+                              lastTimeHour = hora2select;
+                              saveEventDraft();
+                              print(hora2select.hour);
+                              print(hora2select.minute);
+                            });
+                            _validateHoras();
+                          }
+                        },
+                      ),
+                      if (_hora2Error != null)
+                        Padding(
+                          padding: const EdgeInsets.only(left: 8),
+                          child: Text(
+                            _hora2Error!,
+                            style: const TextStyle(
+                              color: Colors.red,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          TextFormField(
+            controller: descripcionController,
+            maxLines: 3,
+            onChanged: (value) {
+              if (_debounce?.isActive ?? false) _debounce!.cancel();
+              _debounce = Timer(const Duration(milliseconds: 500), () {
+                saveEventDraft();
+              });
+            },
+            decoration: const InputDecoration(
+              labelText: 'Descripción del evento',
+              alignLabelWithHint: true,
+              border: OutlineInputBorder(),
+              counterText: '',
+            ),
+          ),
+
+          const SizedBox(height: 20),
+          const Divider(),
+
+          // --- PRIVACIDAD ---
+          _buildLabel('Privacidad del Evento'),
+          SwitchListTile(
+            title: Text(isPrivateC ? 'Evento Privado' : 'Evento Público'),
+            subtitle: Text(
+              isPrivateC
+                  ? 'Solo accesible mediante enlace de invitación'
+                  : 'Visible para todos en el mapa',
+            ),
             value: isPrivateC,
             activeThumbColor: PrimaryPurple,
-            onChanged: (v) => setState(() => isPrivateC = v),
-          ),
-          SwitchListTile(
-            title: const Text(
-              "Evento de Pago",
-              style: TextStyle(fontWeight: FontWeight.bold),
+            secondary: Icon(
+              isPrivateC ? Icons.lock : Icons.public,
+              color: isPrivateC ? PrimaryPurple : Colors.grey,
             ),
-            subtitle: const Text("Los bochincheros deben pagar entrada"),
-            value: isPayedC,
-            activeThumbColor: PrimaryPurple,
-            onChanged: (v) => setState(() => isPayedC = v),
+            onChanged: (val) {
+              setState(() => isPrivateC = val);
+              saveEventDraft();
+            },
           ),
+
+          const SizedBox(height: 20),
+          const Divider(),
+
+          SwitchListTile(
+            title: Text(isPayedC ? 'Evento Pago' : 'Evento Gratuito'),
+            value: isPayedC,
+            // ... resto de tu configuración actual
+            onChanged: (val) {
+              setState(() => isPayedC = val);
+              saveEventDraft();
+            },
+          ),
+
+          // --- AQUÍ LA MAGIA ---
           if (isPayedC) ...[
-            const SizedBox(height: 10),
-            TextField(
+            _buildLabel('Datos de Pago (Pago Móvil)'),
+            const SizedBox(height: 4),
+            const Text(
+              'Ingresa los datos donde los compradores realizarán el pago.',
+              style: TextStyle(color: Colors.grey, fontSize: 13),
+            ),
+            const SizedBox(height: 12),
+            // --- Banco (Dropdown) ---
+            DropdownButtonFormField<String>(
+              value: selectedBank,
+              isExpanded: true,
+              decoration: InputDecoration(
+                labelText: 'Banco',
+                prefixIcon: const Icon(Icons.account_balance),
+                border: const OutlineInputBorder(),
+                errorText: _bankError,
+              ),
+              items: bankList
+                  .map(
+                    (b) => DropdownMenuItem(
+                      value: b,
+                      child: Text(b, overflow: TextOverflow.ellipsis),
+                    ),
+                  )
+                  .toList(),
+              onChanged: (val) {
+                setState(() => selectedBank = val);
+                _validateBank(val);
+                saveEventDraft();
+              },
+            ),
+            const SizedBox(height: 12),
+
+            // --- Teléfono (Prefijo dropdown + número) ---
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  width: 110,
+                  child: DropdownButtonFormField<String>(
+                    value: selectedPhonePrefix,
+                    isExpanded: true,
+                    decoration: InputDecoration(
+                      labelText: 'Prefijo',
+                      border: const OutlineInputBorder(),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 15,
+                      ),
+                      errorText: _phonePrefixError,
+                    ),
+                    items: phonePrefixList
+                        .map(
+                          (p) => DropdownMenuItem(
+                            value: p,
+                            child: Text(p, overflow: TextOverflow.ellipsis),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (val) {
+                      setState(() => selectedPhonePrefix = val);
+                      _validatePhonePrefix(val);
+                      saveEventDraft();
+                    },
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: TextFormField(
+                    controller: paymentPhoneNumberController,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: false,
+                    ),
+                    inputFormatters: <TextInputFormatter>[
+                      FilteringTextInputFormatter.digitsOnly,
+                    ],
+                    maxLength: 7,
+                    onChanged: (value) {
+                      if (_debounce?.isActive ?? false) _debounce!.cancel();
+                      _debounce = Timer(const Duration(milliseconds: 500), () {
+                        _validatePaymentPhone(value);
+                        saveEventDraft();
+                      });
+                    },
+                    decoration: InputDecoration(
+                      labelText: 'Número',
+                      prefixIcon: const Icon(Icons.phone),
+                      border: const OutlineInputBorder(),
+                      counterText: '',
+                      errorText: _paymentPhoneError,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  width: 120,
+                  child: DropdownButtonFormField<String>(
+                    value: selectedCIType,
+                    isExpanded: true,
+                    decoration: InputDecoration(
+                      labelText: 'Tipo',
+                      border: const OutlineInputBorder(),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 15,
+                      ),
+                      errorText: _ciTypeError,
+                    ),
+                    items: ciTypeList
+                        .map(
+                          (t) => DropdownMenuItem(
+                            value: t,
+                            child: Text(
+                              '$t - ${ciTypeLabels[t]}',
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (val) {
+                      setState(() => selectedCIType = val);
+                      _validateCIType(val);
+                      saveEventDraft();
+                    },
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: TextFormField(
+                    controller: paymentCINumberController,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: false,
+                    ),
+                    inputFormatters: <TextInputFormatter>[
+                      FilteringTextInputFormatter.digitsOnly,
+                    ],
+                    onChanged: (value) {
+                      if (_debounce?.isActive ?? false) _debounce!.cancel();
+                      _debounce = Timer(const Duration(milliseconds: 500), () {
+                        _validatePaymentCI(value);
+                        saveEventDraft();
+                      });
+                    },
+                    maxLength: 10,
+                    decoration: InputDecoration(
+                      labelText: 'Número de Identificación',
+                      prefixIcon: const Icon(Icons.badge),
+                      border: const OutlineInputBorder(),
+                      counterText: '',
+                      errorText: _paymentCIError,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
               controller: priceController,
-              keyboardType: TextInputType.number,
-              decoration: _inputStyle("Precio (Bs)", Icons.monetization_on),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              inputFormatters: <TextInputFormatter>[
+                FilteringTextInputFormatter.digitsOnly,
+              ],
+              onChanged: (value) {
+                if (_debounce?.isActive ?? false) _debounce!.cancel();
+                _debounce = Timer(const Duration(milliseconds: 500), () {
+                  _validatePrice(value);
+                  saveEventDraft();
+                });
+              },
+              decoration: InputDecoration(
+                labelText: 'Precio por Entrada (Bs)',
+                prefixIcon: const Icon(Icons.attach_money),
+                border: const OutlineInputBorder(),
+                errorText: _priceError,
+              ),
+            ),
+          ] else ...[
+            // Opcional: widgets que solo se ven si es GRATUITO
+            const Padding(
+              padding: EdgeInsets.all(8.0),
+              child: Text("Visible para todos de forma gratuita."),
             ),
           ],
-          const SizedBox(height: 40),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: PrimaryPurple,
-              minimumSize: const Size(double.infinity, 60),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(15),
-              ),
-              elevation: 4,
-            ),
-            onPressed: () => createEvent(context),
-            child: const Text(
-              "PUBLICAR BOCHINCHE",
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
+
+          // --- DATOS DE PAGO ---
+          const SizedBox(height: 30),
+          SafeArea(
+            child: Center(
+              child: SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: PrimaryPurple,
+                    foregroundColor: SecondaryPurple,
+                  ),
+                  onPressed: () {
+                    if (_validateAll()) {
+                      createEvent(context, _imagenesSeleccionadas);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ControlPanelEvent(),
+                        ),
+                      );
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            "Por favor, corrige los errores en el formulario",
+                          ),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
+                  },
+                  icon: const Icon(Icons.cloud_upload),
+                  label: const Text('PUBLICAR EVENTO'),
+                ),
               ),
             ),
           ),
-          const SizedBox(height: 30),
         ],
       ),
     );
   }
 
-  InputDecoration _inputStyle(String label, IconData icon) => InputDecoration(
-    labelText: label,
-    prefixIcon: Icon(icon, color: PrimaryPurple),
-    border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
-  );
-  Widget _sectionTitle(String text) => Padding(
-    padding: const EdgeInsets.only(bottom: 10, left: 5),
-    child: Text(
+  Widget _buildLabel(String text) {
+    return Text(
       text,
-      style: const TextStyle(
-        fontSize: 14,
-        fontWeight: FontWeight.bold,
-        color: Colors.grey,
-      ),
-    ),
-  );
-}
-
-// --- PANTALLA: PANEL DE CONTROL ---
-class ControlPanelEvent extends StatelessWidget {
-  const ControlPanelEvent({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: const BochincheAppBar(),
-      drawer: const Navbar(),
-      body: const MyEvents(),
+      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
     );
   }
 }
 
-class MyEvents extends StatelessWidget {
-  const MyEvents({super.key});
+// --- PANEL DE CONTROL ---
+class ControlPanelEvent extends StatelessWidget {
+  const ControlPanelEvent({super.key});
+
   @override
   Widget build(BuildContext context) {
-    final uid = FirebaseAuth.instance.currentUser?.uid;
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('events')
-          .where('id_organizer', isEqualTo: uid)
-          .snapshots(),
-      builder: (context, snap) {
-        if (!snap.hasData)
-          return const Center(child: CircularProgressIndicator());
-        final docs = snap.data!.docs;
-        if (docs.isEmpty)
-          return const Center(child: Text("Aún no has creado eventos."));
+    return Scaffold(
+      drawer: const Navbar(),
+      appBar: BochincheAppBar(),
+      body: SingleChildScrollView(
+        child: Container(
+          color: Colors.white,
+          padding: EdgeInsets.all(13),
 
-        return ListView.builder(
-          itemCount: docs.length,
-          itemBuilder: (context, i) {
-            final data = docs[i].data() as Map<String, dynamic>;
-            return Card(
-              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: ListTile(
-                title: Text(
-                  data['name'] ?? 'Sin nombre',
-                  style: const TextStyle(fontWeight: FontWeight.bold),
+          child: SafeArea(
+            child: Container(
+              color: Colors.white,
+              padding: EdgeInsets.all(10),
+              child: MyEvents(),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class MyEvents extends StatefulWidget {
+  //Esto con el tiempo se validará mejor
+  const MyEvents({super.key});
+
+  @override
+  State<MyEvents> createState() => _MyEventsState();
+}
+
+class _MyEventsState extends State<MyEvents> {
+  String obtainIDFromEvent(String id) {
+    return id;
+  }
+
+  Future<void> deleteEvent(String id) async {
+    try {
+      await FirebaseFirestore.instance.collection('events').doc(id).delete();
+    } catch (e) {
+      print('Error $e');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text(
+          'Panel de control de eventos',
+          style: TextStyle(fontSize: 25, fontWeight: FontWeight.w900),
+        ),
+        Text(
+          'Aqui puedes ver todos tus eventos creados',
+          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w900),
+        ),
+        Divider(),
+
+        FutureBuilder<List<dynamic>>(
+          future: chargeEvents(),
+          builder: (context, snapshot) {
+            if (snapshot.hasData) {
+              final eventos = snapshot.data!;
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: eventos
+                    .map(
+                      (i) => Padding(
+                        padding: const EdgeInsets.all(5),
+                        child: Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(10),
+                            color: const Color(0xFFF7F4FD),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                i['name'],
+                                style: const TextStyle(
+                                  color: Colors.black,
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 20,
+                                ),
+                              ),
+                              SizedBox(height: 5),
+                              if (i['isPrivate'] == true) ...[
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 6,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.orange[50],
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(color: Colors.orange),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: const [
+                                      Icon(
+                                        Icons.lock,
+                                        size: 16,
+                                        color: Colors.orange,
+                                      ),
+                                      SizedBox(width: 4),
+                                      Text(
+                                        'Evento Privado',
+                                        style: TextStyle(
+                                          color: Colors.orange,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                SizedBox(height: 5),
+                              ],
+                              Wrap(
+                                children: [
+                                  Text(
+                                    'Aforo:',
+                                    style: TextStyle(
+                                      color: Colors.black,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  Text(
+                                    ' ${i['capacity']}  ',
+                                    style: TextStyle(
+                                      color: Colors.black,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              SizedBox(height: 2),
+                              Wrap(
+                                children: [
+                                  Text(
+                                    'Contacto:',
+                                    style: TextStyle(
+                                      color: Colors.black,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  Text(
+                                    ' ${i['contact']}',
+                                    style: TextStyle(
+                                      color: Colors.black,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              SizedBox(height: 2),
+                              Wrap(
+                                children: [
+                                  Text(
+                                    'Tipo:',
+                                    style: TextStyle(
+                                      color: Colors.black,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  Text(
+                                    ' ${i['type']}',
+                                    style: TextStyle(
+                                      color: Colors.black,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              SizedBox(height: 2),
+                              Wrap(
+                                children: [
+                                  Text(
+                                    'Direccion corta:',
+                                    style: TextStyle(
+                                      color: Colors.black,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  Text(
+                                    ' ${i['address']}',
+                                    style: TextStyle(
+                                      color: Colors.black,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              SizedBox(height: 2),
+                              Wrap(
+                                children: [
+                                  Text(
+                                    'Descripción:',
+                                    style: TextStyle(
+                                      color: Colors.black,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  Text(
+                                    ' ${i['description']}',
+                                    style: TextStyle(
+                                      color: Colors.black,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              SizedBox(height: 2),
+                              Wrap(
+                                children: [
+                                  Text(
+                                    'Fechas:',
+                                    style: TextStyle(
+                                      color: Colors.black,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  Text(
+                                    ' ${DateTime.parse(i['startDate']).day}/${DateTime.parse(i['startDate']).month}/${DateTime.parse(i['startDate']).year} hasta ${DateTime.parse(i['endDate']).day}/${DateTime.parse(i['endDate']).month}/${DateTime.parse(i['endDate']).year}',
+                                    style: TextStyle(
+                                      color: Colors.black,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              SizedBox(height: 2),
+                              Wrap(
+                                children: [
+                                  Text(
+                                    'Horarios:',
+                                    style: TextStyle(
+                                      color: Colors.black,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  Text(
+                                    ' ${i['startTime']['hour']}:${i['startTime']['minute'].toString().padLeft(2, '0')} hasta ${i['endTime']['hour']}:${i['endTime']['minute'].toString().padLeft(2, '0')}',
+                                    style: TextStyle(
+                                      color: Colors.black,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              SizedBox(height: 2),
+                              Wrap(
+                                children: [
+                                  Text(
+                                    'Localización:',
+                                    style: TextStyle(
+                                      color: Colors.black,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  Text(
+                                    ' ${i['location'].latitude}, ${i['location'].longitude}',
+                                    style: TextStyle(
+                                      color: Colors.black,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ],
+                              ),
+
+                              const SizedBox(height: 10),
+
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  if (i['isPrivate'] == true) ...[
+                                    ElevatedButton.icon(
+                                      style: ElevatedButton.styleFrom(
+                                        elevation:
+                                            0, // Sin sombra pesada para un look plano y moderno
+                                        backgroundColor: const Color(
+                                          0xFFEADDFF,
+                                        ), // Un lila suave
+                                        foregroundColor: const Color(
+                                          0xFF21005D,
+                                        ), // Texto e icono en morado oscuro
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 16,
+                                          vertical: 10,
+                                        ),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ), // Bordes redondeados modernos
+                                        ),
+                                      ),
+                                      onPressed: () async {
+                                        await Clipboard.setData(
+                                          ClipboardData(text: i['id']),
+                                        );
+                                        if (context.mounted) {
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                'Código de invitación copiado: ${i['id']}',
+                                              ),
+                                              backgroundColor: Colors.green,
+                                            ),
+                                          );
+                                        }
+                                      },
+                                      icon: const Icon(Icons.link),
+                                      label: const Text('Copiar Código'),
+                                    ),
+                                    const SizedBox(height: 5),
+                                  ],
+                                  ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      foregroundColor: Colors.blue[800],
+                                      backgroundColor: Colors.blue[50],
+                                      elevation: 0,
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 12,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                    ),
+                                    onPressed: () {
+                                      idmod = i['id'];
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              const ModifyEvents(),
+                                        ),
+                                      );
+                                      cargarDatosEvento(idmod);
+                                    },
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: const [
+                                        Icon(Icons.change_circle),
+                                        SizedBox(width: 5),
+                                        Text('Modificar evento'),
+                                      ],
+                                    ),
+                                  ),
+                                  SizedBox(height: 5),
+                                  ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      foregroundColor: Colors.red[800],
+                                      backgroundColor: Colors.red[50],
+                                      elevation: 0,
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 12,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                    ),
+                                    onPressed: () {
+                                      try {
+                                        setState(() {
+                                          deleteEvent(
+                                            obtainIDFromEvent(i['id']),
+                                          );
+                                        });
+                                      } catch (e) {
+                                        print(e);
+                                      }
+                                    },
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: const [
+                                        Icon(Icons.delete),
+                                        SizedBox(width: 5),
+                                        Text('Eliminar evento'),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    )
+                    .toList(),
+              );
+            }
+            return CircularProgressIndicator();
+          },
+        ),
+      ],
+    );
+  }
+}
+
+class ModifyEvents extends StatelessWidget {
+  const ModifyEvents({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      drawer: const Navbar(),
+      appBar: BochincheAppBar(),
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            Text(
+              'Modifica tus eventos',
+              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 25),
+            ),
+            Text(
+              'Aquí puedes modificar los datos de tus eventos',
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+            ),
+
+            const Divider(),
+            const FormCreateEvent2(),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class FormCreateEvent2 extends StatefulWidget {
+  const FormCreateEvent2({super.key});
+
+  @override
+  State<FormCreateEvent2> createState() => _FormCreateEvent2State();
+}
+
+class _FormCreateEvent2State extends State<FormCreateEvent2> {
+  final ImagePicker _picker = ImagePicker();
+  List<File> _imagenesSeleccionadas = [];
+  List<String> _imagenesExistentes = [];
+  bool _cargandoFotos = true;
+
+  String? selectedValue;
+  LatLng? ubicacionTemporal;
+  String? selectedValue2;
+  TimeOfDay hora1select = TimeOfDay.now();
+  TimeOfDay hora2select = TimeOfDay.now();
+  TimeOfDay hora1 = TimeOfDay.now();
+  MapController controladormapa = MapController();
+  String? _nombreError;
+  String? _direccionError;
+  String? _aforoError;
+  String? _bankError;
+  String? _phonePrefixError;
+  String? _paymentPhoneError;
+  String? _ciTypeError;
+  String? _paymentCIError;
+
+  @override
+  void initState() {
+    super.initState();
+    _cargarImagenesDesdeFirebase();
+  }
+
+  Future<void> _cargarImagenesDesdeFirebase() async {
+    try {
+      var doc = await FirebaseFirestore.instance
+          .collection('events')
+          .doc(idmod)
+          .get();
+
+      if (doc.exists) {
+        var data = doc.data() as Map<String, dynamic>;
+
+        if (data.containsKey('gallery') && data['gallery'] != null) {
+          setState(() {
+            _imagenesExistentes = List<String>.from(data['gallery']);
+          });
+        }
+      }
+    } catch (e) {
+      print("Error cargando las imágenes de Firebase: \$e");
+    } finally {
+      setState(() {
+        _cargandoFotos = false;
+      });
+    }
+  }
+
+  Future<void> fechaselect2(BuildContext context) async {
+    DateTime? date = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime.now(),
+      lastDate: DateTime(2027),
+    );
+
+    if (date != null) {
+      setState(() {
+        fecha2C.text = date.toString().split(" ")[0];
+        fecha2 = date;
+      });
+    }
+  }
+
+  void _validateNombre(String value) {
+    setState(() {
+      _nombreError = value.trim().isEmpty ? "El nombre es requerido" : null;
+    });
+  }
+
+  void _validateDireccion(String value) {
+    setState(() {
+      _direccionError = value.trim().isEmpty
+          ? "La dirección es requerida"
+          : null;
+    });
+  }
+
+  void _validateAforo(String value) {
+    setState(() {
+      if (value.isEmpty) {
+        _aforoError = "El aforo es requerido";
+      } else {
+        int? a = int.tryParse(value);
+        if (a == null || a <= 0) {
+          _aforoError = "Número inválido";
+        } else {
+          _aforoError = null;
+        }
+      }
+    });
+  }
+
+  Future<void> fechaselect1(BuildContext context) async {
+    DateTime? date = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime.now(),
+      lastDate: DateTime(2027),
+    );
+
+    if (date != null) {
+      setState(() {
+        fecha1C.text = date.toString().split(" ")[0];
+        fecha1 = date;
+      });
+    }
+  }
+
+  Future<void> _seleccionarImagenes() async {
+    try {
+      final List<XFile> imagenes = await _picker.pickMultiImage();
+
+      if (imagenes.isNotEmpty) {
+        final int limiteBytes = 5 * 1024 * 1024;
+        bool algunaMuyPesada = false;
+
+        setState(() {
+          for (var xfile in imagenes) {
+            final file = File(xfile.path);
+            if (file.lengthSync() > limiteBytes) {
+              algunaMuyPesada = true;
+            } else {
+              _imagenesSeleccionadas.add(file);
+            }
+          }
+        });
+
+        if (algunaMuyPesada) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Una o más imágenes exceden 5MB y no se añadieron.',
+              ),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      print("Error seleccionando imágenes: $e");
+    }
+  }
+
+  final List<String> options = [
+    'Concierto',
+    'Conferencias',
+    'Stand Up',
+    'Teatro',
+    'Fiestas',
+    'Cine',
+    'Restaurante',
+    'Otros',
+  ];
+
+  final List<String> options2 = [
+    'Proximo',
+    'Ocurriendo',
+    'Terminado',
+    'Cancelado',
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          TextFormField(
+            controller: nombreEventoController,
+            validator: validateName,
+            decoration: const InputDecoration(
+              labelText: 'Nombre del evento',
+              prefixIcon: Icon(Icons.event),
+              border: OutlineInputBorder(),
+              counterText: '',
+            ),
+          ),
+
+          const SizedBox(height: 12),
+          TextFormField(
+            controller: contactoController,
+            validator: validateName,
+            decoration: const InputDecoration(
+              labelText: 'Contacto o Pagina Web',
+              prefixIcon: Icon(Icons.contact_page),
+              border: OutlineInputBorder(),
+              counterText: '',
+            ),
+          ),
+          const SizedBox(height: 12),
+          TextFormField(
+            controller: aforoController,
+            validator: validateAforo,
+            decoration: const InputDecoration(
+              labelText: 'Aforo',
+              prefixIcon: Icon(Icons.people),
+              border: OutlineInputBorder(),
+              counterText: '',
+            ),
+          ),
+          const SizedBox(height: 12),
+          DropdownButtonFormField<String>(
+            decoration: const InputDecoration(
+              labelText: 'Estado del evento',
+              prefixIcon: Icon(Icons.event_available),
+              border: OutlineInputBorder(),
+            ),
+            initialValue: selectedValue,
+            isExpanded: true,
+            hint: const Text("Selecciona el estado"),
+            items: options2
+                .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                .toList(),
+            onChanged: (val) {
+              setState(() {
+                selectedValue = val;
+                stateC = val;
+              });
+            },
+          ),
+          SizedBox(height: 12),
+          TextFormField(
+            controller: descripcionController,
+            maxLines: 3,
+            decoration: const InputDecoration(
+              labelText: 'Descripción del evento',
+              alignLabelWithHint: true,
+              border: OutlineInputBorder(),
+              counterText: '',
+            ),
+          ),
+          const SizedBox(height: 20),
+          const Divider(),
+
+          //seccion para editar fotos
+          const Text(
+            'Fotos del Evento (Selecciona varias)',
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 10),
+
+          _cargandoFotos
+              ? const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(20.0),
+                    child: CircularProgressIndicator(color: Colors.deepPurple),
+                  ),
+                )
+              : SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      GestureDetector(
+                        onTap: _seleccionarImagenes,
+                        child: Container(
+                          width: 100,
+                          height: 120,
+                          margin: const EdgeInsets.only(right: 12.0),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[200],
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: Colors.grey[400]!,
+                              width: 1,
+                            ),
+                          ),
+                          child: const Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.add_photo_alternate,
+                                size: 30,
+                                color: Colors.grey,
+                              ),
+                              SizedBox(height: 5),
+                              Text(
+                                'Agregar',
+                                style: TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      ..._imagenesExistentes.asMap().entries.map((entry) {
+                        int idx = entry.key;
+                        String url = entry.value;
+                        return _buildImageBadge(
+                          imageProvider: NetworkImage(url),
+                          onDelete: () {
+                            setState(() {
+                              _imagenesExistentes.removeAt(idx);
+                            });
+                          },
+                        );
+                      }),
+
+                      ..._imagenesSeleccionadas.asMap().entries.map((entry) {
+                        int idx = entry.key;
+                        File file = entry.value;
+                        return _buildImageBadge(
+                          imageProvider: FileImage(file),
+                          onDelete: () {
+                            setState(() {
+                              _imagenesSeleccionadas.removeAt(idx);
+                            });
+                          },
+                        );
+                      }),
+                    ],
+                  ),
                 ),
-                subtitle: Text("${data['type']} • ${data['state']}"),
-                trailing: IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.red),
-                  onPressed: () => docs[i].reference.delete(),
+          const SizedBox(height: 8),
+
+          // Contador de fotos abajo
+          Text(
+            '${_imagenesExistentes.length + _imagenesSeleccionadas.length} foto(s) lista(s)',
+            style: const TextStyle(color: Colors.grey, fontSize: 12),
+          ),
+          const SizedBox(height: 20),
+
+          // --- DATOS DE PAGO ---
+          _buildLabel('Datos de Pago (Pago Móvil)'),
+          const SizedBox(height: 4),
+          const Text(
+            'Ingresa los datos donde los compradores realizarán el pago.',
+            style: TextStyle(color: Colors.grey, fontSize: 13),
+          ),
+          const SizedBox(height: 12),
+          // --- Banco (Dropdown) ---
+          DropdownButtonFormField<String>(
+            initialValue: selectedBank,
+            isExpanded: true,
+            decoration: const InputDecoration(
+              labelText: 'Banco',
+              prefixIcon: Icon(Icons.account_balance),
+              border: OutlineInputBorder(),
+            ),
+            items: bankList
+                .map(
+                  (b) => DropdownMenuItem(
+                    value: b,
+                    child: Text(b, overflow: TextOverflow.ellipsis),
+                  ),
+                )
+                .toList(),
+            onChanged: (val) => setState(() => selectedBank = val),
+          ),
+          const SizedBox(height: 12),
+
+          // --- Teléfono (Prefijo dropdown + número) ---
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                width: 110,
+                child: DropdownButtonFormField<String>(
+                  initialValue: selectedPhonePrefix,
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Prefijo',
+                    border: OutlineInputBorder(),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 15,
+                    ),
+                  ),
+                  items: phonePrefixList
+                      .map(
+                        (p) => DropdownMenuItem(
+                          value: p,
+                          child: Text(p, overflow: TextOverflow.ellipsis),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (val) => setState(() => selectedPhonePrefix = val),
                 ),
               ),
-            );
-          },
-        );
-      },
+              const SizedBox(width: 8),
+              Expanded(
+                child: TextFormField(
+                  controller: paymentPhoneNumberController,
+                  keyboardType: TextInputType.number,
+                  maxLength: 7,
+                  decoration: const InputDecoration(
+                    labelText: 'Número',
+                    prefixIcon: Icon(Icons.phone),
+                    border: OutlineInputBorder(),
+                    counterText: '',
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // --- Cédula / Identificación (Tipo dropdown + número) ---
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                width: 120,
+                child: DropdownButtonFormField<String>(
+                  initialValue: selectedCIType,
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Tipo',
+                    border: OutlineInputBorder(),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 15,
+                    ),
+                  ),
+                  items: ciTypeList
+                      .map(
+                        (t) => DropdownMenuItem(
+                          value: t,
+                          child: Text(
+                            '$t - ${ciTypeLabels[t]}',
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (val) => setState(() => selectedCIType = val),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: TextFormField(
+                  controller: paymentCINumberController,
+                  keyboardType: TextInputType.number,
+                  maxLength: 10,
+                  decoration: const InputDecoration(
+                    labelText: 'Número de Identificación',
+                    prefixIcon: Icon(Icons.badge),
+                    border: OutlineInputBorder(),
+                    counterText: '',
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          TextFormField(
+            controller: priceController,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: const InputDecoration(
+              labelText: 'Precio por Entrada (Bs)',
+              prefixIcon: Icon(Icons.attach_money),
+              border: OutlineInputBorder(),
+            ),
+          ),
+
+          const SizedBox(height: 30),
+          Center(
+            child: SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: PrimaryPurple,
+                  foregroundColor: SecondaryPurple,
+                ),
+                onPressed: () {
+                  modifyEvent(context, idmod, _imagenesSeleccionadas);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ControlPanelEvent(),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.cloud_upload),
+                label: const Text('MODIFICAR EVENTO'),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLabel(String text) {
+    return Text(
+      text,
+      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+    );
+  }
+
+  Widget _buildImageBadge({
+    required ImageProvider imageProvider,
+    required VoidCallback onDelete,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(right: 12.0),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Image(
+              image: imageProvider,
+              width: 100,
+              height: 120,
+              fit: BoxFit.cover,
+            ),
+          ),
+          Positioned(
+            right: -5,
+            top: -5,
+            child: GestureDetector(
+              onTap: onDelete,
+              child: Container(
+                decoration: const BoxDecoration(
+                  color: Color(0xFFFF4C4C),
+                  shape: BoxShape.circle,
+                ),
+                padding: const EdgeInsets.all(4),
+                child: const Icon(Icons.close, color: Colors.white, size: 16),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class DetalleEvento extends StatefulWidget {
+  const DetalleEvento({super.key});
+
+  @override
+  State<DetalleEvento> createState() => _DetalleEventoState();
+}
+
+class _DetalleEventoState extends State<DetalleEvento> {
+  final String idDelEvento = "ID_DEL_EVENTO";
+  final commentsKey = GlobalKey();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Detalle del Evento')),
+      body: FutureBuilder<DocumentSnapshot>(
+        future: FirebaseFirestore.instance
+            .collection('events')
+            .doc(idDelEvento)
+            .get(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (!snapshot.hasData || !snapshot.data!.exists) {
+            return const Center(child: Text('Evento no encontrado'));
+          }
+
+          final evento = snapshot.data!;
+          final Map<String, dynamic> data =
+              evento.data() as Map<String, dynamic>;
+
+          return SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    data['name'],
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: (data['isPrivate'] ?? false)
+                          ? Colors.red[50]
+                          : Colors.green[50],
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: (data['isPrivate'] ?? false)
+                            ? Colors.red
+                            : Colors.green,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          (data['isPrivate'] ?? false)
+                              ? Icons.lock_outline
+                              : Icons.public,
+                          size: 16,
+                          color: (data['isPrivate'] ?? false)
+                              ? Colors.red
+                              : Colors.green,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          (data['isPrivate'] ?? false)
+                              ? 'EVENTO PRIVADO'
+                              : 'EVENTO PÚBLICO',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: (data['isPrivate'] ?? false)
+                                ? Colors.red
+                                : Colors.green,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Organizador: ${data['organizer'] ?? 'N/A'}',
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Tipo: ${data['type'] ?? 'N/A'}',
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Estado: ${data['status'] ?? 'N/A'}',
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Aforo: ${data['capacity'] ?? 'N/A'}',
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Contacto: ${data['contact'] ?? 'N/A'}',
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Dirección: ${data['address'] ?? 'N/A'}',
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Descripción: ${data['description'] ?? 'N/A'}',
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Fechas: ${DateTime.parse(data['startDate']).day}/${DateTime.parse(data['startDate']).month}/${DateTime.parse(data['startDate']).year} hasta ${DateTime.parse(data['endDate']).day}/${DateTime.parse(data['endDate']).month}/${DateTime.parse(data['endDate']).year}',
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Horarios: ${data['startTime']['hour']}:${data['startTime']['minute'].toString().padLeft(2, '0')} hasta ${data['endTime']['hour']}:${data['endTime']['minute'].toString().padLeft(2, '0')}',
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Localización: ${data['location'].latitude}, ${data['location'].longitude}',
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                  const SizedBox(height: 20),
+                  ElevatedButton(
+                    onPressed: () {},
+                    child: const Text('Registrarse en este evento'),
+                  ),
+                  const SizedBox(height: 20),
+                  ElevatedButton(
+                    onPressed: () {
+                      Scrollable.ensureVisible(
+                        commentsKey.currentContext!,
+                        duration: const Duration(milliseconds: 500),
+                        curve: Curves.easeInOut,
+                      );
+                    },
+                    child: const Text('Dejar un comentario'),
+                  ),
+                  const SizedBox(height: 20),
+                  CommentsSection(key: commentsKey, eventoId: idDelEvento),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+//ESTOS SON LOS CAMBIOS DE JAVIER
+
+class PublicEventsScreen extends StatefulWidget {
+  const PublicEventsScreen({super.key});
+  @override
+  State<PublicEventsScreen> createState() => _PublicEventsScreenState();
+}
+
+final List<String> categoriasEventos = [
+  'Todos',
+  'Seguidos',
+  'Concierto',
+  'Teatro',
+  'Fiestas',
+  'Stand Up',
+  'Cine',
+  'Otros',
+];
+
+final List<String> categoriasUsuarios = ['Todos', 'Seguidos'];
+
+class _PublicEventsScreenState extends State<PublicEventsScreen> {
+  late String selectedCategory;
+  DateTime? selectedDate;
+  late List<String> selectedPreferences;
+  bool _isLoading = false;
+  String searchQuery = '';
+  final TextEditingController _searchController = TextEditingController();
+  MapController mapaController = MapController();
+
+  @override
+  void initState() {
+    super.initState();
+    selectedCategory = userPreferredFilters['category'];
+    selectedPreferences = List<String>.from(userPreferredFilters['tags']);
+    if (selectedPreferences.isEmpty) {
+      selectedPreferences.add('Eventos');
+    }
+  }
+
+  Future<void> _fakeLoading() async {
+    setState(() => _isLoading = true);
+    await Future.delayed(const Duration(milliseconds: 1000));
+    if (mounted) setState(() => _isLoading = false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Determinamos si estamos buscando usuarios basándonos en los chips;
+    SearchMode currentMode = SearchMode.eventos; // Por defecto
+    if (selectedPreferences.contains('Eventos privados')) {
+      currentMode = SearchMode.privados;
+    } else if (selectedPreferences.contains('Bochincheros')) {
+      currentMode = SearchMode.bochincheros;
+    }
+    return SafeArea(child: cuerpo(context, currentMode));
+  }
+
+  Widget cuerpo(BuildContext context, SearchMode currentMode) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8F9FA),
+      appBar: BochincheAppBar(),
+      drawer: FirebaseAuth.instance.currentUser != null ? const Navbar() : null,
+      body: Column(
+        children: [
+          // --- TÍTULO Y BOTÓN RESET ---
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 20, 16, 10),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Explorar',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.w900,
+                    color: PrimaryPurple,
+                  ),
+                ),
+                IconButton(
+                  onPressed: () {
+                    setState(() {
+                      selectedCategory = 'Todos';
+                      selectedDate = null;
+                      _searchController.clear();
+                      searchQuery = '';
+                    });
+                    _fakeLoading();
+                  },
+                  icon: const Icon(
+                    Icons.filter_alt_off,
+                    color: Colors.redAccent,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // --- BUSCADOR DINÁMICO ---
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+            child: SearchAnchor(
+              builder: (BuildContext context, SearchController controller) {
+                return SearchBar(
+                  controller: controller,
+                  hintText: currentMode == SearchMode.bochincheros
+                      ? 'Buscar bochincheros...'
+                      : (currentMode == SearchMode.privados
+                            ? 'Ingresa código de acceso...'
+                            : 'Buscar eventos públicos...'),
+                  onTap: () => controller.openView(),
+                  onChanged: (_) => controller.openView(),
+                  leading: const Icon(Icons.search, color: PrimaryPurple),
+                  trailing: [
+                    IconButton(
+                      icon: const Icon(
+                        Icons.arrow_forward,
+                        color: PrimaryPurple,
+                      ),
+                      onPressed: () {
+                        setState(() => searchQuery = controller.text);
+                        _fakeLoading();
+                      },
+                    ),
+                  ],
+                  backgroundColor: WidgetStateProperty.all(Colors.white),
+                  elevation: WidgetStateProperty.all(0),
+                  shape: WidgetStateProperty.all(
+                    RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                  ),
+                );
+              },
+              suggestionsBuilder: (context, controller) async {
+                final input = controller.text.trim();
+                if (input.isEmpty) return [];
+
+                // Decidimos qué lista cargar según el modo actual
+                List<Map<String, dynamic>> predictions;
+                if (currentMode == SearchMode.bochincheros) {
+                  predictions = await getUserPredictions(input);
+                } else {
+                  predictions = await getEventPredictions(input);
+                }
+
+                return predictions.map((item) {
+                  // NUEVO: Definimos los campos según el origen. Ahora priorizamos el username.
+                  final String title =
+                      (currentMode == SearchMode.bochincheros
+                          ? (item['username'] != null
+                                ? '@${item['username']}'
+                                : (item['nombre'] ?? 'Sin nombre'))
+                          : item['name']) ??
+                      '';
+
+                  final IconData icon = currentMode == SearchMode.bochincheros
+                      ? Icons
+                            .alternate_email // Cambiado a un @ para que se vea más cool
+                      : Icons.calendar_today_outlined;
+
+                  return ListTile(
+                    leading: Icon(icon, color: PrimaryPurple),
+                    title: Text(title),
+                    onTap: () {
+                      controller.closeView(title);
+                      // Actualizamos el estado para filtrar la lista principal
+                      setState(() {
+                        searchQuery = title;
+                        _fakeLoading();
+                      });
+                    },
+                  );
+                }).toList();
+              },
+            ),
+          ),
+
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(15),
+              border: Border.all(color: Colors.black12),
+            ),
+            child: Column(
+              children: [
+                DropdownButtonFormField<String>(
+                  value: selectedCategory,
+                  decoration: const InputDecoration(
+                    labelText: 'Categoría',
+                    border: InputBorder.none,
+                  ),
+                  items:
+                      (selectedPreferences.contains('Bochincheros')
+                              ? categoriasUsuarios
+                              : categoriasEventos)
+                          .map(
+                            (e) => DropdownMenuItem(value: e, child: Text(e)),
+                          )
+                          .toList(),
+
+                  onChanged: (val) {
+                    setState(() => selectedCategory = val!);
+                    _fakeLoading();
+                  },
+                ),
+                SizedBox(
+                  height: 40,
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    children: ['Eventos', 'Eventos privados', 'Bochincheros'].map((
+                      pref,
+                    ) {
+                      final isSelected = selectedPreferences.contains(pref);
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: FilterChip(
+                          label: Text(
+                            pref,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: isSelected ? Colors.white : Colors.black87,
+                            ),
+                          ),
+                          selected: isSelected,
+                          selectedColor: PrimaryPurple,
+                          checkmarkColor: Colors
+                              .white, // Para que el check sea blanco al seleccionar
+                          onSelected: (bool s) {
+                            setState(() {
+                              selectedPreferences.clear();
+
+                              if (s) {
+                                selectedPreferences.add(pref);
+                              } else {
+                                selectedPreferences.add('Eventos');
+                              }
+
+                              selectedCategory = 'Todos';
+                            });
+
+                            _fakeLoading();
+                          },
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          Expanded(
+            child: _isLoading
+                ? const BochincheFilterLoader()
+                : StreamBuilder<List<Map<String, dynamic>>>(
+                    stream: chargeFilteredEvents(
+                      mode: currentMode, // El modo que calculamos con los chips
+                      category: selectedCategory,
+                      search: searchQuery,
+                      date: selectedDate,
+                    ),
+                    builder: (context, snapshot) {
+                      if (!snapshot.hasData)
+                        return const BochincheFilterLoader();
+                      final data = snapshot.data ?? [];
+                      if (data.isEmpty) {
+                        return const Center(
+                          child: Text("Sin resultados coincidentes"),
+                        );
+                      }
+                      return ListView.builder(
+                        itemCount: data.length,
+                        itemBuilder: (context, index) {
+                          final item = data[index];
+
+                          // Escenario 1: Bochincheros (Usuarios)
+                          if (currentMode == SearchMode.bochincheros) {
+                            return Card(
+                              child: ListTile(
+                                leading: const CircleAvatar(
+                                  child: Icon(Icons.person),
+                                ),
+                                title: Text(item['nombre'] ?? 'Sin nombre'),
+                                // NUEVO: Quitamos la cédula y mostramos el @username
+                                subtitle: Text(
+                                  item['username'] != null
+                                      ? "@${item['username']}"
+                                      : "Usuario sin @",
+                                  style: const TextStyle(
+                                    color: PrimaryPurple,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                onTap: () {
+                                  userToReport = item['uid'];
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => OrgProfile(),
+                                    ),
+                                  );
+                                },
+                              ),
+                            );
+                          }
+
+                          // Escenario 2 y 3: Eventos (Públicos o Privados)
+                          return Card(
+                            child: ListTile(
+                              leading: CircleAvatar(
+                                child: Icon(
+                                  currentMode == SearchMode.privados
+                                      ? Icons.lock_outline
+                                      : Icons.celebration,
+                                ),
+                              ),
+                              title: Text(item['name'] ?? 'Evento sin nombre'),
+                              subtitle: Text(
+                                "${item['type']} • ${item['startDate'] != null ? DateTime.parse(item['startDate']).day.toString().padLeft(2, '0') + '/' + DateTime.parse(item['startDate']).month.toString().padLeft(2, '0') + '/' + DateTime.parse(item['startDate']).year.toString() : 'Fecha no disponible'}",
+                              ),
+                              onTap: () =>
+                                  mostrarDetalles(context, item, item['id']),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
     );
   }
 }

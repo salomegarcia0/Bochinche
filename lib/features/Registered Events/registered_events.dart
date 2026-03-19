@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:bochinche_app/styles/NavBar.dart';
+import 'package:bochinche_app/widgets/NavBar.dart';
 import 'package:bochinche_app/styles/BochincheAppBar.dart';
 import 'package:bochinche_app/features/Registered Events/registered_events_logic.dart';
 import 'package:bochinche_app/styles/Color.dart';
@@ -19,7 +19,7 @@ class _registered_events extends State<registered_events> {
       backgroundColor: Colors.white, // Fondo blanco principal
       appBar: const BochincheAppBar(),
       drawer: const Navbar(),
-      body: cuerpo(context),
+      body: SafeArea(child: cuerpo(context)),
     );
   }
 
@@ -137,9 +137,10 @@ class _registered_events extends State<registered_events> {
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                const Text(
-                                  "1. Detalles de la Reserva",
-                                  style: TextStyle(
+                                // AQUI ESTÁ LA MAGIA 👇
+                                Text(
+                                  "${index + 1}. Detalles de la Reserva",
+                                  style: const TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w600,
                                     color: PrimaryPurple,

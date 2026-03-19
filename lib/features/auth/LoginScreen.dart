@@ -8,6 +8,7 @@ import 'package:bochinche_app/data/auth_service.dart';
 import 'package:bochinche_app/styles/Color.dart';
 import 'package:bochinche_app/sources/events/events_logic.dart';
 import 'package:bochinche_app/core/utils/draft_manager.dart';
+import 'package:bochinche_app/sources/statistics/statistics_ui.dart'; 
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -39,6 +40,112 @@ class _LoginScreenState extends State<LoginScreen> {
       });
     }
   }
+  
+  // --- VALIDACIÓN ---
+  Timer? _debounce;
+  String? _emailError;
+  String? _passwordError;
+
+  bool cargando = false;
+  bool showPassword = false;
+
+  bool show2FAWidget = false;
+  User? _tempUser;
+  String? _tempRol;
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    emailController.dispose();
+    passwordController.dispose();
+    super.dispose();
+  }
+
+  // --- LÓGICA DE VALIDACIÓN ---
+  void _validateInput(String input) {
+    setState(() {
+      if (input.isEmpty) {
+        _emailError = "El campo es requerido";
+      } else if (!input.contains('@')) {
+        // Si no tiene @, asumimos que es un username. Verificamos tamaño básico.
+        if (input.length < 3) {
+          _emailError = "Mínimo 3 caracteres para usuario";
+        } else {
+          _emailError = null;
+        }
+      } else {
+        // Si tiene @, usamos la validación estricta de correo
+        final bool emailValid = RegExp(
+                r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+")
+            .hasMatch(input);
+        if (!emailValid) {
+          _emailError = "El correo no es válido";
+        } else {
+          _emailError = null;
+        }
+      }
+    });
+  }
+
+  void _validatePassword(String password) {
+    setState(() {
+      if (password.isEmpty) {
+        _passwordError = "La contraseña es requerida";
+      } else if (password.length < 6) {
+        _passwordError = "Mínimo 6 caracteres";
+      } else {
+        _passwordError = null;
+      }
+    });
+  }
+
+  bool _validateAll() {
+    _validateInput(emailController.text.trim());
+    _validatePassword(passwordController.text);
+
+    return _emailError == null && _passwordError == null;
+  }
+
+  void recuperarPassword() async {
+    String email = emailController.text.trim();
+
+    if (email.isEmpty || _emailError != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Ingresa un correo válido en el campo superior para recuperar tu clave"),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    try {
+      // Función oficial de Firebase para el "Olvidé mi contraseña"
+      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text("Correo Enviado"),
+            content: Text("Se ha enviado un enlace de recuperación a:\n$email\n\nRevisa tu bandeja de entrada o spam para cambiar tu contraseña."),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text("Aceptar"),
+              ),
+            ],
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
 
   void ejecutarLogin() async {
     if (emailController.text.isEmpty || passwordController.text.isEmpty) {
@@ -51,7 +158,7 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => cargando = true);
 
     try {
-      // 1. Iniciar sesión en Firebase Auth
+      // 1. Iniciar sesión en Authentication (Pasando el correo O el username)
       User? user = await _authService.signInWithEmailAndPassword(
         emailController.text.trim(),
         passwordController.text.trim(),
@@ -83,31 +190,58 @@ class _LoginScreenState extends State<LoginScreen> {
               return;
             }
           }
-        }
 
-        // 3. Verificar si el correo está verificado
-        if (user.emailVerified) {
-          // ÉXITO: Sincronizar eventos y navegar (Balance Javier)
-          await updateEventStatusOnLogin();
-          DraftManager.clearLoginDraft();
+          // Obtenemos el rol del usuario (Ej: 'organizador','admin')
+          String? rol = await _authService.getUserRol(user.uid);
 
-          if (mounted) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => const PaginaPrincipal()),
-            );
-          }
-        } else {
-          // Correo no verificado
-          if (mounted) {
+          if (rol != null && user.emailVerified == true) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text("Verifica tu correo antes de ingresar."),
-                backgroundColor: Colors.orange,
+                content: Text("Login exitoso!."),
+                backgroundColor: Color.fromARGB(255, 17, 255, 9),
+                duration: Duration(seconds: 4),
               ),
             );
-            await user.sendEmailVerification();
-            setState(() => cargando = false);
+            updateEventStatusOnLogin();
+            DraftManager.clearLoginDraft();
+
+            bool is2FAEnabled = data['is2FAEnabled'] ?? false;
+
+            if (is2FAEnabled) {
+              // Lanzar widget de 2FA antes de completar el inicio de sesión
+              if (mounted) {
+                setState(() {
+                  _tempUser = user;
+                  _tempRol = rol;
+                  show2FAWidget = true;
+                  cargando = false;
+                });
+                await _send2FAVerificationEmail();
+              }
+              return; // No completamos la navegación aún
+            } else {
+              // Completar login directo
+              _completeLogin(rol);
+              return;
+            }
+
+          } else {
+            if (rol != null && user.emailVerified == false) {
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      "Verifica tu correo primero para iniciar sesión.",
+                    ),
+                    backgroundColor: Colors.orange,
+                    duration: Duration(seconds: 4),
+                  ),
+                );
+                user.sendEmailVerification();
+                setState(() => cargando = false);
+                return;
+              }
+            }
           }
         }
       }
@@ -125,63 +259,308 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  Future<void> _send2FAVerificationEmail() async {
+    if (_tempUser == null) return;
+    try {
+      await _tempUser!.sendEmailVerification();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Correo de verificación enviado. Revisa tu bandeja de entrada."),
+            backgroundColor: Colors.blue,
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint("Error enviando correo de verificación 2FA: $e");
+    }
+  }
+
+  Future<void> _checkEmailVerified() async {
+    if (_tempUser == null) return;
+    setState(() => cargando = true);
+    try {
+      // Forzar recarga del token para obtener el estado más reciente
+      await _tempUser!.reload();
+      final updatedUser = FirebaseAuth.instance.currentUser;
+      if (updatedUser != null && updatedUser.emailVerified) {
+        // Sincronizar Firestore igual que en el login normal
+        await FirebaseFirestore.instance.collection('users').doc(updatedUser.uid).update({
+          'email_verified': true,
+        });
+        if (mounted) _completeLogin(_tempRol);
+      } else {
+        if (mounted) {
+          setState(() => cargando = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Correo aún no verificado. Revisa tu bandeja y vuelve a intentarlo."),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) setState(() => cargando = false);
+    }
+  }
+
+  void _completeLogin(String? rol) {
+    if (rol == 'admin') {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const StatisticsScreen()),
+      );
+    } else {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const Pagina_Principal()),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: PrimaryBackGroundPurple,
-      body: Center(
+    return Stack(
+      children: [
+        Container(color: PrimaryBackGroundPurple),
+
+        Scaffold(
+          backgroundColor: Colors.transparent,
+          resizeToAvoidBottomInset: true,
+          appBar: AppBar(
+            title: const Text(
+              "Iniciar Sesión",
+              style: TextStyle(
+                color: SecondaryPurple,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            centerTitle: true,
+            actionsPadding: const EdgeInsets.symmetric(horizontal: 16.0),
+            backgroundColor: PrimaryPurple,
+            elevation: 0,
+          ),
+          body: SafeArea(
+            child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10.0,
+                  vertical: 20.0,
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [contenido(context)],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget waitTilVerification(BuildContext context) {
+    return Stack(
+      children: [
+        Container(color: PrimaryBackGroundPurple),
+
+        Scaffold(
+          backgroundColor: Colors.transparent,
+          resizeToAvoidBottomInset: true,
+          appBar: AppBar(
+            title: const Text(
+              "Espera la verificación de tu correo",
+              style: TextStyle(
+                color: SecondaryPurple,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            centerTitle: true,
+            actionsPadding: const EdgeInsets.symmetric(horizontal: 16.0),
+            backgroundColor: PrimaryPurple,
+            elevation: 0,
+          ),
+          body: SafeArea(child: Center(child: Text('Espere unos segundos'))),
+        ),
+      ],
+    );
+  }
+
+  Widget contenido(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AccentPurple,
+        borderRadius: BorderRadius.circular(40.0),
+      ),
+      child: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(30.0),
-          child: Container(
-            padding: const EdgeInsets.all(25),
-            decoration: BoxDecoration(
-              color: AccentPurple,
-              borderRadius: BorderRadius.circular(40.0),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(
-                  Icons.person_pin,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(20),
+                //Se va a cambiar por el logo de la app
+                child: Icon(
+                  Icons.person_2_outlined,
                   size: 100,
                   color: PrimaryBackGroundPurple,
                 ),
-                const SizedBox(height: 20),
+              ),
+              if (!show2FAWidget) ...[
+                // Campo de Email o Username
                 TextField(
-                  controller: emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  decoration: const InputDecoration(
-                    filled: true,
-                    fillColor: SecondaryPurple,
-                    labelText: "Correo Electrónico",
-                    prefixIcon: Icon(Icons.email_outlined),
-                    border: OutlineInputBorder(),
-                  ),
+                controller: emailController,
+                keyboardType: TextInputType.emailAddress,
+                onChanged: (value) {
+                  DraftManager.saveLoginDraft({
+                    'email': value,
+                    'password': passwordController.text,
+                  });
+                  if (_debounce?.isActive ?? false) _debounce!.cancel();
+                  _debounce = Timer(const Duration(milliseconds: 500), () {
+                    _validateInput(value.trim()); // Validamos el input
+                  });
+                },
+                decoration: InputDecoration(
+                  filled: true,
+                  fillColor: SecondaryPurple,
+                  labelText: "Correo Electrónico o Usuario (@)",
+                  prefixIcon: const Icon(Icons.account_circle_outlined),
+                  border: const OutlineInputBorder(),
+                  errorText: _emailError,
+                  errorStyle: const TextStyle(color: Colors.red),
                 ),
-                const SizedBox(height: 20),
-                TextField(
-                  controller: passwordController,
-                  obscureText: !showPassword,
-                  decoration: InputDecoration(
-                    filled: true,
-                    fillColor: SecondaryPurple,
-                    labelText: "Contraseña",
-                    prefixIcon: const Icon(Icons.lock_outline),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        showPassword ? Icons.visibility : Icons.visibility_off,
-                      ),
-                      onPressed: () =>
-                          setState(() => showPassword = !showPassword),
+              ),
+              const SizedBox(height: 20),
+
+              // Campo de Contraseña
+              TextField(
+                controller: passwordController,
+                obscureText: !showPassword,
+                onChanged: (value) {
+                  DraftManager.saveLoginDraft({
+                    'email': emailController.text,
+                    'password': value,
+                  });
+                  if (_debounce?.isActive ?? false) _debounce!.cancel();
+                  _debounce = Timer(const Duration(milliseconds: 500), () {
+                    _validatePassword(value);
+                  });
+                },
+                decoration: InputDecoration(
+                  filled: true,
+                  fillColor: SecondaryPurple,
+                  labelText: "Contraseña",
+                  prefixIcon: const Icon(Icons.lock_outline),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      showPassword ? Icons.visibility : Icons.visibility_off,
                     ),
-                    border: const OutlineInputBorder(),
+                    onPressed: () =>
+                        setState(() => showPassword = !showPassword),
+                  ),
+                  border: const OutlineInputBorder(),
+                  errorText: _passwordError,
+                  errorStyle: const TextStyle(color: Colors.red),
+                ),
+              ),
+
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: recuperarPassword,
+                  child: const Text(
+                    "¿Olvidaste tu contraseña?",
+                    style: TextStyle(
+                      color: PrimaryBackGroundPurple,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
                   ),
                 ),
-                const SizedBox(height: 30),
+              ),
+
+              const SizedBox(height: 15),
+
+              // Botón de Inicio de Sesión
+              cargando
+                  ? const CircularProgressIndicator()
+                  : ElevatedButton(
+                      onPressed: ejecutarLogin,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: PrimaryBackGroundPurple,
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size(double.infinity, 55),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      
+                      child: const Text(
+                        "INICIAR SESIÓN",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+
+              const SizedBox(height: 20),
+
+              // Botón para ir al Registro
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text("¿No tienes cuenta?"),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const SignUpScreen(),
+                        ),
+                      );
+                    },
+                    child: const Text(
+                      "Regístrate aquí",
+                      style: TextStyle(
+                        color: PrimaryBackGroundPurple,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              ] else ...[
+                // Widget de Verificación 2FA (via link de correo)
+                const Icon(Icons.mark_email_unread_outlined, size: 70, color: PrimaryBackGroundPurple),
+                const SizedBox(height: 16),
+                const Text(
+                  "Verificación en 2 Pasos",
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: PrimaryBackGroundPurple,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                const Text(
+                  "Te enviamos un enlace de verificación a tu correo electrónico.\nHaz clic en el enlace y luego vuelve aquí.",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: PrimaryBackGroundPurple),
+                ),
+                const SizedBox(height: 28),
                 cargando
                     ? const CircularProgressIndicator()
-                    : ElevatedButton(
-                        onPressed: ejecutarLogin,
+                    : ElevatedButton.icon(
+                        onPressed: _checkEmailVerified,
+                        icon: const Icon(Icons.check_circle_outline),
+                        label: const Text(
+                          "YA VERIFIQUÉ MI CORREO",
+                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                        ),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: PrimaryBackGroundPurple,
                           foregroundColor: Colors.white,
@@ -190,27 +569,36 @@ class _LoginScreenState extends State<LoginScreen> {
                             borderRadius: BorderRadius.circular(10),
                           ),
                         ),
-                        child: const Text(
-                          "INICIAR SESIÓN",
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
                       ),
-                const SizedBox(height: 20),
-                TextButton(
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (c) => const SignUpScreen()),
-                  ),
-                  child: const Text(
-                    "¿No tienes cuenta? Regístrate aquí",
+                const SizedBox(height: 12),
+                TextButton.icon(
+                  onPressed: _send2FAVerificationEmail,
+                  icon: const Icon(Icons.refresh, color: PrimaryBackGroundPurple),
+                  label: const Text(
+                    "Reenviar correo",
                     style: TextStyle(
                       color: PrimaryBackGroundPurple,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
+                TextButton(
+                  onPressed: () {
+                    setState(() {
+                      show2FAWidget = false;
+                      _tempUser = null;
+                      _tempRol = null;
+                    });
+                  },
+                  child: const Text(
+                    "Volver al inicio de sesión",
+                    style: TextStyle(
+                      color: PrimaryBackGroundPurple,
+                    ),
+                  ),
+                ),
               ],
-            ),
+            ],
           ),
         ),
       ),
