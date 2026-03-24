@@ -1847,7 +1847,7 @@ class _FormCreateEvent2State extends State<FormCreateEvent2> {
           const Divider(),
 
           //seccion para editar fotos
-          const Text(
+          /* const Text(
             'Fotos del Evento (Selecciona varias)',
             style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
           ),
@@ -1934,7 +1934,7 @@ class _FormCreateEvent2State extends State<FormCreateEvent2> {
             '${_imagenesExistentes.length + _imagenesSeleccionadas.length} foto(s) lista(s)',
             style: const TextStyle(color: Colors.grey, fontSize: 12),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 20),*/
 
           // --- DATOS DE PAGO ---
           _buildLabel('Datos de Pago (Pago Móvil)'),
