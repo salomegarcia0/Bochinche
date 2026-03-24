@@ -90,6 +90,14 @@ class _StatisticsUiState extends State<StatisticsUi> {
   Widget estadisticasusuario(String id) {
     return Column(
       children: [
+        Text(
+          'Mis eventos por mes',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: Colors.black,
+          ),
+        ),
         EventosPorMesGrafico(), // Este lo mantenemos como pediste
         const SizedBox(height: 20),
         const MisEventosMasVendidosGrafico(), // Nuevo: Eventos más vendidos
@@ -213,7 +221,6 @@ class _StatisticsUiState extends State<StatisticsUi> {
   }
 }
 
-// --- GRÁFICO 1: MIS EVENTOS MÁS VENDIDOS / ASISTIDOS ---
 class MisEventosMasVendidosGrafico extends StatelessWidget {
   const MisEventosMasVendidosGrafico({super.key});
 

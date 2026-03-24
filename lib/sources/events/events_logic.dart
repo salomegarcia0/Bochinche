@@ -485,10 +485,6 @@ Future<void> modifyEvent(BuildContext context, String id) async {
   } else if (validateAforo(aforoController.text) == null) {
     // <-- Corregido aquí
     errorMsg = 'Por favor, el aforo debe ser un número válido.';
-  } else if (latitudC == 0.0) {
-    errorMsg = 'Por favor, selecciona una ubicación en el mapa.';
-  } else if (validateState(stateC) == null) {
-    errorMsg = 'Por favor, selecciona un estado válido.';
   }
 
   // 2. Si hay un error, mostrarlo y salir
