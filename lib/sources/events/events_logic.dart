@@ -52,7 +52,7 @@ Future<void> loadEventDraft() async {
   aforoController.text = data['capacity'] ?? '';
   typeC = data['type'];
   if (typeC != null && typeC!.isEmpty) typeC = null;
-  
+
   isPrivateC = data['isPrivate'] ?? false;
   isPayedC = data['isPayed'] ?? false;
   latitudC = data['lat'] ?? 10.0;
@@ -63,7 +63,7 @@ Future<void> loadEventDraft() async {
     fecha1 = DateTime.parse(d1);
     fecha1C.text = d1.split('T')[0];
   }
-  
+
   final d2 = data['date2'];
   if (d2 != null) {
     fecha2 = DateTime.parse(d2);
@@ -81,18 +81,19 @@ Future<void> loadEventDraft() async {
 
   selectedBank = data['bank'];
   if (selectedBank != null && selectedBank!.isEmpty) selectedBank = null;
-  
+
   selectedPhonePrefix = data['phonePrefix'];
-  if (selectedPhonePrefix != null && selectedPhonePrefix!.isEmpty) selectedPhonePrefix = null;
-  
+  if (selectedPhonePrefix != null && selectedPhonePrefix!.isEmpty)
+    selectedPhonePrefix = null;
+
   paymentPhoneNumberController.text = data['phoneNum'] ?? '';
-  
+
   selectedCIType = data['ciType'];
   if (selectedCIType != null && selectedCIType!.isEmpty) selectedCIType = null;
-  
+
   paymentCINumberController.text = data['ciNum'] ?? '';
   priceController.text = data['price'] ?? '';
-  
+
   print("Draft loaded from DraftManager");
 }
 
@@ -238,7 +239,10 @@ DateTime? validateDate(DateTime date1, DateTime date2) {
   }
 }
 
-Future<void> createEvent(BuildContext context, List<File> imagenesSeleccionadas) async {
+Future<void> createEvent(
+  BuildContext context,
+  List<File> imagenesSeleccionadas,
+) async {
   print(latitudC);
   print(longitudC);
   print(aforoController.text);
@@ -273,9 +277,14 @@ Future<void> createEvent(BuildContext context, List<File> imagenesSeleccionadas)
       List<String> urlsImagenesEvento = [];
       if (imagenesSeleccionadas.isNotEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Subiendo imágenes, por favor espera...')),
+          const SnackBar(
+            content: Text('Subiendo imágenes, por favor espera...'),
+          ),
         );
-        urlsImagenesEvento = await subirImagenesASupabase(eventId, imagenesSeleccionadas);
+        urlsImagenesEvento = await subirImagenesASupabase(
+          eventId,
+          imagenesSeleccionadas,
+        );
       }
 
       await newEventRef.set({
@@ -286,17 +295,21 @@ Future<void> createEvent(BuildContext context, List<File> imagenesSeleccionadas)
         'type': typeC,
         'state': 'Proximo',
         'id_organizer': FirebaseAuth.instance.currentUser!.uid,
-        'description': descripcionController.text.trim(), // <--- Fix: Adiós código muerto
+        'description': descripcionController.text
+            .trim(), // <--- Fix: Adiós código muerto
         'capacity': aforoController.text,
         'startDate': fecha1!.toIso8601String(),
         'endDate': fecha2!.toIso8601String(),
-        'startTime': {'hour': firstTimeHour.hour, 'minute': firstTimeHour.minute},
+        'startTime': {
+          'hour': firstTimeHour.hour,
+          'minute': firstTimeHour.minute,
+        },
         'endTime': {'hour': lastTimeHour.hour, 'minute': lastTimeHour.minute},
         'location': GeoPoint(latitudC, longitudC),
         'createdAt': FieldValue.serverTimestamp(),
         'stars': 0,
         'total_review': 0,
-        'isPrivate': isPrivateC, 
+        'isPrivate': isPrivateC,
         'isPayed': isPayedC,
         'gallery': urlsImagenesEvento,
       });
@@ -361,16 +374,20 @@ void clearAllFields() {
   clearEventDraft();
 }
 
-//funcion para cargar imagenes del evento 
-Future<List<String>> subirImagenesASupabase(String eventId, List<File> imagenes) async {
+//funcion para cargar imagenes del evento
+Future<List<String>> subirImagenesASupabase(
+  String eventId,
+  List<File> imagenes,
+) async {
   List<String> imageUrls = [];
   final supabase = Supabase.instance.client;
-  const String bucketName = 'events_images'; 
+  const String bucketName = 'events_images';
 
   for (int i = 0; i < imagenes.length; i++) {
     final file = imagenes[i];
     final fileExt = file.path.split('.').last;
-    final fileName = '${eventId}_${DateTime.now().millisecondsSinceEpoch}_$i.$fileExt';
+    final fileName =
+        '${eventId}_${DateTime.now().millisecondsSinceEpoch}_$i.$fileExt';
     final filePath = '$eventId/$fileName';
 
     try {
@@ -458,52 +475,52 @@ Future<void> cargarDatosEvento(String idDocumento) async {
   }
 }
 
-Future<void> modifyEvent(BuildContext context, String id, List<File> nuevasImagenes) async {
-  if (nombreEventoController.text.isEmpty ||
-      latitudC == 0.0 ||
-      validateAforo(aforoController.text) == null ||
-      validateName(contactoController.text) == null ||
-      validateName(direccionController.text) == null ||
-      validateState(stateC) == null) {
-    if (nombreEventoController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Por favor, ingresa el nombre del evento.'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    } else if (validateName(contactoController.text) == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Por favor, ingresa un contacto válido.'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
+Future<void> modifyEvent(BuildContext context, String id) async {
+  String? errorMsg;
+
+  if (nombreEventoController.text.isEmpty) {
+    errorMsg = 'Por favor, ingresa el nombre del evento.';
+  } else if (validateName(contactoController.text) == null) {
+    errorMsg = 'Por favor, ingresa un contacto válido.';
+  } else if (validateAforo(aforoController.text) == null) {
+    // <-- Corregido aquí
+    errorMsg = 'Por favor, el aforo debe ser un número válido.';
+  } else if (latitudC == 0.0) {
+    errorMsg = 'Por favor, selecciona una ubicación en el mapa.';
+  } else if (validateState(stateC) == null) {
+    errorMsg = 'Por favor, selecciona un estado válido.';
+  }
+
+  // 2. Si hay un error, mostrarlo y salir
+  if (errorMsg != null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(errorMsg), backgroundColor: Colors.red),
+    );
+    return;
   } else {
     try {
       var newEventRef = FirebaseFirestore.instance.collection('events').doc(id);
       var docSnapshot = await newEventRef.get();
 
       if (docSnapshot.exists) {
-
         var pagado = docSnapshot['isPayed'] ?? false;
-        
-        List<dynamic> fotosActuales = docSnapshot['gallery'] ?? []; 
-        List<String> linksNuevos = [];
 
-        if (nuevasImagenes.isNotEmpty) {
+        /*List<dynamic> fotosActuales = docSnapshot['gallery'] ?? [];
+        List<String> linksNuevos = [];*/
+
+        /* if (nuevasImagenes.isNotEmpty) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Subiendo nuevas imágenes, por favor espera...')),
+            const SnackBar(
+              content: Text('Subiendo nuevas imágenes, por favor espera...'),
+            ),
           );
           linksNuevos = await subirImagenesASupabase(id, nuevasImagenes);
         }
 
         List<String> galeriaFinal = [
-          ...fotosActuales.map((e) => e.toString()), 
-          ...linksNuevos
-        ];
-
+          ...fotosActuales.map((e) => e.toString()),
+          ...linksNuevos,
+        ];*/
 
         await newEventRef.update({
           'name': nombreEventoController.text,
@@ -513,34 +530,63 @@ Future<void> modifyEvent(BuildContext context, String id, List<File> nuevasImage
           'description': descripcionController.text,
           'capacity': aforoController.text,
           'isPrivate': isPrivateC,
-          'gallery': galeriaFinal,
+          /* 'gallery': galeriaFinal,*/
         });
         if (pagado) {
-          await newEventRef.update({
-            'paymentInfo': {
-              'bank': selectedBank ?? '',
-              'phone':
-                  selectedPhonePrefix != null &&
-                          paymentPhoneNumberController.text.isNotEmpty
-                      ? '$selectedPhonePrefix-${paymentPhoneNumberController.text}'
-                      : '',
-              'ci':
-                  selectedCIType != null &&
-                          paymentCINumberController.text.isNotEmpty
-                      ? '$selectedCIType-${paymentCINumberController.text}'
-                      : '',
-              'price': double.tryParse(priceController.text) ?? 0.0,
-            },
-          });
-        }
+          if (selectedBank == null ||
+              selectedPhonePrefix == null ||
+              selectedCIType == null) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  'Por favor, completa toda la información de pago.',
+                ),
+              ),
+            );
+          } else {
+            await newEventRef.update({
+              'paymentInfo': {
+                'bank': selectedBank ?? '',
+                'phone':
+                    selectedPhonePrefix != null &&
+                        paymentPhoneNumberController.text.isNotEmpty
+                    ? '$selectedPhonePrefix-${paymentPhoneNumberController.text}'
+                    : '',
+                'ci':
+                    selectedCIType != null &&
+                        paymentCINumberController.text.isNotEmpty
+                    ? '$selectedCIType-${paymentCINumberController.text}'
+                    : '',
+                'price': double.tryParse(priceController.text) ?? 0.0,
+              },
+            });
 
-        // Mostrar mensaje de éxito
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('¡Evento modificado con éxito!'),
-            backgroundColor: Colors.green,
-          ),
-        );
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('¡Evento modificado con éxito!'),
+                backgroundColor: Colors.green,
+              ),
+            );
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const ControlPanelEvent(),
+              ),
+            );
+          }
+        } else {
+          // Mostrar mensaje de éxito
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('¡Evento modificado con éxito!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const ControlPanelEvent()),
+          );
+        }
       } else {
         print("El documento con id $id no existe");
       }
@@ -576,9 +622,11 @@ Future<void> updateEventStatusOnLogin() async {
 
       DateTime startDate = DateTime.parse(data['startDate']);
       String currentState = data['state'];
-      
+
       // Definimos cuándo se considera que terminó (Ej: 12 horas después de empezar)
-      final DateTime fechaFinEstimada = startDate.add(const Duration(hours: 12));
+      final DateTime fechaFinEstimada = startDate.add(
+        const Duration(hours: 12),
+      );
 
       Map<String, dynamic> updates = {};
 
@@ -586,7 +634,7 @@ Future<void> updateEventStatusOnLogin() async {
       if (now.isAfter(fechaFinEstimada)) {
         updates['state'] = 'Finalizado';
         updates['isFinalizado'] = true; // <--- AQUÍ ESTÁ EL CANDADO QUE FALTABA
-      } 
+      }
       // CASO 2: El evento ya empezó pero no ha terminado
       else if (now.isAfter(startDate) && currentState != 'Ocurriendo') {
         updates['state'] = 'Ocurriendo';
@@ -601,7 +649,9 @@ Future<void> updateEventStatusOnLogin() async {
 
     if (hasChanges) {
       await batch.commit();
-      print("✅ Sincronización completa: Eventos viejos finalizados y base de datos limpia.");
+      print(
+        "✅ Sincronización completa: Eventos viejos finalizados y base de datos limpia.",
+      );
     }
   } catch (e) {
     print("❌ Error sincronizando estados: $e");
@@ -733,7 +783,7 @@ Stream<List<Map<String, dynamic>>> chargeFilteredEvents({
   // --- CASO 1: BÚSQUEDA DE BOCHINCHEROS (USUARIOS) ---
   if (mode == SearchMode.bochincheros) {
     // NUEVO: Convertimos la búsqueda a minúsculas una sola vez
-    final String lowerSearch = safeSearch.toLowerCase(); 
+    final String lowerSearch = safeSearch.toLowerCase();
 
     if (category == 'Seguidos') {
       if (currentUserUid == null) return Stream.value([]);
@@ -755,8 +805,8 @@ Stream<List<Map<String, dynamic>>> chargeFilteredEvents({
                 .where((userData) {
                   final String id = userData['uid'] ?? '';
                   // NUEVO: Ahora comparamos contra username_lowercase en vez de nombre
-                  final String usernameLower = (userData['username_lowercase'] ?? '')
-                      .toString();
+                  final String usernameLower =
+                      (userData['username_lowercase'] ?? '').toString();
                   return followingIds.contains(id) &&
                       usernameLower.contains(lowerSearch);
                 })
@@ -770,11 +820,7 @@ Stream<List<Map<String, dynamic>>> chargeFilteredEvents({
         .where('username_lowercase', isGreaterThanOrEqualTo: lowerSearch)
         .where('username_lowercase', isLessThanOrEqualTo: '$lowerSearch\uf8ff')
         .snapshots()
-        .map(
-          (snap) => snap.docs
-              .map((doc) => doc.data())
-              .toList(),
-        );
+        .map((snap) => snap.docs.map((doc) => doc.data()).toList());
   }
 
   // --- CASO 2: BÚSQUEDA DE EVENTOS ---
@@ -910,9 +956,13 @@ Future<void> registrarUsuarioEnEvento(
   }
 
   try {
-    DocumentReference eventRef = FirebaseFirestore.instance.collection('events').doc(eventoId);
-    DocumentReference userRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
-    
+    DocumentReference eventRef = FirebaseFirestore.instance
+        .collection('events')
+        .doc(eventoId);
+    DocumentReference userRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid);
+
     // CREAMOS LA REFERENCIA A LA SUBCOLECCIÓN 'tickets'
     // Usamos el eventoId como nombre del documento para evitar reservas duplicadas
     DocumentReference ticketRef = userRef.collection('tickets').doc(eventoId);
@@ -927,7 +977,7 @@ Future<void> registrarUsuarioEnEvento(
 
     // 2. Guardamos el ticket en la subcolección correcta
     batch.set(ticketRef, {
-      'eventId': eventoId, 
+      'eventId': eventoId,
       'reservedAt': FieldValue.serverTimestamp(),
     });
 

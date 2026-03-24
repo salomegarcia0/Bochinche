@@ -691,22 +691,31 @@ class _FormCreateEventState extends State<FormCreateEvent> {
               if (resultado != null) {
                 try {
                   List<Placemark> placemarks = await placemarkFromCoordinates(
-                      resultado.latitude, resultado.longitude);
+                    resultado.latitude,
+                    resultado.longitude,
+                  );
                   if (placemarks.isNotEmpty) {
                     Placemark place = placemarks[0];
                     String pointName = place.name ?? '';
                     String street = place.street ?? '';
                     String address = '';
-                    if (pointName.isNotEmpty && pointName != street && !street.contains(pointName)) {
+                    if (pointName.isNotEmpty &&
+                        pointName != street &&
+                        !street.contains(pointName)) {
                       address += '$pointName, ';
                     }
-                    address += '$street, ${place.subLocality ?? ''}, ${place.locality ?? ''}, ${place.country ?? ''}';
-                    address = address.replaceAll(RegExp(r',\s*,'), ',').replaceAll(RegExp(r'(^,\s*)|(\s*,$)'), '').trim();
+                    address +=
+                        '$street, ${place.subLocality ?? ''}, ${place.locality ?? ''}, ${place.country ?? ''}';
+                    address = address
+                        .replaceAll(RegExp(r',\s*,'), ',')
+                        .replaceAll(RegExp(r'(^,\s*)|(\s*,$)'), '')
+                        .trim();
                     if (address.isEmpty) address = 'Dirección desconocida';
                     direccionController.text = address;
                   }
                 } catch (e) {
-                   direccionController.text = '${resultado.latitude}, ${resultado.longitude}';
+                  direccionController.text =
+                      '${resultado.latitude}, ${resultado.longitude}';
                 }
                 setState(() {
                   ubicacionTemporal = resultado;
@@ -1161,7 +1170,7 @@ class ControlPanelEvent extends StatelessWidget {
             child: Container(
               color: Colors.white,
               padding: EdgeInsets.all(10),
-              child: MyEvents(),
+              child: SafeArea(child: MyEvents()),
             ),
           ),
         ),
@@ -1569,6 +1578,7 @@ class ModifyEvents extends StatelessWidget {
       body: SingleChildScrollView(
         child: Column(
           children: [
+            SizedBox(height: 10),
             Text(
               'Modifica tus eventos',
               style: TextStyle(fontWeight: FontWeight.w800, fontSize: 25),
@@ -1579,7 +1589,7 @@ class ModifyEvents extends StatelessWidget {
             ),
 
             const Divider(),
-            const FormCreateEvent2(),
+            const SafeArea(child: FormCreateEvent2()),
           ],
         ),
       ),
@@ -1793,6 +1803,7 @@ class _FormCreateEvent2State extends State<FormCreateEvent2> {
           const SizedBox(height: 12),
           TextFormField(
             controller: aforoController,
+            keyboardType: const TextInputType.numberWithOptions(decimal: false),
             validator: validateAforo,
             decoration: const InputDecoration(
               labelText: 'Aforo',
@@ -2069,13 +2080,7 @@ class _FormCreateEvent2State extends State<FormCreateEvent2> {
                   foregroundColor: SecondaryPurple,
                 ),
                 onPressed: () {
-                  modifyEvent(context, idmod, _imagenesSeleccionadas);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const ControlPanelEvent(),
-                    ),
-                  );
+                  modifyEvent(context, idmod);
                 },
                 icon: const Icon(Icons.cloud_upload),
                 label: const Text('MODIFICAR EVENTO'),

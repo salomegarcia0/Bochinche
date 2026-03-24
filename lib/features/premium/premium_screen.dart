@@ -1,5 +1,11 @@
 import 'package:flutter/material.dart';
 import 'venezuelan_payment_screen.dart';
+import 'package:bochinche_app/features/profile/profile_screen.dart';
+import 'package:bochinche_app/sources/notifications/notifications_ui.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:bochinche_app/styles/Color.dart';
+import 'package:bochinche_app/features/auth/LoginScreen.dart';
+import 'package:bochinche_app/widgets/detalle_evento.dart';
 
 class PremiumScreen extends StatelessWidget {
   const PremiumScreen({super.key});
@@ -8,52 +14,118 @@ class PremiumScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Planes Bochinche"),
+        title: const Text(
+          "Planes Bochinche",
+          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+        ),
         backgroundColor: Colors.amber[700],
+        centerTitle: true,
+        actions: <Widget>[
+          if (FirebaseAuth.instance.currentUser != null) iconbell(context),
+        ],
+        actionsPadding: EdgeInsets.symmetric(horizontal: 16.0),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            const Text(
-              "Sube de nivel tu rumba",
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 20),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            children: [
+              const Text(
+                "Sube de nivel tu rumba",
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 20),
 
-            // PLAN GOLD
-            _buildPlanCard(
-              context,
-              title: "PLAN GOLD",
-              price: "9.99",
-              color: Colors.orange,
-              icon: Icons.star,
-              benefits: [
-                "Eventos Ilimitados",
-                "Insignia VIP",
-                "Sin publicidad",
-              ],
-            ),
+              // PLAN GOLD
+              _buildPlanCard(
+                context,
+                title: "PLAN GOLD",
+                price: "9.99",
+                color: Colors.orange,
+                icon: Icons.star,
+                benefits: [
+                  "Eventos Ilimitados",
+                  "Insignia VIP",
+                  "Sin publicidad",
+                ],
+              ),
 
-            const SizedBox(height: 20),
+              const SizedBox(height: 20),
 
-            // PLAN DIAMOND
-            _buildPlanCard(
-              context,
-              title: "PLAN DIAMOND",
-              price: "19.99",
-              color: Colors.blue.shade900,
-              icon: Icons.diamond, // Javier: Corregido gem por diamond
-              benefits: [
-                "Todo lo del Gold",
-                "Soporte 24/7",
-                "Eventos Destacados",
-              ],
-              isDiamond: true,
-            ),
-          ],
+              // PLAN DIAMOND
+              _buildPlanCard(
+                context,
+                title: "PLAN DIAMOND",
+                price: "19.99",
+                color: Colors.blue.shade900,
+                icon: Icons.diamond, // Javier: Corregido gem por diamond
+                benefits: [
+                  "Todo lo del Gold",
+                  "Soporte 24/7",
+                  "Eventos Destacados",
+                ],
+                isDiamond: true,
+              ),
+            ],
+          ),
         ),
       ),
+    );
+  }
+
+  Widget iconbell(BuildContext context) {
+    return IconButton(
+      icon: const Icon(
+        Icons.notifications,
+        color: Color.fromARGB(255, 0, 0, 0),
+      ),
+      onPressed: () {
+        User? usuario = FirebaseAuth.instance.currentUser;
+        if (usuario == null) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const LoginScreen()),
+          );
+        } else {
+          showNotifications(
+            context,
+            onEventSelected: (eventData) {
+              mostrarDetalles(context, eventData, eventData['id']);
+            },
+          );
+        }
+      },
+    );
+  }
+
+  Widget iconpersona(BuildContext context) {
+    return IconButton(
+      icon: const Icon(Icons.person, color: Color.fromARGB(255, 0, 0, 0)),
+      onPressed: () {
+        User? usuario = FirebaseAuth.instance.currentUser;
+
+        if (usuario == null) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const LoginScreen()),
+          );
+        } else {
+          // 🧹 Se eliminó el SnackBar de aquí
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const ProfileScreen()),
+          );
+        }
+      },
+    );
+  }
+
+  Widget icon(BuildContext context) {
+    return IconButton(
+      icon: const Icon(Icons.menu, color: SecondaryPurple),
+      onPressed: () {
+        // mostrara una ventana emergente lateral al presionar el icono
+      },
     );
   }
 

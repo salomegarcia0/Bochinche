@@ -69,7 +69,12 @@ class _VenezuelanPaymentScreenState extends State<VenezuelanPaymentScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Reportar Pago Móvil")),
+      appBar: AppBar(
+        title: const Text(
+          "Reportar Pago Móvil",
+          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+        ),
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Form(

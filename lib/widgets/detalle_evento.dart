@@ -398,12 +398,16 @@ void mostrarDetalles(
                             builder: (context, snapshot) {
                               final bool yaReservo =
                                   snapshot.hasData && snapshot.data!.exists;
+                              final bool isMine = data['id_organizer'] == uid;
 
                               // ========================================================
                               // 3. LÓGICA DEL BOTÓN A PRUEBA DE BALAS
                               // ========================================================
                               final bool botonDeshabilitado =
-                                  isAgotado || isFinalizado || yaReservo;
+                                  isAgotado ||
+                                  isFinalizado ||
+                                  yaReservo ||
+                                  isMine;
 
                               String textoBoton = isPayed
                                   ? 'Comprar entradas'
@@ -414,6 +418,8 @@ void mostrarDetalles(
                                 textoBoton = 'Ya reservaste';
                               } else if (isAgotado) {
                                 textoBoton = 'Agotado';
+                              } else if (isMine) {
+                                textoBoton = 'Tu evento';
                               }
 
                               return ElevatedButton(
