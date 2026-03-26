@@ -244,12 +244,14 @@ void mostrarDetalles(
                               ),
                               onPressed: () {
                                 userToReport = data['id_organizer'];
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => OrgProfile(),
-                                  ),
-                                );
+                                if (FirebaseAuth.instance.currentUser != null) {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => OrgProfile(),
+                                    ),
+                                  );
+                                }
                               },
                               child: RichText(
                                 overflow: TextOverflow.ellipsis,
