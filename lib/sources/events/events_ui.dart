@@ -2605,13 +2605,16 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
                                   ),
                                 ),
                                 onTap: () {
-                                  userToReport = item['uid'];
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => OrgProfile(),
-                                    ),
-                                  );
+                                  if (FirebaseAuth.instance.currentUser !=
+                                      null) {
+                                    userToReport = item['uid'];
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => OrgProfile(),
+                                      ),
+                                    );
+                                  }
                                 },
                               ),
                             );
